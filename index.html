@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sideline Pro | Analytics Suite</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050b05; --panel: #0e1610; --border: #1f3a25; 
+            --accent: #4ade80; --text: #e8ece9; --muted: #6b8a75;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
+
+        .app-container { display: flex; width: 100%; height: 100%; }
+        
+        .sidebar { width: 250px; background: #000; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono'; color: var(--accent); font-weight: bold; }
+        .action-btn { margin: 10px 15px 0 15px; padding: 10px; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'JetBrains Mono'; font-size: 0.8rem; }
+        .btn-new { background: var(--accent); color: black; }
+        .btn-stats { background: #1a4d2e; color: var(--accent); border: 1px solid var(--border); }
+        .session-list { flex: 1; overflow-y: auto; padding: 10px; margin-top: 10px; }
+        .session-item { padding: 12px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; color: #888; font-size: 0.9rem; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-item:hover { background: #111; color: white; }
+        .session-item.active { background: #1a4d2e; color: white; border: 1px solid var(--accent); }
+
+        .chat-section { flex: 1; display: flex; flex-direction: column; background: var(--panel); border-right: 1px solid var(--border); position: relative; }
+        .header-top { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #090f0a; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .message { padding: 12px 16px; border-radius: 6px; font-size: 0.9rem; line-height: 1.6; max-width: 85%; }
+        .user-msg { background: #1a4d2e; border-left: 3px solid var(--accent); align-self: flex-end; color: white; }
+        .ai-msg { align-self: flex-start; color: var(--text); } 
+
+        .input-area { padding: 20px; border-top: 1px solid var(--border); background: #090f0a; display: flex; gap: 10px; align-items: center; }
+        input[type="text"] { background: #161f18; border: 1px solid #333; color: white; padding: 12px; border-radius: 4px; flex: 1; outline: none; }
+        .btn { background: var(--accent); color: black; border: none; padding: 0 20px; font-weight: bold; cursor: pointer; height: 42px; border-radius: 4px; width: 140px; }
+        .file-label { background: #333; color: #888; border: 1px solid #444; padding: 0 15px; height: 42px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: all 0.2s; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-label.has-file { background: #1a4d2e; color: white; border: 1px solid var(--accent); font-size: 0.8rem; font-family: 'JetBrains Mono'; }
+
+        .library-section { width: 400px; display: flex; flex-direction: column; background: #050b05; border-left: 1px solid var(--border); }
+        .lib-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .search-bar { width: 100%; padding: 10px; background: #111; border: 1px solid var(--border); color: white; border-radius: 4px; font-family: 'JetBrains Mono'; }
+        #library-content { flex: 1; overflow-y: auto; padding: 20px; }
+        .section-header { margin-top: 20px; margin-bottom: 10px; font-size: 0.8rem; font-weight: bold; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        .play-card { background: #111; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 10px; transition: 0.2s; position: relative; }
+        .play-card:hover { border-color: var(--accent); }
+        .card-preview { height: 100px; background: #000; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .card-info { padding: 10px; }
+        .card-title { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; }
+        .card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #666; margin-top: 8px; }
+        .card-action-btn { background: #222; border: 1px solid #333; color: #ccc; cursor: pointer; font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; }
+        .card-action-btn:hover { background: #333; color: white; }
+        .delete-btn { color: #ff5555; border-color: #552222; }
+        .delete-btn:hover { background: #552222; color: white; }
+        .edit-title-btn { background: none; border: none; cursor: pointer; color: #666; font-size: 1rem; margin-left: 10px; transition: color 0.2s; }
+        .edit-title-btn:hover { color: var(--accent); }
+
+        /* MODALS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; justify-content: center; align-items: center; flex-direction: column; }
+        .details-card-lg { background: #111; border: 1px solid var(--border); padding: 0; border-radius: 12px; width: 700px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .details-header { background: #1a4d2e; padding: 20px; border-bottom: 1px solid var(--accent); color: white; font-weight: bold; font-family: 'JetBrains Mono'; font-size: 1.2rem; }
+        .details-body { padding: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .detail-row { margin-bottom: 15px; }
+        .detail-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+        .detail-val { color: #eee; font-size: 0.95rem; margin-top: 4px; line-height: 1.4; }
+        .full-width { grid-column: span 2; border-top: 1px solid #333; padding-top: 15px; margin-top: 5px; }
+        .stats-card-lg { background: #111; border: 1px solid var(--border); padding: 40px; border-radius: 12px; width: 800px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
+        .stat-category { background: #222; padding: 15px; border-radius: 8px; border: 1px solid #333; }
+        .stat-row { margin-bottom: 8px; font-size: 0.8rem; display:flex; justify-content:space-between; color:#ccc; }
+        .auth-card { background: #111; border: 1px solid var(--border); padding: 40px; border-radius: 12px; width: 350px; text-align: center; display: flex; flex-direction: column; gap: 15px; }
+        .auth-input { width: 100%; padding: 15px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="sidebar">
+        <div class="sidebar-header">SIDELINE PRO</div>
+        <button class="action-btn btn-new" onclick="createNewChat()">+ NEW CHAT</button>
+        <button class="action-btn btn-stats" onclick="openStats()">📊 SESSION REPORT</button>
+        <div id="session-list" class="session-list"></div>
+        <div style="padding:15px; border-top:1px solid #333; font-size:0.8rem; color:#666; cursor:pointer;" onclick="logout()">LOGOUT</div>
+    </div>
+
+    <div class="chat-section">
+        <div class="header-top">
+            <div style="display:flex; align-items:center;">
+                <span id="current-chat-title" style="font-weight:bold; color:white;">New Chat</span>
+                <button class="edit-title-btn" onclick="renameCurrentChat()" title="Rename Chat">✏️</button>
+            </div>
+            <div id="credit-display" style="color:var(--accent); font-weight:bold;">Loading...</div>
+        </div>
+        <div id="chat-window"><div class="message ai-msg" style="padding:12px 16px; background:#161f18; border:1px solid var(--border); border-radius:6px;">Select a chat or upload film to begin.</div></div>
+        <div class="input-area">
+            <label for="file-input" class="file-label" id="file-btn-label">📎</label>
+            <input type="file" id="file-input" accept="video/*" style="display:none;">
+            <input type="text" id="user-input" placeholder="Ask about this play..." autocomplete="off">
+            <button class="btn" id="send-btn">SEND</button>
+        </div>
+    </div>
+
+    <div class="library-section">
+        <div class="lib-header">
+            <input type="text" class="search-bar" id="library-search" placeholder="Search Clips & Sections..." onkeyup="loadLibrary()">
+        </div>
+        <div id="library-content"></div>
+    </div>
+</div>
+
+<div id="details-modal" class="modal-overlay">
+    <div class="details-card-lg">
+        <div class="details-header" id="detail-title">PLAY TITLE</div>
+        <div class="details-body" id="detail-body"></div>
+        <div style="padding:20px; background:#111; border-top:1px solid #333; text-align:right;">
+             <button class="btn" onclick="document.getElementById('details-modal').style.display='none'">CLOSE</button>
+        </div>
+    </div>
+</div>
+
+<div id="stats-modal" class="modal-overlay">
+    <div class="stats-card-lg">
+        <h2 style="color:white; margin:0; border-bottom:1px solid #333; padding-bottom:10px;">SESSION TENDENCY REPORT</h2>
+        <div id="stats-content" class="stats-grid"></div>
+        <button class="btn" style="align-self: flex-end;" onclick="document.getElementById('stats-modal').style.display='none'">CLOSE</button>
+    </div>
+</div>
+
+<div id="video-modal" class="modal-overlay">
+    <video id="main-player" controls style="max-width:90%; border:2px solid var(--accent);"></video>
+    <div style="margin-top:20px; color:white; cursor:pointer;" onclick="document.getElementById('video-modal').style.display='none'">CLOSE</div>
+</div>
+
+<div id="auth-modal" class="modal-overlay">
+    <div class="auth-card">
+        <h2 style="color:var(--accent);">LOGIN</h2>
+        <input type="email" id="auth-email" class="auth-input" placeholder="Email">
+        <input type="password" id="auth-pass" class="auth-input" placeholder="Password">
+        <button class="btn" style="width:100%" onclick="handleAuth()">CONTINUE</button>
+        <p style="color:#666; font-size:0.8rem; cursor:pointer;" onclick="toggleAuth()" id="auth-toggle">Create Account</p>
+    </div>
+</div>
+
+<script>
+    let currentUser = localStorage.getItem('sideline_user');
+    let currentSessionId = null;
+    let isSignup = false;
+    let globalLibrary = [];
+
+    window.onload = () => {
+        if (!currentUser) document.getElementById('auth-modal').style.display = 'flex';
+        else { loadSessions(); loadLibrary(); refreshCredits(); }
+    };
+
+    // --- SCOPED STATS FUNCTION ---
+    async function openStats() {
+        if(!currentSessionId) return alert("Select a chat first to view its report.");
+        
+        // Pass the session ID to filter the report
+        const res = await fetch(`http://localhost:3000/api/stats?email=${currentUser}&sessionId=${currentSessionId}`);
+        const data = await res.json();
+        const container = document.getElementById('stats-content');
+        container.innerHTML = '';
+
+        if (data.empty) {
+            container.innerHTML = '<div style="color:#666; grid-column: span 2; text-align:center;">No plays analyzed in this session yet.</div>';
+        } else {
+             const renderCategory = (title, items) => {
+                let html = `<div class="stat-category"><div class="stat-title">${title}</div>`;
+                const sorted = Object.entries(items).sort((a,b) => b[1] - a[1]);
+                sorted.forEach(([label, count]) => {
+                    const pct = Math.round((count / data.total) * 100);
+                    html += `<div class="stat-row"><span>${label}</span><span>${pct}% (${count})</span></div><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%"></div></div>`;
+                });
+                return html + '</div>';
+            };
+            container.innerHTML += renderCategory("TOP FORMATIONS", data.formation);
+            container.innerHTML += renderCategory("TOP COVERAGES", data.coverage);
+            container.innerHTML += renderCategory("KEY CONCEPTS", data.concept);
+            
+            container.innerHTML += `<div class="stat-category" style="display:flex; align-items:center; justify-content:center; flex-direction:column;"><div style="font-size:3rem; font-weight:bold; color:white;">${data.total}</div><div style="color:#666;">Plays in Session</div></div>`;
+        }
+        document.getElementById('stats-modal').style.display = 'flex';
+    }
+
+    async function renameCurrentChat() {
+        if(!currentSessionId) return alert("Start a chat first!");
+        const newTitle = prompt("Enter new chat name:");
+        if(newTitle && newTitle.trim() !== "") {
+            document.getElementById('current-chat-title').textContent = newTitle;
+            try {
+                await fetch('http://localhost:3000/api/rename-session', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ sessionId: currentSessionId, newTitle: newTitle, email: currentUser })
+                });
+                // REFRESH SIDEBAR IMMEDIATELY
+                loadSessions();
+            } catch(e) { alert("Failed to save name."); }
+        }
+    }
+
+    // --- EXISTING HELPER FUNCTIONS ---
+    function showFullDetails(encodedData) {
+        try {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            document.getElementById('detail-title').innerText = data.title || "PLAY DETAILS";
+            const body = document.getElementById('detail-body');
+            body.innerHTML = `
+                <div class="detail-row"><div class="detail-label">FORMATION</div><div class="detail-val">${data.data?.formation || '-'}</div></div>
+                <div class="detail-row"><div class="detail-label">PERSONNEL</div><div class="detail-val">${data.data?.personnel || '-'}</div></div>
+                <div class="detail-row"><div class="detail-label">COVERAGE</div><div class="detail-val">${data.data?.coverage || '-'}</div></div>
+                <div class="detail-row"><div class="detail-label">CONCEPT</div><div class="detail-val">${data.title || '-'}</div></div>
+                <div class="detail-row"><div class="detail-label">DOWN & DISTANCE</div><div class="detail-val">${data.data?.down_distance || '-'}</div></div>
+                <div class="detail-row"><div class="detail-label">HASH / FIELD POS</div><div class="detail-val">${data.data?.hash || '-'}</div></div>
+                <div class="detail-row full-width"><div class="detail-label" style="color:#4ade80;">TELLS & PHYSICAL CUES</div><div class="detail-val">${data.scouting_report?.tells || '-'}</div></div>
+                <div class="detail-row full-width"><div class="detail-label" style="color:#facc15;">STRATEGIC TENDENCIES</div><div class="detail-val">${data.scouting_report?.tendency || '-'}</div></div>
+                <div class="detail-row full-width"><div class="detail-label" style="color:#60a5fa;">EXPLOITABLE WEAKNESSES</div><div class="detail-val">${data.scouting_report?.weakness || '-'}</div></div>
+                <div class="detail-row full-width" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                    <div><div class="detail-label">ASSIGNMENT</div><div class="detail-val">${data.grading?.assignment || '-'}</div></div>
+                    <div><div class="detail-label">TECHNIQUE</div><div class="detail-val">${data.grading?.technique || '-'}</div></div>
+                    <div><div class="detail-label">EFFORT</div><div class="detail-val">${data.grading?.effort || '-'}</div></div>
+                </div>
+                <div class="detail-row full-width"><div class="detail-label">FULL SUMMARY</div><div class="detail-val" style="font-style:italic; color:#999;">${data.summary || 'No summary provided.'}</div></div>
+            `;
+            document.getElementById('details-modal').style.display = 'flex';
+        } catch(e) { console.error(e); alert("Could not load details."); }
+    }
+
+    function renderScoutCard(data) {
+        const encoded = encodeURIComponent(JSON.stringify(data));
+        return `
+            <div style="background:#1a4d2e; padding:15px; font-weight:bold; color:white; border-bottom:1px solid #4ade80; display:flex; justify-content:space-between;">
+                <span>${data.title || 'Untitled'}</span>
+                <span style="font-family:'JetBrains Mono'; opacity:0.8;">${data.data?.down_distance || 'N/A'}</span>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; border-bottom:1px solid #333; background:#0e1610;">
+                <div style="padding:15px; border-right:1px solid #333;">
+                    <div style="font-size:0.7rem; color:#6b8a75;">PERSONNEL / FORMATION</div>
+                    <div style="color:white; font-size:0.9rem;">${data.data?.personnel || '-'} <br> ${data.data?.formation || '-'}</div>
+                </div>
+                <div style="padding:15px;">
+                    <div style="font-size:0.7rem; color:#6b8a75;">CONCEPT / COVERAGE</div>
+                    <div style="color:white; font-size:0.9rem;">${data.title || '-'} <br> ${data.data?.coverage || '-'}</div>
+                </div>
+            </div>
+            <div style="padding:20px; background:#0e1610;">
+                <div style="margin-bottom:15px;">
+                    <span style="color:#4ade80; font-weight:bold; font-size:0.8rem;">👀 TELLS & CUES</span>
+                    <div style="color:#ddd; font-size:0.9rem; margin-top:4px;">${data.scouting_report?.tells || '-'}</div>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <span style="color:#facc15; font-weight:bold; font-size:0.8rem;">📉 EXPLOITABLE WEAKNESS</span>
+                    <div style="color:#ddd; font-size:0.9rem; margin-top:4px;">${data.scouting_report?.weakness || '-'}</div>
+                </div>
+                <button onclick="showFullDetails('${encoded}')" style="width:100%; padding:10px; background:#222; border:1px solid #333; color:#ccc; cursor:pointer; border-radius:4px; font-weight:bold; font-size:0.8rem; margin-top:10px;">➕ VIEW FULL DETAILS</button>
+            </div>
+        `;
+    }
+
+    document.getElementById('file-input').addEventListener('change', function() {
+        const label = document.getElementById('file-btn-label');
+        if(this.files.length > 0) {
+            label.textContent = "✅ " + this.files[0].name;
+            label.classList.add('has-file');
+        } else { label.textContent = "📎"; label.classList.remove('has-file'); }
+    });
+
+    async function deleteClip(id) {
+        if(!confirm("Are you sure you want to delete this film?")) return;
+        try {
+            const res = await fetch('http://localhost:3000/api/delete-clip', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id, owner: currentUser })
+            });
+            const data = await res.json();
+            if(data.success) {
+                loadLibrary();
+                const player = document.getElementById('main-player');
+                if(player.src.includes(id)) {
+                    document.getElementById('video-modal').style.display='none';
+                    player.pause();
+                }
+            } else alert("Error: " + data.error);
+        } catch(e) { alert("Connection Failed"); }
+    }
+
+    async function loadLibrary() {
+        const q = document.getElementById('library-search').value;
+        const res = await fetch(`http://localhost:3000/api/search?email=${currentUser}&q=${q}`);
+        const plays = await res.json();
+        globalLibrary = plays;
+
+        const groups = {};
+        plays.forEach(p => {
+            const sec = p.section || "Uncategorized";
+            if (!groups[sec]) groups[sec] = [];
+            groups[sec].push(p);
+        });
+
+        const content = document.getElementById('library-content');
+        content.innerHTML = '';
+
+        Object.keys(groups).sort().forEach(section => {
+            const header = document.createElement('div');
+            header.className = 'section-header';
+            header.innerHTML = `<span>${section}</span> <span style="color:#444">${groups[section].length}</span>`;
+            content.appendChild(header);
+
+            groups[section].forEach(play => {
+                const card = document.createElement('div');
+                card.className = 'play-card';
+                card.innerHTML = `
+                    <div class="card-preview" onclick="playVideo('${play.id}')"><span style="font-size:2rem; opacity:0.5;">▶</span></div>
+                    <div class="card-info">
+                        <div class="card-title">${play.title || 'Unknown Play'}</div>
+                        <div class="card-meta"><span>${play.formation || 'Raw'}</span></div>
+                        <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
+                             <button class="card-action-btn" onclick="viewSavedReport('${play.id}')">📄 REPORT</button>
+                             <button class="card-action-btn" onclick="changeSection('${play.id}')">📂 MOVE</button>
+                             <button class="card-action-btn delete-btn" onclick="deleteClip('${play.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+                content.appendChild(card);
+            });
+        });
+    }
+
+    function viewSavedReport(playId) {
+        const play = globalLibrary.find(p => p.id === playId);
+        if (play && play.fullData) {
+            const encoded = encodeURIComponent(JSON.stringify(play.fullData));
+            showFullDetails(encoded);
+        } else alert("Analysis not available for this older clip.");
+    }
+
+    function addMessageToUI(text, role) {
+        const div = document.createElement('div');
+        div.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
+        if (role === 'user') {
+            div.textContent = text;
+        } else {
+            try {
+                const cleanText = text.replace(/```json/g, '').replace(/```/g, '');
+                const firstBrace = cleanText.indexOf('{');
+                const lastBrace = cleanText.lastIndexOf('}');
+                if (firstBrace !== -1 && lastBrace !== -1) {
+                    const jsonString = cleanText.substring(firstBrace, lastBrace + 1);
+                    const data = JSON.parse(jsonString);
+                    if (data.scouting_report) {
+                        div.style.background = "#0e1610"; div.style.border = "1px solid #1f3a25"; div.style.padding = "0"; div.style.overflow = "hidden"; div.style.borderRadius = "8px"; div.style.maxWidth = "600px";
+                        div.innerHTML = renderScoutCard(data);
+                    } else {
+                        div.textContent = text; div.style.background = "#161f18"; div.style.border = "1px solid #1f3a25"; div.style.padding = "12px 16px"; div.style.borderRadius = "6px";
+                    }
+                } else {
+                    div.textContent = text; div.style.background = "#161f18"; div.style.border = "1px solid #1f3a25"; div.style.padding = "12px 16px"; div.style.borderRadius = "6px";
+                }
+            } catch (e) { div.textContent = text; div.style.background = "#161f18"; div.style.border = "1px solid #1f3a25"; div.style.padding = "12px 16px"; div.style.borderRadius = "6px"; }
+        }
+        const win = document.getElementById('chat-window');
+        win.appendChild(div);
+        win.scrollTop = win.scrollHeight;
+    }
+
+    document.getElementById('send-btn').addEventListener('click', async () => {
+        const text = document.getElementById('user-input').value;
+        const file = document.getElementById('file-input').files[0];
+        if (!text && !file) return;
+        if (!currentSessionId) createNewChat();
+
+        addMessageToUI(text || "Analyzing...", 'user');
+        document.getElementById('user-input').value = '';
+        const label = document.getElementById('file-btn-label');
+        label.textContent = "📎"; label.classList.remove('has-file');
+
+        const payload = { message: text, sessionId: currentSessionId, email: currentUser };
+        if (file) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                payload.fileData = reader.result.split(',')[1];
+                payload.mimeType = file.type;
+                sendToBackend(payload);
+            };
+        } else { sendToBackend(payload); }
+    });
+
+    async function sendToBackend(payload) {
+        const btn = document.getElementById('send-btn');
+        btn.disabled = true;
+        let seconds = 0;
+        btn.innerText = "0.0s";
+        const timer = setInterval(() => { seconds += 0.1; btn.innerText = seconds.toFixed(1) + "s"; }, 100);
+
+        try {
+            const res = await fetch('http://localhost:3000/api/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            clearInterval(timer);
+
+            if (data.error === "payment_required") return alert("Out of credits!");
+            addMessageToUI(data.reply, 'model');
+            if (data.newClip) { loadLibrary(); loadSessions(); }
+            refreshCredits();
+        } catch (e) { 
+            clearInterval(timer);
+            addMessageToUI("Error analyzing.", 'model'); 
+        } finally { btn.innerText = "SEND"; btn.disabled = false; }
+    }
+
+    function createNewChat() {
+        currentSessionId = Math.random().toString(36).substring(7);
+        document.getElementById('current-chat-title').textContent = "New Chat";
+        document.getElementById('chat-window').innerHTML = '<div class="message ai-msg" style="padding:12px 16px; background:#161f18; border:1px solid var(--border); border-radius:6px;">New chat started. Upload film to begin.</div>';
+        loadSessions();
+    }
+    
+    async function loadSessions() {
+        const res = await fetch(`http://localhost:3000/api/sessions?email=${currentUser}`);
+        const sessions = await res.json();
+        const list = document.getElementById('session-list');
+        list.innerHTML = '';
+        sessions.forEach(s => {
+            const div = document.createElement('div');
+            div.className = `session-item ${s.id === currentSessionId ? 'active' : ''}`;
+            div.textContent = s.title || "Untitled Analysis";
+            div.onclick = () => loadChatHistory(s.id, s.title);
+            list.appendChild(div);
+        });
+    }
+
+    async function loadChatHistory(id, title) {
+        currentSessionId = id;
+        document.getElementById('current-chat-title').textContent = title;
+        loadSessions();
+        const res = await fetch(`http://localhost:3000/api/session/${id}`);
+        const history = await res.json();
+        const win = document.getElementById('chat-window');
+        win.innerHTML = '';
+        history.forEach(msg => addMessageToUI(msg.text, msg.role));
+    }
+
+    async function changeSection(playId) {
+        const newSec = prompt("Enter new section name (e.g., 'Redzone', 'Week 1'):");
+        if (newSec) {
+            await fetch('http://localhost:3000/api/update-clip', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: playId, owner: currentUser, section: newSec })
+            });
+            loadLibrary();
+        }
+    }
+
+    function playVideo(id) {
+        const p = document.getElementById('main-player');
+        p.src = `http://localhost:3000/plays/${id}`;
+        document.getElementById('video-modal').style.display = 'flex';
+        p.play();
+    }
+    
+    async function handleAuth() {
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-pass').value;
+        const endpoint = isSignup ? '/api/signup' : '/api/login';
+        const res = await fetch(`http://localhost:3000${endpoint}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentUser = email;
+            localStorage.setItem('sideline_user', email);
+            document.getElementById('auth-modal').style.display = 'none';
+            loadSessions(); loadLibrary(); refreshCredits();
+        } else alert(data.error);
+    }
+    async function refreshCredits() {
+        const res = await fetch('http://localhost:3000/api/balance', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email: currentUser })
+        });
+        const data = await res.json();
+        document.getElementById('credit-display').textContent = `🪙 ${data.credits}`;
+    }
+    function toggleAuth() {
+        isSignup = !isSignup;
+        document.getElementById('auth-toggle').textContent = isSignup ? "Have an account? Login" : "Create Account";
+    }
+    function logout() { localStorage.removeItem('sideline_user'); location.reload(); }
+</script>
+</body>
+</html>

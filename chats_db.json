@@ -1,0 +1,48 @@
+{
+  "p1ckpf": {
+    "owner": "arhamgupta09@gmail.com",
+    "title": "analyze this play",
+    "timestamp": 1768166582747,
+    "history": [
+      {
+        "role": "user",
+        "text": "analyze this play"
+      },
+      {
+        "role": "model",
+        "text": "{\n  \"title\": \"Play Action Deep Post\",\n  \"data\": {\n    \"down_distance\": \"3rd & Short\",\n    \"hash\": \"Right\",\n    \"personnel\": \"11 Pers\",\n    \"formation\": \"Singleback\",\n    \"play_type\": \"Pass\",\n    \"coverage\": \"Cover 1\"\n  },\n  \"scouting_report\": {\n    \"tells\": \"Defense aligns with safeties creeping up to play the run, anticipating short yardage run.\",\n    \"tendency\": \"Offense utilizes aggressive Play Action on short yardage downs to exploit run-committed defenses for deep shots.\",\n    \"weakness\": \"Single-high safety lacks discipline, biting hard on the play fake, leaving the cornerback isolated with no deep help.\"\n  },\n  \"grading\": {\n    \"assignment\": \"Pass\",\n    \"technique\": \"QB executes a convincing hard play fake, freezes the safety, and delivers a precise deep ball. WR wins vertical leverage instantly.\",\n    \"effort\": \"Offensive line sells run blocking effectively; WR maximizes separation speed.\"\n  },\n  \"section\": \"General\"\n}"
+      },
+      {
+        "role": "user",
+        "text": ""
+      },
+      {
+        "role": "model",
+        "text": "{\n  \"title\": \"Play Action Deep Post\",\n  \"data\": {\n    \"down_distance\": \"3rd & 1\",\n    \"hash\": \"Right\",\n    \"personnel\": \"11 Pers\",\n    \"formation\": \"Singleback\",\n    \"play_type\": \"Pass\",\n    \"coverage\": \"Cover 1\"\n  },\n  \"scouting_report\": {\n    \"tells\": \"Defense aligns with single-high safety creeping forward, anticipating a run to convert the short yardage.\",\n    \"tendency\": \"Offense exploits defensive aggressiveness on 3rd & Short by utilizing max-protect Play Action to take vertical shots.\",\n    \"weakness\": \"The deep safety lacks discipline, biting hard on the run fake, which leaves the post route undefended in the middle of the field.\"\n  },\n  \"grading\": {\n    \"assignment\": \"Pass\",\n    \"technique\": \"QB executes a hard play fake to freeze the linebackers and safety; WR wins inside leverage instantly and stacks the DB.\",\n    \"effort\": \"Offensive line sells the run blocking to suck in the defense; WR displays elite separation speed after the catch.\"\n  },\n  \"section\": \"General\"\n}"
+      },
+      {
+        "role": "user",
+        "text": ""
+      },
+      {
+        "role": "model",
+        "text": "{\n  \"title\": \"Gun Empty Speed Rush Sack\",\n  \"data\": {\n    \"down_distance\": \"3rd & 5\",\n    \"hash\": \"Right\",\n    \"personnel\": \"11 Pers\",\n    \"formation\": \"Gun Empty\",\n    \"play_type\": \"Pass\",\n    \"coverage\": \"Cover 2 Man\"\n  },\n  \"scouting_report\": {\n    \"tells\": \"Defensive ends align in wide techniques (Wide 9) anticipating pass in empty set.\",\n    \"tendency\": \"Offense utilizes empty formation to spread the defense horizontally, relying on 5-man protection holding up without chip help.\",\n    \"weakness\": \"Right Tackle isolation against speed rush; lacks the foot speed to reach the deep set point against a wide-aligned edge rusher.\"\n  },\n  \"grading\": {\n    \"assignment\": \"Fail\",\n    \"technique\": \"RT fails to gain sufficient depth in kick slide and opens the gate early. DE executes a clean speed rip move to turn the corner. QB cannot step up due to interior pocket collapse.\",\n    \"effort\": \"Poor protection effort on the right side; high motor by the defensive end to finish the play.\"\n  },\n  \"section\": \"General\"\n}"
+      }
+    ]
+  },
+  "tfbsa2i": {
+    "owner": "arhamgupta09@gmail.com",
+    "title": "",
+    "timestamp": 1768169281227,
+    "history": [
+      {
+        "role": "user",
+        "text": ""
+      },
+      {
+        "role": "model",
+        "text": "{\n  \"title\": \"Play Action Seam Touchdown\",\n  \"data\": {\n    \"down_distance\": \"3rd & 1\",\n    \"hash\": \"Left\",\n    \"personnel\": \"12 Pers\",\n    \"formation\": \"Under Center Singleback\",\n    \"play_type\": \"Pass\",\n    \"coverage\": \"Cover 1\"\n  },\n  \"scouting_report\": {\n    \"tells\": \"Heavy personnel and under center alignment on 3rd & 1 signals run to the defense.\",\n    \"tendency\": \"Offense uses short-yardage situations to take deep shots against aggressive run support.\",\n    \"weakness\": \"Safety bites hard on the play action fake, leaving the deep middle of the field exposed and the CB with no help.\"\n  },\n  \"grading\": {\n    \"assignment\": \"Pass\",\n    \"technique\": \"QB sells the handoff effectively; Receiver (Higgins) gets a clean release and stacks the DB.\",\n    \"effort\": \"Defense collapses on the line of scrimmage, failing to maintain deep integrity.\"\n  },\n  \"section\": \"General\"\n}"
+      }
+    ]
+  }
+}
