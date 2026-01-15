@@ -7,7 +7,7 @@ const path = require('path');
 
 const app = express();
 
-// *** FIX 1: Use the Port Render gives us, or 3000 if local ***
+// *** FIX 1: Use the Port Render gives us (Critical for Cloud) ***
 const port = process.env.PORT || 3000;
 
 // --- CONFIGURATION ---
@@ -30,22 +30,18 @@ app.use(cors());
 app.use(express.json({ limit: '200mb' }));
 app.use(express.urlencoded({ limit: '200mb', extended: true }));
 
-// *** FIX 2: SERVE YOUR WEBSITE FILES ***
-// This tells the server: "Look in this folder for index.html, css, etc."
+// *** FIX 2: SERVE THE WEBSITE (Critical for "Cannot GET /" error) ***
+// This serves index.html and any other files in this folder
 app.use(express.static(__dirname));
+app.use('/plays', express.static(UPLOAD_DIR));
 
-// *** FIX 3: EXPLICIT HOME ROUTE ***
-// When someone visits the main link, send them index.html
+// Explicitly serve index.html for the home page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.use('/plays', express.static(UPLOAD_DIR));
-
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// *** THE UPGRADE: GEMINI 3 PRO PREVIEW ***
 const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
 const ANALYST_PROMPT = `
