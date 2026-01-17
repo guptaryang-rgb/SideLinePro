@@ -13,13 +13,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_football_key"; 
 
-// --- CRITICAL: FILE SYSTEM CONFIG ---
 const UPLOAD_DIR = path.join(__dirname, 'saved_plays');
 const DB_FILE = path.join(__dirname, 'stats_db.json');
 const USER_DB_FILE = path.join(__dirname, 'users_db.json');
 const CHATS_FILE = path.join(__dirname, 'chats_db.json');
 
-// Ensure folders exist immediately
 if (!fsSync.existsSync(UPLOAD_DIR)) fsSync.mkdirSync(UPLOAD_DIR);
 const initJSON = (file) => { if (!fsSync.existsSync(file)) fsSync.writeFileSync(file, JSON.stringify(file.includes('db.json') ? [] : {})); };
 initJSON(DB_FILE); initJSON(USER_DB_FILE); initJSON(CHATS_FILE);
@@ -27,20 +25,14 @@ initJSON(DB_FILE); initJSON(USER_DB_FILE); initJSON(CHATS_FILE);
 app.use(cors());
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
-
-// *** FIX: SERVE VIDEOS BEFORE AUTH ***
-// This allows the browser to load the video file even if the API call is protected
 app.use('/plays', express.static(UPLOAD_DIR));
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// --- AI CONFIGURATION ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
-
-// --- PROMPTS ---
 
 const TEAM_PROMPT = `
 You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
@@ -60,54 +52,38 @@ JSON STRUCTURE:
 }
 `;
 
-// *** NEW: 1-ON-1 COACHING PROMPT ***
 const PLAYER_PROMPT = `
-You are an elite private Position Coach. This is a 1-on-1 session with a player.
-1. Identify the focus player.
-2. Roast their technique constructively.
-3. Prescribe a specific WORKOUT plan.
+You are an elite private Position Coach. 1-on-1 session.
+1. Identify focus player. 2. Roast technique. 3. Prescribe workout.
 CRITICAL: Output ONLY valid JSON.
 
 JSON STRUCTURE:
 {
-  "title": "Player Grade & Technique",
-  "data": { "formation": "Alignment", "coverage": "Role", "play_type": "Technique Focus" },
+  "title": "Player Grade",
+  "data": { "formation": "Alignment", "coverage": "Role", "play_type": "Focus" },
   "scouting_report": {
-    "summary": "Direct feedback to the player on this rep.",
-    "mistakes": ["Specific mechanical flaws (e.g. 'Heels clicking', 'Eyes down')"],
-    "weakness": "What scouts will knock you for.",
-    "action_plan": "SPECIFIC DRILL & WORKOUT (e.g. '3 sets of T-Step Drills, Focus on hip fluidity')."
+    "summary": "Direct feedback.",
+    "mistakes": ["Mechanical flaws"],
+    "weakness": "Scouting knock",
+    "action_plan": "SPECIFIC DRILL & WORKOUT."
   },
   "section": "Individual"
 }
 `;
 
-// --- HELPERS ---
 async function readJSON(file) {
-    try {
-        const data = await fs.readFile(file, 'utf8');
-        return JSON.parse(data);
-    } catch (e) { return file.includes('users') || file.includes('chats') ? {} : []; }
+    try { const data = await fs.readFile(file, 'utf8'); return JSON.parse(data); } 
+    catch (e) { return file.includes('users') || file.includes('chats') ? {} : []; }
 }
-
 async function writeJSON(file, data) {
-    const tempFile = `${file}.tmp`;
-    await fs.writeFile(tempFile, JSON.stringify(data, null, 2));
-    await fs.rename(tempFile, file);
+    const tempFile = `${file}.tmp`; await fs.writeFile(tempFile, JSON.stringify(data, null, 2)); await fs.rename(tempFile, file);
 }
-
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.sendStatus(401);
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
-    });
+    jwt.verify(token, JWT_SECRET, (err, user) => { if (err) return res.sendStatus(403); req.user = user; next(); });
 };
-
-// --- ROUTES ---
 
 app.post('/api/signup', async (req, res) => {
     const { email, password } = req.body;
@@ -128,12 +104,9 @@ app.post('/api/login', async (req, res) => {
     if (await bcrypt.compare(password, user.password)) {
         const token = jwt.sign({ email }, JWT_SECRET);
         res.json({ success: true, token });
-    } else {
-        res.json({ error: "Invalid password" });
-    }
+    } else { res.json({ error: "Invalid password" }); }
 });
 
-// --- DATA ---
 app.get('/api/sessions', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
     const userChats = Object.entries(chats)
@@ -150,24 +123,15 @@ app.get('/api/session/:id', authenticateToken, async (req, res) => {
 app.post('/api/rename-session', authenticateToken, async (req, res) => {
     const { sessionId, newTitle, type } = req.body;
     const chats = await readJSON(CHATS_FILE);
-    
     if (!chats[sessionId]) {
-        chats[sessionId] = { 
-            owner: req.user.email, 
-            title: newTitle, 
-            timestamp: Date.now(), 
-            history: [],
-            type: type || 'team'
-        };
+        chats[sessionId] = { owner: req.user.email, title: newTitle, timestamp: Date.now(), history: [], type: type || 'team' };
     } else if (chats[sessionId].owner === req.user.email) {
         chats[sessionId].title = newTitle;
     }
-    
     await writeJSON(CHATS_FILE, chats);
     res.json({ success: true });
 });
 
-// --- AI LOGIC ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
         const { message, sessionId, fileData, mimeType, sessionType } = req.body;
@@ -178,12 +142,15 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
             chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [], type: sessionType || 'team' };
         }
 
+        const historyForAI = chats[sessionId].history.map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+        }));
+
         chats[sessionId].history.push({ role: 'user', text: message });
 
         let promptContent = [{ text: message }];
         let savedFilename = null;
-
-        // SWITCH PROMPT BASED ON TYPE
         const SYSTEM_PROMPT = (chats[sessionId].type === 'player') ? PLAYER_PROMPT : TEAM_PROMPT;
 
         if (fileData) {
@@ -194,19 +161,18 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
             await fs.writeFile(filePath, buffer);
 
             const uploadResponse = await fileManager.uploadFile(filePath, { mimeType: mimeType, displayName: savedFilename });
-
+            
             let file = await fileManager.getFile(uploadResponse.file.name);
             while (file.state === FileState.PROCESSING) {
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 file = await fileManager.getFile(uploadResponse.file.name);
             }
-
             if (file.state === FileState.FAILED) throw new Error("Video processing failed.");
 
             promptContent = [{ fileData: { mimeType: uploadResponse.file.mimeType, fileUri: uploadResponse.file.uri } }, { text: SYSTEM_PROMPT }];
         }
 
-        const chat = model.startChat(); 
+        const chat = model.startChat({ history: historyForAI });
         const result = await chat.sendMessage(promptContent);
         const reply = result.response.text();
 
@@ -219,12 +185,9 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
         let newClip = null;
         const firstBrace = reply.indexOf('{');
         const lastBrace = reply.lastIndexOf('}');
-        
         if (firstBrace !== -1 && lastBrace !== -1 && savedFilename) {
             try {
-                const jsonString = reply.substring(firstBrace, lastBrace + 1);
-                const parsed = JSON.parse(jsonString);
-                
+                const parsed = JSON.parse(reply.substring(firstBrace, lastBrace + 1));
                 newClip = {
                     id: savedFilename,
                     owner: email,
@@ -235,19 +198,13 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
                     section: (chats[sessionId].type === 'player') ? "Individual" : "General",
                     fullData: parsed 
                 };
-                
                 const library = await readJSON(DB_FILE);
                 library.push(newClip);
                 await writeJSON(DB_FILE, library); 
-            } catch(e) { console.log("JSON Parse Failed"); }
+            } catch(e) {}
         }
-
         res.json({ reply, newClip });
-
-    } catch (e) {
-        console.error("AI ERROR:", e);
-        res.status(500).json({ error: "Analysis failed. " + e.message });
-    }
+    } catch (e) { res.status(500).json({ error: "Analysis failed. " + e.message }); }
 });
 
 app.post('/api/update-clip', authenticateToken, async (req, res) => {
@@ -258,21 +215,45 @@ app.post('/api/update-clip', authenticateToken, async (req, res) => {
     else { res.json({ error: "Clip not found" }); }
 });
 
+// *** UPDATED: CLIP CHAT WITH MEMORY INSTRUCTION ***
 app.post('/api/clip-chat', authenticateToken, async (req, res) => {
     try {
         const { message, context } = req.body;
-        const prompt = `Context: Analyzing football play. Data: ${JSON.stringify(context)}. Question: ${message}`;
+        // Stronger instruction to use existing data and not ask for the file
+        const prompt = `
+        CONTEXT: You are discussing a football play that has ALREADY been uploaded and analyzed.
+        Here is the technical data extracted from the clip: ${JSON.stringify(context)}.
+        
+        USER QUESTION: ${message}
+        
+        INSTRUCTIONS:
+        1. Answer the user's question using ONLY the provided data.
+        2. Do NOT ask the user to upload the video again. You already have the analysis.
+        3. Be specific and helpful.
+        `;
         const result = await model.generateContent(prompt);
         res.json({ reply: result.response.text() });
     } catch(e) { res.status(500).json({ error: "Chat failed" }); }
 });
 
 app.post('/api/session-summary', authenticateToken, async (req, res) => {
-    const { sessionId } = req.body;
+    const { sessionId, focus } = req.body; 
     const library = await readJSON(DB_FILE);
     const clips = library.filter(p => p.owner === req.user.email && p.sessionId === sessionId);
-    if (clips.length === 0) return res.json({ report: "No clips found." });
-    const summaryPrompt = `Coordinator Session Report for: ${JSON.stringify(clips)}. Tendencies & Gameplan?`;
+    if (clips.length === 0) return res.json({ report: "No clips found in this session to analyze." });
+
+    const summaryPrompt = `
+    You are a veteran coordinator writing a game-plan.
+    Based on the following ${clips.length} plays from this session: ${JSON.stringify(clips)}
+    
+    TASK: Write a detailed "Tendency Report" specifically for the **${focus.toUpperCase()}**.
+    1. What are their top tendencies (formations, play types)?
+    2. What are their most common weaknesses shown in these clips?
+    3. If I am the opposing coordinator, how do I beat this ${focus}?
+    
+    Format nicely with bullet points and bold text.
+    `;
+    
     try {
         const result = await model.generateContent(summaryPrompt);
         res.json({ report: result.response.text() });
