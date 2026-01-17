@@ -47,6 +47,7 @@ app.get('/', (req, res) => {
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
+// *** KEEPING GEMINI 3 PRO AS REQUESTED ***
 const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
 const ANALYST_PROMPT = `
