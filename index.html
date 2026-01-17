@@ -6,7 +6,6 @@
     <title>Sideline Pro | Secure Elite Analytics</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        /* SAME CSS AS BEFORE - NO CHANGES TO VISUALS */
         :root { --bg: #050a05; --panel: #0a140a; --border: #142914; --accent: #009933; --accent-glow: #00cc44; --text: #e0e0e0; }
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
@@ -85,7 +84,7 @@
         <div id="session-list" class="session-list"></div>
         <div class="credits-panel">
             <span id="credit-display" style="color:white; font-weight:bold;">--</span> Credits
-            <button class="buy-btn" onclick="buyCredits()">+ 50 Credits ($15)</button>
+            <button class="buy-btn" onclick="buyCredits()">+ 50 Credits (Free)</button>
             <div style="margin-top:10px; font-size:0.7rem; color:#444; cursor:pointer;" onclick="logout()">LOGOUT</div>
         </div>
     </div>
@@ -193,8 +192,7 @@
     async function buyCredits() {
         const res = await apiFetch('/api/buy-credits', { method: 'POST', body: JSON.stringify({}) });
         const data = await res.json();
-        if(data.success && data.url) window.location.href = data.url;
-        else if(data.success) { alert(data.message); refreshCredits(); }
+        if(data.success) { alert(data.message); refreshCredits(); }
     }
 
     // --- SESSIONS ---
