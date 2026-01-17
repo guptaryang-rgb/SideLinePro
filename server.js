@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { GoogleAIFileManager, FileState } = require('@google/generative-ai/server'); // Import FileState
+const { GoogleAIFileManager, FileState } = require('@google/generative-ai/server'); 
 const fs = require('fs');
 const path = require('path');
 
@@ -34,7 +34,6 @@ initJSON(USER_DB_FILE, '{}');
 initJSON(CHATS_FILE, '{}');
 
 app.use(cors());
-// 500MB Limit
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
@@ -48,7 +47,8 @@ app.get('/', (req, res) => {
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" }); // KEPT GEMINI 3 PRO
+// *** KEEPING GEMINI 3 PRO AS REQUESTED ***
+const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
 const ANALYST_PROMPT = `
 You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
@@ -64,10 +64,11 @@ JSON STRUCTURE:
   },
   "scouting_report": {
     "summary": "Concise technical summary.",
-    "mistakes": ["List specific player errors (e.g. 'CB1 bad leverage')"],
+    "mistakes": ["List specific player errors"],
     "weakness": "Structural weakness exposed.",
     "action_plan": "Step-by-step plan to exploit this."
-  }
+  },
+  "section": "General" 
 }
 `;
 
@@ -108,14 +109,7 @@ app.post('/api/buy-credits', async (req, res) => {
         try {
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
-                line_items: [{
-                    price_data: {
-                        currency: 'usd',
-                        product_data: { name: '50 Scouting Credits' },
-                        unit_amount: 1500,
-                    },
-                    quantity: 1,
-                }],
+                line_items: [{ price_data: { currency: 'usd', product_data: { name: '50 Scouting Credits' }, unit_amount: 1500 }, quantity: 1 }],
                 mode: 'payment',
                 success_url: `https://your-site.com/success`, 
                 cancel_url: 'https://your-site.com/cancel',
@@ -124,10 +118,7 @@ app.post('/api/buy-credits', async (req, res) => {
         } catch (e) { console.log("Stripe Error:", e.message); }
     }
     const db = readJSON(USER_DB_FILE);
-    if(db[email]) {
-        db[email].credits += 50;
-        writeJSON(USER_DB_FILE, db);
-    }
+    if(db[email]) { db[email].credits += 50; writeJSON(USER_DB_FILE, db); }
     res.json({ success: true, message: "Credits added (Demo Mode)" });
 });
 
@@ -169,12 +160,7 @@ app.post('/api/chat', async (req, res) => {
         }
 
         if (!chats[sessionId]) {
-            chats[sessionId] = { 
-                owner: email, 
-                title: "New Analysis", 
-                timestamp: Date.now(), 
-                history: [] 
-            };
+            chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [] };
         }
 
         chats[sessionId].history.push({ role: 'user', text: message });
@@ -189,35 +175,17 @@ app.post('/api/chat', async (req, res) => {
             const filePath = path.join(UPLOAD_DIR, savedFilename);
             fs.writeFileSync(filePath, buffer);
 
-            // 1. Upload
-            const uploadResponse = await fileManager.uploadFile(filePath, {
-                mimeType: mimeType,
-                displayName: savedFilename,
-            });
+            const uploadResponse = await fileManager.uploadFile(filePath, { mimeType: mimeType, displayName: savedFilename });
 
-            // 2. *** WAIT FOR ACTIVE STATE (THE FIX) ***
             let file = await fileManager.getFile(uploadResponse.file.name);
             while (file.state === FileState.PROCESSING) {
-                console.log(`Processing file...`);
-                // Wait 2 seconds before checking again
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 file = await fileManager.getFile(uploadResponse.file.name);
             }
 
-            if (file.state === FileState.FAILED) {
-                throw new Error("Video processing failed by Google.");
-            }
+            if (file.state === FileState.FAILED) throw new Error("Video processing failed.");
 
-            // 3. Ready to use
-            promptContent = [
-                {
-                    fileData: {
-                        mimeType: uploadResponse.file.mimeType,
-                        fileUri: uploadResponse.file.uri
-                    }
-                },
-                { text: ANALYST_PROMPT }
-            ];
+            promptContent = [{ fileData: { mimeType: uploadResponse.file.mimeType, fileUri: uploadResponse.file.uri } }, { text: ANALYST_PROMPT }];
         }
 
         const chat = model.startChat(); 
@@ -246,6 +214,7 @@ app.post('/api/chat', async (req, res) => {
                     title: parsed.title || "Analyzed Play",
                     formation: parsed.data?.formation || "Unknown",
                     coverage: parsed.data?.coverage || "Unknown",
+                    section: "General", // Default Section
                     fullData: parsed 
                 };
                 
@@ -263,12 +232,34 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
+// *** NEW: CLIP CHAT (Ask Questions) ***
+app.post('/api/clip-chat', async (req, res) => {
+    try {
+        const { message, context } = req.body;
+        // Simple one-off chat for now, or you could store history
+        const prompt = `Context: Analyzing a football play. Data: ${JSON.stringify(context)}. User Question: ${message}`;
+        const result = await model.generateContent(prompt);
+        res.json({ reply: result.response.text() });
+    } catch(e) { res.status(500).json({ error: "Chat failed" }); }
+});
+
+// *** NEW: UPDATE CLIP (Move Section) ***
+app.post('/api/update-clip', (req, res) => {
+    const { id, section, owner } = req.body;
+    let library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
+    const index = library.findIndex(p => p.id === id && p.owner === owner);
+    if(index > -1) {
+        library[index].section = section;
+        fs.writeFileSync(DB_FILE, JSON.stringify(library));
+        res.json({ success: true });
+    } else { res.json({ error: "Clip not found" }); }
+});
+
 app.post('/api/session-summary', async (req, res) => {
     const { sessionId, email } = req.body;
     const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
     const clips = library.filter(p => p.owner === email && p.sessionId === sessionId);
-    if (clips.length === 0) return res.json({ report: "No clips found in this session." });
-
+    if (clips.length === 0) return res.json({ report: "No clips found." });
     const summaryPrompt = `Coordinator Session Report for: ${JSON.stringify(clips)}. Tendencies & Gameplan?`;
     try {
         const result = await model.generateContent(summaryPrompt);
@@ -290,6 +281,8 @@ app.post('/api/delete-clip', (req, res) => {
     library = library.filter(p => !(p.id === id && p.owner === owner));
     if (library.length < initialLength) {
         fs.writeFileSync(DB_FILE, JSON.stringify(library, null, 2));
+        // Optional: Delete actual file
+        try { fs.unlinkSync(path.join(UPLOAD_DIR, id)); } catch(e){}
         res.json({ success: true });
     } else { res.json({ error: "Clip not found" }); }
 });
