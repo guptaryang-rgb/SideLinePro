@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sideline Pro | Analytics Suite</title>
+    <title>Sideline Pro | Secure Elite Analytics</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #050a05; --panel: #0a140a; --border: #142914; 
-            --accent: #009933; --accent-glow: #00cc44; --text: #e0e0e0; 
-        }
+        /* SAME CSS AS BEFORE - NO CHANGES TO VISUALS */
+        :root { --bg: #050a05; --panel: #0a140a; --border: #142914; --accent: #009933; --accent-glow: #00cc44; --text: #e0e0e0; }
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
         ::-webkit-scrollbar { width: 8px; }
@@ -148,13 +146,21 @@
 </div>
 
 <script>
-    let currentUser = localStorage.getItem('sideline_user');
+    let authToken = localStorage.getItem('sideline_token');
     let currentSessionId = null;
     let currentClipId = null;
     let libraryData = [];
 
+    // Helper for authenticated fetch
+    async function apiFetch(url, options = {}) {
+        if (!options.headers) options.headers = {};
+        options.headers['Authorization'] = `Bearer ${authToken}`;
+        options.headers['Content-Type'] = 'application/json';
+        return fetch(url, options);
+    }
+
     window.onload = () => {
-        if (!currentUser) document.getElementById('auth-modal').style.display = 'flex';
+        if (!authToken) document.getElementById('auth-modal').style.display = 'flex';
         else { loadSessions(); loadLibrary(); refreshCredits(); }
     };
 
@@ -169,142 +175,31 @@
         });
         const data = await res.json();
         if (data.success) {
-            currentUser = email;
-            localStorage.setItem('sideline_user', email);
+            authToken = data.token;
+            localStorage.setItem('sideline_token', authToken);
             document.getElementById('auth-modal').style.display = 'none';
             loadSessions(); loadLibrary(); refreshCredits();
         } else alert(data.error);
     }
-    function logout() { localStorage.removeItem('sideline_user'); location.reload(); }
+    
+    function logout() { localStorage.removeItem('sideline_token'); location.reload(); }
+    
     async function refreshCredits() {
-        const res = await fetch('/api/balance', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: currentUser })
-        });
+        const res = await apiFetch('/api/balance', { method: 'GET' });
         const data = await res.json();
         document.getElementById('credit-display').textContent = data.credits;
     }
+
     async function buyCredits() {
-        const res = await fetch('/api/buy-credits', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: currentUser })
-        });
+        const res = await apiFetch('/api/buy-credits', { method: 'POST', body: JSON.stringify({}) });
         const data = await res.json();
         if(data.success && data.url) window.location.href = data.url;
         else if(data.success) { alert(data.message); refreshCredits(); }
     }
 
-    // --- MAIN CHAT & ANALYSIS ---
-    document.getElementById('send-btn').addEventListener('click', async () => {
-        const text = document.getElementById('user-input').value;
-        const file = document.getElementById('file-input').files[0];
-        if(!text && !file) return;
-        if(!currentSessionId) createNewChat();
-
-        addMessage(text || "Analyzing footage...", 'user');
-        document.getElementById('user-input').value = '';
-        
-        // SHOW PROGRESS
-        document.getElementById('progress-container').style.display = 'block';
-
-        const payload = { message: text, sessionId: currentSessionId, email: currentUser };
-        if (file) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                payload.fileData = reader.result.split(',')[1];
-                payload.mimeType = file.type;
-                sendPayload(payload);
-            };
-        } else { sendPayload(payload); }
-    });
-
-    async function sendPayload(payload) {
-        try {
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            
-            // HIDE PROGRESS
-            document.getElementById('progress-container').style.display = 'none';
-
-            if(data.error) addMessage(data.error, 'model');
-            else {
-                addMessage(data.reply, 'model');
-                if(data.newClip) loadLibrary();
-                refreshCredits();
-            }
-        } catch(e) { 
-            document.getElementById('progress-container').style.display = 'none';
-            addMessage("Connection error", 'model'); 
-        }
-    }
-
-    function addMessage(text, role) {
-        const div = document.createElement('div');
-        div.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
-        
-        if (role === 'model') {
-            try {
-                // Parse JSON for pretty card
-                const firstBrace = text.indexOf('{');
-                const lastBrace = text.lastIndexOf('}');
-                if (firstBrace !== -1 && lastBrace !== -1) {
-                    const jsonString = text.substring(firstBrace, lastBrace + 1);
-                    const data = JSON.parse(jsonString);
-                    div.innerHTML = renderScoutCard(data);
-                } else { div.textContent = text; }
-            } catch(e) { div.textContent = text; }
-        } else { div.textContent = text; }
-        
-        const win = document.getElementById('chat-window');
-        win.appendChild(div);
-        win.scrollTop = win.scrollHeight;
-    }
-
-    // --- THE "EYE FRIENDLY" REPORT CARD ---
-    function renderScoutCard(data) {
-        const r = data.scouting_report || {};
-        const mistakes = (r.mistakes || []).map(m => `<li>${m}</li>`).join('');
-        
-        return `
-            <div class="scout-card">
-                <div class="scout-header">
-                    <div class="scout-title">${data.title}</div>
-                    <div style="color:#666; font-size:0.8rem;">${data.data?.formation} vs ${data.data?.coverage}</div>
-                </div>
-                
-                <div class="report-section">
-                    <div class="section-label">EXECUTIVE SUMMARY</div>
-                    <div class="section-text">${r.summary}</div>
-                </div>
-
-                <div class="report-section">
-                    <div class="section-label" style="color:#ff5555">MISTAKES DETECTED</div>
-                    <ul class="mistake-list">${mistakes}</ul>
-                </div>
-
-                <div class="report-section">
-                    <div class="section-label" style="color:var(--accent-glow)">ACTION PLAN</div>
-                    <div class="section-text action-list">${r.action_plan}</div>
-                </div>
-
-                <div class="action-row">
-                    <a href="/plays/${data.id}" target="_blank" class="card-btn">WATCH CLIP</a>
-                    <div class="card-btn" onclick="openClipChat('${data.id}')">ASK QUESTIONS</div>
-                </div>
-            </div>
-        `;
-    }
-
-    // --- LIBRARY & SESSIONS ---
+    // --- SESSIONS ---
     async function loadSessions() {
-        const res = await fetch(`/api/sessions?email=${currentUser}`);
+        const res = await apiFetch('/api/sessions');
         const sessions = await res.json();
         const list = document.getElementById('session-list');
         list.innerHTML = '';
@@ -328,7 +223,7 @@
         currentSessionId = id;
         document.getElementById('current-chat-title').textContent = title;
         loadSessions();
-        const res = await fetch(`/api/session/${id}`);
+        const res = await apiFetch(`/api/session/${id}`);
         const history = await res.json();
         const win = document.getElementById('chat-window');
         win.innerHTML = '';
@@ -336,22 +231,93 @@
         loadLibrary();
     }
 
-    // NEW: RENAME SESSION
     async function renameSession(id) {
         const newName = prompt("Rename Session:");
         if(newName) {
-            await fetch('/api/rename-session', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ sessionId: id, newTitle: newName, email: currentUser }) });
+            await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: id, newTitle: newName }) });
             loadSessions();
         }
     }
     
-    function renameCurrentSession() {
-        if(currentSessionId) renameSession(currentSessionId);
+    function renameCurrentSession() { if(currentSessionId) renameSession(currentSessionId); }
+
+    // --- CHAT & ANALYSIS ---
+    document.getElementById('send-btn').addEventListener('click', async () => {
+        const text = document.getElementById('user-input').value;
+        const file = document.getElementById('file-input').files[0];
+        if(!text && !file) return;
+        if(!currentSessionId) createNewChat();
+
+        addMessage(text || "Analyzing...", 'user');
+        document.getElementById('user-input').value = '';
+        document.getElementById('progress-container').style.display = 'block';
+
+        const payload = { message: text, sessionId: currentSessionId };
+        if (file) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                payload.fileData = reader.result.split(',')[1];
+                payload.mimeType = file.type;
+                sendPayload(payload);
+            };
+        } else { sendPayload(payload); }
+    });
+
+    async function sendPayload(payload) {
+        try {
+            const res = await apiFetch('/api/chat', { method: 'POST', body: JSON.stringify(payload) });
+            const data = await res.json();
+            document.getElementById('progress-container').style.display = 'none';
+            if(data.error) addMessage(data.error, 'model');
+            else {
+                addMessage(data.reply, 'model');
+                if(data.newClip) loadLibrary();
+                refreshCredits();
+            }
+        } catch(e) { 
+            document.getElementById('progress-container').style.display = 'none';
+            addMessage("Connection error", 'model'); 
+        }
     }
 
-    // --- LIBRARY WITH FOLDERS ---
+    function addMessage(text, role) {
+        const div = document.createElement('div');
+        div.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
+        if (role === 'model') {
+            try {
+                const firstBrace = text.indexOf('{');
+                const lastBrace = text.lastIndexOf('}');
+                if (firstBrace !== -1 && lastBrace !== -1) {
+                    const jsonString = text.substring(firstBrace, lastBrace + 1);
+                    const data = JSON.parse(jsonString);
+                    div.innerHTML = renderScoutCard(data);
+                } else { div.textContent = text; }
+            } catch(e) { div.textContent = text; }
+        } else { div.textContent = text; }
+        const win = document.getElementById('chat-window');
+        win.appendChild(div);
+        win.scrollTop = win.scrollHeight;
+    }
+
+    // --- SCOUT CARD & LIBRARY ---
+    function renderScoutCard(data) {
+        const r = data.scouting_report || {};
+        return `
+            <div class="scout-card">
+                <div class="scout-header">
+                    <div class="scout-title">${data.title}</div>
+                    <div style="color:#666; font-size:0.8rem;">${data.data?.formation} vs ${data.data?.coverage}</div>
+                </div>
+                <div class="report-section"><div class="section-label">SUMMARY</div><div class="section-text">${r.summary}</div></div>
+                <div class="report-section"><div class="section-label" style="color:#ff5555">MISTAKES</div><ul class="mistake-list">${(r.mistakes||[]).map(m=>`<li>${m}</li>`).join('')}</ul></div>
+                <div class="report-section"><div class="section-label" style="color:var(--accent-glow)">PLAN</div><div class="section-text action-list">${r.action_plan}</div></div>
+                <div class="action-row"><button onclick="playVideo('${data.id}')" class="card-btn">WATCH</button><div class="card-btn" onclick="openClipChat('${data.id}')">ASK</div></div>
+            </div>`;
+    }
+
     async function loadLibrary() {
-        const res = await fetch(`/api/search?email=${currentUser}&sessionId=${currentSessionId}`);
+        const res = await apiFetch(`/api/search?sessionId=${currentSessionId}`, { method: 'GET' });
         libraryData = await res.json();
         const lib = document.getElementById('library-content');
         lib.innerHTML = '';
@@ -382,7 +348,11 @@
         });
     }
 
-    // --- EXTRAS ---
+    function playVideo(id) {
+        document.getElementById('main-player').src = `/plays/${id}`;
+        document.getElementById('video-modal').style.display = 'flex';
+    }
+
     function openClipChat(id) {
         currentClipId = id;
         document.getElementById('clip-chat-history').innerHTML = '';
@@ -394,27 +364,27 @@
         const clip = libraryData.find(c => c.id === currentClipId);
         document.getElementById('clip-chat-history').innerHTML += `<div style="color:white; margin:5px;">User: ${msg}</div>`;
         document.getElementById('clip-chat-input').value = '';
-        const res = await fetch('/api/clip-chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: msg, context: clip }) });
+        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: clip }) });
         const data = await res.json();
         document.getElementById('clip-chat-history').innerHTML += `<div style="color:var(--accent); margin:5px;">AI: ${data.reply}</div>`;
     }
 
     async function deleteClip(id) {
-        if(!confirm("Delete this clip?")) return;
-        await fetch('/api/delete-clip', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id, owner: currentUser }) });
+        if(!confirm("Delete?")) return;
+        await apiFetch('/api/delete-clip', { method: 'POST', body: JSON.stringify({ id }) });
         loadLibrary();
     }
 
     async function changeSection(id) {
-        const sec = prompt("Enter new folder name (e.g. Redzone):");
+        const sec = prompt("Folder Name:");
         if(sec) {
-            await fetch('/api/update-clip', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id, section: sec, owner: currentUser }) });
+            await apiFetch('/api/update-clip', { method: 'POST', body: JSON.stringify({ id, section: sec }) });
             loadLibrary();
         }
     }
 
     async function generateSessionSummary() {
-        const res = await fetch('/api/session-summary', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email: currentUser, sessionId: currentSessionId }) });
+        const res = await apiFetch('/api/session-summary', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId }) });
         const data = await res.json();
         addMessage(data.report, 'model');
     }
