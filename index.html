@@ -4,254 +4,202 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sideline Pro | Elite Analytics</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        :root {
-            /* THEME: Deepest Black-Green & Neon */
-            --bg-body: #020402;
-            --bg-panel: #050a05;
-            --bg-card: #0a110a;
-            --border: #142214;
-            --accent: #00e676; /* Neon Green */
-            --accent-glow: rgba(0, 230, 118, 0.15);
-            --text-main: #ffffff;
-            --text-muted: #668866;
-            --btn-dark: #111a11;
-            
-            --library-width: 240px; /* Made smaller as requested */
-        }
+        :root { --bg-deep: #050505; --bg-panel: #0a0c0a; --bg-card: #111411; --border: #1f261f; --accent: #00e676; --accent-dim: rgba(0, 230, 118, 0.1); --text-main: #ffffff; --text-muted: #889988; --danger: #ff4444; --sidebar-width: 280px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body { background-color: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; font-family: 'Inter', sans-serif; }
-        
-        body { 
-            background: var(--bg-body);
-            color: var(--text-main); 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
-
-        /* --- NAVBAR --- */
-        .navbar {
-            height: 60px;
-            background: rgba(2, 4, 2, 0.95);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 30px;
-            z-index: 50;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .navbar { height: 60px; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 50; }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 15px; }
         .logo { font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.2rem; color: white; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
         .logo span { color: var(--accent); }
-
-        /* SESSIONS DROPDOWN */
-        .dropdown { position: relative; }
-        .dropdown-btn {
-            background: var(--bg-panel); border: 1px solid var(--border); color: white;
-            padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer;
-            display: flex; align-items: center; gap: 8px; min-width: 200px; justify-content: space-between;
-        }
-        .dropdown-btn:hover { border-color: var(--accent); }
-        .dropdown-content {
-            display: none; position: absolute; top: 110%; left: 0; 
-            background: var(--bg-card); min-width: 240px; 
-            border: 1px solid var(--border); border-radius: 8px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 100; padding: 5px;
-        }
-        .dropdown.active .dropdown-content { display: block; }
+        .toggle-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); width: 36px; height: 36px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .toggle-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
         
-        .session-option {
-            padding: 10px; color: #88a; font-size: 0.85rem; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px;
-        }
-        .session-option:hover { background: var(--bg-panel); color: white; }
-        .session-option.active { color: var(--accent); background: var(--accent-glow); }
-        .session-group { font-size: 0.7rem; color: var(--text-muted); padding: 5px 10px; text-transform: uppercase; font-weight: 800; margin-top: 5px; }
+        .btn-glow { background: var(--accent); color: black; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 10px rgba(0, 230, 118, 0.2); text-transform: uppercase; }
+        .btn-glow:hover { background: #33ff99; box-shadow: 0 0 20px rgba(0, 230, 118, 0.5); }
+        .btn-player { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.2s; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+        .btn-player:hover { background: var(--accent-dim); }
 
-        .nav-right { display: flex; gap: 10px; }
-        .nav-icon-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 8px; border-radius: 6px; cursor: pointer; }
-        .nav-icon-btn:hover { color: white; border-color: var(--accent); }
+        .app-body { flex: 1; display: flex; overflow: hidden; position: relative; }
+        .sidebar-left { width: var(--sidebar-width); background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: margin-left 0.3s ease; flex-shrink: 0; }
+        .sidebar-left.closed { margin-left: calc(var(--sidebar-width) * -1); }
+        .sidebar-right { width: var(--sidebar-width); background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: margin-right 0.3s ease; flex-shrink: 0; }
+        .sidebar-right.closed { margin-right: calc(var(--sidebar-width) * -1); }
+        .main-stage { flex: 1; display: flex; flex-direction: column; background: var(--bg-deep); position: relative; min-width: 0; }
 
-        /* --- MAIN LAYOUT --- */
-        .app-body { display: flex; flex: 1; overflow: hidden; }
-
-        /* CENTER STAGE (The Feed) */
-        .main-stage {
-            flex: 1; display: flex; flex-direction: column; 
-            padding: 0; position: relative;
-        }
-
-        #feed-scroll {
-            flex: 1; overflow-y: auto; padding: 40px;
-            display: flex; flex-direction: column; gap: 60px; /* Space between plays */
-        }
-
-        /* --- PLAY ROW (Video Left | Analysis Right) --- */
-        .play-row {
-            display: flex; gap: 30px; align-items: flex-start;
-            opacity: 0; animation: fadeIn 0.5s forwards;
-            max-width: 1400px; margin: 0 auto; width: 100%;
-        }
-
-        /* LEFT: VIDEO CONTAINER */
-        .video-box {
-            flex: 1.2; /* Video takes up slightly more width */
-            background: black; border-radius: 12px; overflow: hidden;
-            border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative; min-width: 400px;
-        }
-        video { width: 100%; display: block; aspect-ratio: 16/9; }
-
-        /* UPLOAD/PROGRESS OVERLAY inside video box */
-        .video-overlay {
-            position: absolute; inset: 0; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;
-        }
-        .progress-bar-wrap { width: 60%; height: 4px; background: #111; border-radius: 2px; overflow: hidden; margin-top: 15px; }
-        .progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; animation: loadStripes 1s linear infinite; }
-        .status-text { color: var(--accent); font-family: 'JetBrains Mono'; font-size: 0.8rem; margin-top: 10px; }
-
-        /* RIGHT: TACTICAL CARD */
-        .card-box {
-            flex: 1; /* Analysis takes remaining space */
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 12px; padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            min-width: 350px;
-        }
+        .panel-header { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+        .session-list, #library-feed { flex: 1; overflow-y: auto; padding: 0 10px; }
+        .session-item, .clip-card { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .session-item { color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+        .session-item:hover { background: #1a1e1a; color: white; }
+        .session-item.active { background: var(--accent-dim); color: var(--accent); border-left: 3px solid var(--accent); }
         
-        .card-header { font-size: 1.1rem; font-weight: 800; color: white; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; display: flex; justify-content: space-between; }
-        
-        .trait { margin-bottom: 15px; }
-        .trait-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
-        .trait-content { font-size: 0.9rem; line-height: 1.6; color: #e0e0e0; }
-        .h-green { color: var(--accent); font-weight: 600; }
+        /* LIBRARY SEARCH */
+        .search-box { padding: 10px; border-bottom: 1px solid var(--border); }
+        .search-input { width: 100%; background: #111; border: 1px solid #333; padding: 8px; border-radius: 4px; color: white; font-size: 0.8rem; }
 
-        /* Action Buttons specific to this play */
-        .card-actions { display: flex; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #1a2a1a; }
-        .mini-btn {
-            background: var(--bg-panel); border: 1px solid var(--border); color: #88a;
-            padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; flex: 1; text-align: center;
-        }
+        .clip-card { background: #111; border-color: var(--border); display: flex; flex-direction: column; gap: 8px; }
+        .clip-card:hover { border-color: var(--accent); transform: translateX(-2px); }
+        .clip-title { font-weight: 700; font-size: 0.9rem; color: white; }
+        .clip-meta { font-size: 0.75rem; color: #666; display: flex; justify-content: space-between; }
+        .library-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; }
+        .mini-btn { background: #222; border: 1px solid #333; color: #ccc; font-size: 0.7rem; padding: 4px; cursor: pointer; border-radius: 3px; }
         .mini-btn:hover { border-color: var(--accent); color: white; }
 
-        /* --- RIGHT SIDEBAR: LIBRARY --- */
-        .sidebar-right {
-            width: var(--library-width); background: var(--bg-panel); border-left: 1px solid var(--border);
-            display: flex; flex-direction: column;
-        }
-        .lib-header { padding: 20px; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 800; color: white; letter-spacing: 1px; }
-        .lib-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .chat-header { height: 50px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: center; background: rgba(5,5,5,0.8); backdrop-filter: blur(5px); position: absolute; top: 0; left: 0; right: 0; z-index: 10; }
+        .editable-title { font-weight: 700; color: white; cursor: pointer; padding: 5px 10px; border-radius: 4px; transition: 0.2s; }
+        .editable-title:hover { background: #111; }
         
-        .lib-item {
-            display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 6px;
-            margin-bottom: 5px; cursor: pointer; color: #668866; border: 1px solid transparent;
-        }
-        .lib-item:hover { background: #0a110a; border-color: var(--border); color: white; }
-        .lib-item.active { border-left: 2px solid var(--accent); background: #0a110a; color: white; }
-        .lib-thumb { width: 30px; height: 30px; background: #000; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--accent); border: 1px solid var(--border); }
+        #chat-feed { flex: 1; overflow-y: auto; padding: 70px 40px 40px; display: flex; flex-direction: column; gap: 30px; scroll-behavior: smooth; }
+        .msg { padding: 20px; border-radius: 12px; max-width: 85%; line-height: 1.6; font-size: 0.95rem; animation: fadeIn 0.3s; }
+        .msg.user { align-self: flex-end; background: #1a1a1a; color: white; border: 1px solid #333; }
+        .msg.model { align-self: flex-start; width: 100%; max-width: 800px; padding: 0; background: transparent; }
 
-        /* --- BOTTOM INPUT --- */
-        .input-dock {
-            padding: 20px 40px; background: var(--bg-panel); border-top: 1px solid var(--border);
-            display: flex; gap: 15px; align-items: center;
-        }
-        .upload-circle {
-            width: 45px; height: 45px; border-radius: 50%; border: 1px solid var(--border); 
-            display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; transition: 0.2s;
-        }
-        .upload-circle:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
-        
-        .chat-input {
-            flex: 1; background: #020402; border: 1px solid var(--border); color: white;
-            padding: 12px 20px; border-radius: 30px; font-size: 0.95rem;
-        }
-        .chat-input:focus { border-color: var(--accent); }
+        .input-wrapper { padding: 20px; background: var(--bg-panel); border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        #file-indicator { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 10px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: none; align-items: center; justify-content: space-between; width: 100%; }
+        .remove-file { cursor: pointer; opacity: 0.7; font-size: 1.1rem; }
+        .input-bar { display: flex; gap: 10px; align-items: center; }
+        .input-field { flex: 1; background: #050505; border: 1px solid var(--border); color: white; padding: 12px 20px; border-radius: 30px; font-size: 1rem; }
+        .input-field:focus { border-color: var(--accent); }
+        .icon-btn { background: #1a1e1a; border: 1px solid var(--border); color: var(--text-muted); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-        /* ANIMATIONS */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes loadStripes { 0% { background-position: 0 0; } 100% { background-position: 30px 0; } }
+        .tactical-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .card-header { font-size: 1.1rem; font-weight: 800; color: white; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; text-transform: uppercase; }
+        .section-label { color: #668866; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+        .section-content { color: #e0e0e0; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; }
+        .card-actions { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #222; }
+        .action-chip { flex: 1; background: #222; border: 1px solid var(--border); color: #ccc; padding: 8px; border-radius: 6px; font-size: 0.8rem; text-align: center; cursor: pointer; }
+        .action-chip:hover { color: var(--accent); border-color: var(--accent); }
 
-        /* MODALS */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; }
-        .modal-box { background: #0a110a; border: 1px solid var(--border); width: 400px; padding: 30px; border-radius: 12px; text-align: center; }
-        .std-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: white; border-radius: 6px; margin-bottom: 15px; }
-        .btn-modal { width: 100%; padding: 12px; background: var(--accent); border: none; font-weight: 800; border-radius: 6px; cursor: pointer; }
+        .embedded-video { width: 100%; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; }
+
+        .progress-bar-container { width: 100%; height: 3px; display: none; position: absolute; top: 0; left: 0; }
+        .progress-bar { height: 100%; background: var(--accent); width: 0%; animation: load 2s infinite ease-in-out; }
+        @keyframes load { 0% { width: 0%; transform: translateX(-100%); } 100% { width: 100%; transform: translateX(100%); } }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-box { background: #111; border: 1px solid var(--border); width: 400px; padding: 30px; border-radius: 12px; text-align: center; }
+        .modal-input { width: 100%; background: #050505; border: 1px solid #333; padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; }
+        .report-btn { flex: 1; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid var(--border); background: #222; color: white; transition: 0.2s; }
+        .report-btn:hover { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
     </style>
 </head>
 <body>
 
     <div class="navbar">
         <div class="nav-left">
-            <div class="logo"><span>⚡</span> SidelinePro</div>
-            
-            <div class="dropdown" onclick="this.classList.toggle('active')">
-                <button class="dropdown-btn" id="session-btn-text">
-                    Select Session <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="dropdown-content">
-                    <div class="session-group">Create New</div>
-                    <div class="session-option" onclick="createNewChat('team')"><span style="color:var(--accent)">+</span> Team Session</div>
-                    <div class="session-option" onclick="createNewChat('player')"><span style="color:var(--accent)">+</span> Player Session</div>
-                    <div class="session-group">Your Sessions</div>
-                    <div id="session-list-container"></div>
-                </div>
-            </div>
+            <button class="toggle-btn active" onclick="toggleSidebar('left')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></button>
+            <div class="logo">Sideline<span>Pro</span></div>
         </div>
-
         <div class="nav-right">
-            <button class="nav-icon-btn" onclick="logout()">Logout</button>
+            <button class="btn-player" onclick="createNewChat('player')"><span style="font-size:1.1rem">👤</span> I'm a Player</button>
+            <button class="btn-glow" onclick="showReportOptions()" style="background:#222; border:1px solid var(--accent); color:var(--accent);">📋 Scouting Report</button>
+            <button id="nav-btn" class="btn-glow" onclick="handleNavClick()">Sign Up</button>
+            <button class="toggle-btn active" onclick="toggleSidebar('right')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg></button>
         </div>
     </div>
 
     <div class="app-body">
-        
+        <div class="sidebar-left" id="sidebar-left">
+            <div class="panel-header"><span>Sessions</span><span style="font-size:1.2rem; cursor:pointer;" onclick="createNewChat('team')">+</span></div>
+            <div id="session-list" class="session-list"></div>
+            <div style="padding:15px; border-top:1px solid #222;"><div style="color:#666; font-size:0.8rem; cursor:pointer;" onclick="logout()">LOGOUT</div></div>
+        </div>
+
         <div class="main-stage">
-            <div id="feed-scroll">
-                <div style="text-align:center; color:#444; margin-top:100px;" id="empty-feed-msg">
-                    Select a session or upload a clip to start analyzing.
+            <div class="chat-header"><span id="session-name" class="editable-title" onclick="renameCurrentSession()">Select Session</span></div>
+            <div class="progress-bar-container" id="progress-bar"><div class="progress-bar"></div></div>
+            <div id="chat-feed">
+                <div class="msg model"><div style="font-size:1.2rem; font-weight:800; color:white; margin-bottom:5px;">System Online.</div><div style="color:var(--text-muted);">Select a session or upload a clip to begin analysis.</div></div>
+            </div>
+            <div class="input-wrapper">
+                <div id="file-indicator"><span id="file-name">📎 Video Attached</span><span class="remove-file" onclick="removeFile()">×</span></div>
+                <div class="input-bar">
+                    <input type="file" id="file-input" accept="video/*" hidden>
+                    <button class="icon-btn" onclick="document.getElementById('file-input').click()">📎</button>
+                    <input type="text" id="user-input" class="input-field" placeholder="Analyze this play..." autocomplete="off">
+                    <button class="btn-glow" id="send-btn">SEND</button>
                 </div>
             </div>
-
-            <div class="input-dock">
-                <input type="file" id="file-input" accept="video/*" style="display:none;" onchange="handleFileUpload()">
-                <button class="upload-circle" onclick="triggerUpload()">＋</button>
-                <input type="text" id="user-input" class="chat-input" placeholder="Type instructions or upload video..." autocomplete="off">
-            </div>
         </div>
 
-        <div class="sidebar-right">
-            <div class="lib-header">CLIP LIBRARY</div>
-            <div id="library-feed" class="lib-list"></div>
+        <div class="sidebar-right" id="sidebar-right">
+            <div class="panel-header"><span>Clip Library</span><span id="clip-count" style="color:var(--accent)">0</span></div>
+            <div class="search-box"><input type="text" id="lib-search" class="search-input" placeholder="Search clips..." oninput="filterLibrary()"></div>
+            <div id="library-feed"></div>
         </div>
-
     </div>
 
     <div id="auth-modal" class="modal-overlay">
         <div class="modal-box">
-            <h2 style="color:white; margin-bottom:20px;">Welcome Coach</h2>
-            <input type="email" id="auth-email" class="std-input" placeholder="Email">
-            <input type="password" id="auth-pass" class="std-input" placeholder="Password">
-            <button class="btn-modal" onclick="handleAuth('signup')">Enter</button>
-            <div style="margin-top:15px; color:#666; font-size:0.8rem; cursor:pointer;" onclick="handleAuth('login')">Have an account? Login</div>
+            <h2 style="color:white; margin-bottom:20px;">Welcome</h2>
+            <input type="email" id="auth-email" class="modal-input" placeholder="Email">
+            <input type="password" id="auth-pass" class="modal-input" placeholder="Password">
+            <button class="btn-glow" style="width:100%;" onclick="handleAuth('signup')">Create Account</button>
+            <div style="margin-top:15px; color:#666; font-size:0.8rem; cursor:pointer;" onclick="handleAuth('login')">Login instead</div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2 style="color:white; margin-bottom:20px;">Settings</h2>
+            <div style="text-align:left; margin-bottom:20px;"><div style="color:#666; font-size:0.8rem;">EMAIL</div><div style="color:white;" id="set-email">--</div></div>
+            <button class="btn-glow" style="background:transparent; border:1px solid #333; color:white; width:100%;" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
+    <div id="video-modal" class="modal-overlay">
+        <div class="modal-box" style="width:800px; padding:0; background:black;">
+            <video id="main-player" controls style="width:100%; display:block;"></video>
+            <button class="btn-glow" style="margin:10px;" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
+    <div id="chat-modal" class="modal-overlay">
+        <div class="modal-box" style="width:600px; text-align:left;">
+            <div class="modal-title" style="font-size:1.2rem;">Ask More Questions</div>
+            <div id="clip-chat-history" style="height:300px; overflow-y:auto; background:#050505; padding:15px; border-radius:8px; margin-bottom:15px; font-size:0.95rem; line-height:1.5;"></div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="clip-chat-input" class="modal-input" placeholder="Ask specific question...">
+                <button class="btn-glow" style="padding:10px 20px;" onclick="sendClipMessage()">Ask</button>
+            </div>
+            <button class="btn-glow" style="background:transparent; border:1px solid #333; width:100%; margin-top:10px;" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
+    <div id="report-select-modal" class="modal-overlay">
+        <div class="modal-box" style="width:500px;">
+            <h2 style="color:white; margin-bottom:20px;">Generate Scouting Report</h2>
+            <div style="display:flex; gap:15px; margin-bottom:20px;">
+                <button class="report-btn" onclick="generateReport('offense')">🏈 SCOUT OFFENSE</button>
+                <button class="report-btn" onclick="generateReport('defense')">🛡️ SCOUT DEFENSE</button>
+            </div>
+            <button class="btn-glow" style="background:transparent; border:1px solid #333; color:white; width:100%;" onclick="closeModals()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="report-view-modal" class="modal-overlay">
+        <div class="modal-box" style="width:700px; max-height:85vh; display:flex; flex-direction:column;">
+            <h2 style="color:var(--accent); margin-bottom:15px;">Tendency Report</h2>
+            <div id="report-content" style="text-align:left; color:#ccc; overflow-y:auto; flex:1; line-height:1.6; white-space: pre-wrap;"></div>
+            <button class="btn-glow" style="margin-top:20px;" onclick="closeModals()">Close</button>
         </div>
     </div>
 
 <script>
     let authToken = localStorage.getItem('sideline_token');
+    let currentUserEmail = localStorage.getItem('sideline_email');
     let currentSessionId = null;
+    let currentSessionType = 'team';
+    let currentClipId = null;
     let libraryData = [];
 
-    // --- INIT ---
-    window.onload = () => {
-        if(authToken) loadSessions(); 
-        else document.getElementById('auth-modal').style.display = 'flex';
-    };
-
-    // --- API ---
     async function apiFetch(url, options = {}) {
         if (!options.headers) options.headers = {};
         options.headers['Authorization'] = `Bearer ${authToken}`;
@@ -259,9 +207,86 @@
         return fetch(url, options);
     }
 
-    // --- SESSIONS ---
+    window.onload = () => {
+        updateNavButton();
+        if(authToken) { loadSessions(); } else { document.getElementById('auth-modal').style.display = 'flex'; }
+    };
+
+    function formatText(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Bold
+            .replace(/\* /g, '<br>• ') // Bullets
+            .replace(/\n/g, '<br>'); // Newlines
+    }
+
+    function toggleSidebar(side) { document.getElementById(`sidebar-${side}`).classList.toggle('closed'); }
+    function removeFile() { document.getElementById('file-input').value = ''; document.getElementById('file-indicator').style.display = 'none'; }
+    document.getElementById('file-input').addEventListener('change', function() { if(this.files[0]) { document.getElementById('file-indicator').style.display = 'flex'; document.getElementById('file-name').innerText = `📎 ${this.files[0].name}`; }});
+
+    document.getElementById('send-btn').addEventListener('click', sendMessage);
+
+    async function sendMessage() {
+        if(!authToken) return;
+        const text = document.getElementById('user-input').value;
+        const file = document.getElementById('file-input').files[0];
+        if(!text && !file) return;
+        if(!currentSessionId) await createNewChat('team');
+
+        const feed = document.getElementById('chat-feed');
+        feed.innerHTML += `<div class="msg user">${text || "Analyzing Clip..."}</div>`;
+        feed.scrollTop = feed.scrollHeight;
+        document.getElementById('user-input').value = '';
+        document.getElementById('progress-bar').style.display = 'block';
+        removeFile();
+
+        const payload = { message: text, sessionId: currentSessionId, sessionType: currentSessionType };
+        if (file) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => { payload.fileData = reader.result.split(',')[1]; payload.mimeType = file.type; await apiCall('/api/chat', payload); };
+        } else { await apiCall('/api/chat', payload); }
+    }
+
+    async function apiCall(endpoint, body) {
+        try {
+            const res = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json();
+            document.getElementById('progress-bar').style.display = 'none';
+            if(data.error) alert(data.error);
+            else { renderResponse(data.reply, data.newClip?.id); if(data.newClip) loadLibrary(); }
+        } catch(e) { document.getElementById('progress-bar').style.display = 'none'; alert("Error communicating with server."); }
+    }
+
+    function renderResponse(text, clipId) {
+        try {
+            const jsonStart = text.indexOf('{');
+            const jsonEnd = text.lastIndexOf('}');
+            if (jsonStart > -1) {
+                const json = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
+                const report = json.scouting_report;
+                const html = `
+                    <div class="tactical-card">
+                        <div class="card-header">${json.title}</div>
+                        ${clipId ? `<video class="embedded-video" controls preload="metadata"><source src="/plays/${clipId}" type="video/mp4"></video>` : ''}
+                        <div class="section-label">FOCUS</div><div class="section-content" style="color:var(--accent);">${json.data.formation} vs ${json.data.coverage}</div>
+                        <div class="section-label">SUMMARY</div><div class="section-content">${report.summary}</div>
+                        <div class="section-label" style="color:var(--danger)">WEAKNESS/MISTAKES</div><div class="section-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div>
+                        <div class="section-label" style="color:var(--accent)">ACTION PLAN</div><div class="section-content">${report.action_plan}</div>
+                        <div class="card-actions">
+                            ${clipId ? `<div class="action-chip" onclick="playVideo('${clipId}')">Watch</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="deleteClip('${clipId}')" style="color:var(--danger); border-color:var(--danger);">Delete</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="changeSection('${clipId}')">Organize</div>` : ''}
+                        </div>
+                    </div>`;
+                document.getElementById('chat-feed').innerHTML += html;
+            } else { document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`; }
+        } catch(e) { document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`; }
+        document.getElementById('chat-feed').scrollTop = document.getElementById('chat-feed').scrollHeight;
+    }
+
     async function createNewChat(type) {
-        const name = prompt("Name this session (e.g., 'LB Drills' or 'Week 4 Game'):");
+        const name = prompt("Session Name:", type === 'player' ? "Player Evaluation" : "Team Analysis");
         if(!name) return;
         
         const res = await apiFetch('/api/create-session', { method: 'POST', body: JSON.stringify({ title: name, type: type }) });
@@ -269,209 +294,118 @@
         
         if(data.success) {
             currentSessionId = data.sessionId;
-            document.getElementById('session-btn-text').innerText = name;
-            loadSessions(); // refresh list
-            loadChat(data.sessionId, name);
+            currentSessionType = type;
+            document.getElementById('session-name').innerText = name;
+            const welcomeMsg = type === 'player' ? "This is meant for individual review. State your position and upload film." : "Team Session Started. Upload clip.";
+            document.getElementById('chat-feed').innerHTML = `<div class="msg model">${welcomeMsg}</div>`;
+            document.getElementById('library-feed').innerHTML = '';
+            loadSessions(); // Updates sidebar now
+        }
+    }
+
+    async function renameCurrentSession() {
+        if(!currentSessionId) return;
+        const newName = prompt("Rename:", document.getElementById('session-name').innerText);
+        if(newName) {
+            await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: newName }) });
+            document.getElementById('session-name').innerText = newName;
+            loadSessions();
         }
     }
 
     async function loadSessions() {
-        const res = await apiFetch('/api/sessions');
+        const res = await fetch('/api/sessions', { headers: { 'Authorization': `Bearer ${authToken}` } });
         const list = await res.json();
-        const container = document.getElementById('session-list-container');
+        const container = document.getElementById('session-list');
         container.innerHTML = '';
-        
         list.forEach(s => {
-            const div = document.createElement('div');
-            div.className = `session-option ${s.id === currentSessionId ? 'active' : ''}`;
-            div.innerHTML = `${s.type === 'player' ? '👤' : '🛡️'} ${s.title}`;
-            div.onclick = () => loadChat(s.id, s.title);
-            container.appendChild(div);
+            const icon = s.type === 'player' ? '👤' : '🛡️';
+            const isActive = s.id === currentSessionId ? 'active' : '';
+            container.innerHTML += `<div class="session-item ${isActive}" onclick="loadChat('${s.id}', '${s.title}')"><span>${icon} ${s.title}</span></div>`;
         });
     }
 
     async function loadChat(id, title) {
-        currentSessionId = id;
-        document.getElementById('session-btn-text').innerText = title;
-        document.getElementById('feed-scroll').innerHTML = ''; // Clear feed
-        document.getElementById('empty-feed-msg').style.display = 'none';
-        
-        // Reload Library
-        loadLibrary();
-
-        // Load History
-        const res = await apiFetch(`/api/session/${id}`);
+        const res = await fetch(`/api/session/${id}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const data = await res.json();
-        
-        // We need to pair clips with analysis. 
-        // For simplicity in this chat-flow view, we will just render the Analysis Cards.
-        // Ideally, the backend would link Clip ID <-> Analysis Message.
-        // Here we re-render analysis. If a clip exists for it, we should ideally find it.
-        // For now, let's just render the text history. The "Video" part is dynamic on upload.
-        data.history.forEach(h => {
-            if(h.role === 'model') injectRow(null, h.text, false); // Null video ID for history text only
-        });
+        currentSessionId = id; currentSessionType = data.type;
+        document.getElementById('session-name').innerText = title;
+        loadSessions(); // refresh active state
+        const feed = document.getElementById('chat-feed');
+        feed.innerHTML = '';
+        data.history.forEach(h => { if(h.role === 'model') renderResponse(h.text); else feed.innerHTML += `<div class="msg user">${h.text}</div>`; });
+        loadLibrary();
     }
 
-    // --- UPLOAD & RENDER ---
-    function triggerUpload() {
-        if(!currentSessionId) return alert("Select a Session first!");
-        document.getElementById('file-input').click();
-    }
-
-    async function handleFileUpload() {
-        const file = document.getElementById('file-input').files[0];
-        if(!file) return;
-
-        // 1. Create Placeholder Row with Progress
-        const tempId = 'temp-' + Date.now();
-        injectRow(tempId, null, true); // True = is loading
-
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-            const payload = {
-                message: `Analyze: ${file.name}`,
-                sessionId: currentSessionId,
-                fileData: reader.result.split(',')[1],
-                mimeType: file.type
-            };
-            
-            try {
-                const res = await apiFetch('/api/chat', { method: 'POST', body: JSON.stringify(payload) });
-                const data = await res.json();
-                
-                // 2. Replace Placeholder with Real Content
-                replaceRow(tempId, data.newClip?.id, data.reply);
-                loadLibrary();
-                
-            } catch(e) { 
-                alert("Analysis failed"); 
-                document.getElementById(tempId).remove(); 
-            }
-        };
-    }
-
-    // Inject a Chat-Bot Style Row
-    function injectRow(id, textData, isLoading) {
-        const feed = document.getElementById('feed-scroll');
-        const div = document.createElement('div');
-        div.className = 'play-row';
-        if(id) div.id = id;
-
-        let leftContent = '';
-        let rightContent = '';
-
-        if (isLoading) {
-            // PROGRESS BAR ON BLACK VIDEO
-            leftContent = `
-                <div class="video-overlay">
-                    <div style="font-weight:700; color:white; margin-bottom:5px;">UPLOADING FILM...</div>
-                    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:100%"></div></div>
-                    <div class="status-text">AI SCOUTING IN PROGRESS</div>
-                </div>`;
-            rightContent = `
-                <div class="card-box" style="opacity:0.5; display:flex; align-items:center; justify-content:center; height:100%;">
-                    <div style="color:#666;">Waiting for data...</div>
-                </div>`;
-        } else {
-            // VIDEO PLAYER (If ID exists) OR Placeholder
-            if (id && !id.startsWith('temp')) {
-                leftContent = `<video controls src="/plays/${id}"></video>`;
-            } else {
-                leftContent = `<div class="video-overlay"><div style="color:#666;">No Video Attached</div></div>`;
-            }
-            
-            // ANALYSIS CARD
-            rightContent = renderCardHTML(textData);
-        }
-
-        div.innerHTML = `<div class="video-box">${leftContent}</div>${rightContent}`;
-        feed.prepend(div); // Newest at top
-    }
-
-    function replaceRow(tempId, clipId, textData) {
-        const row = document.getElementById(tempId);
-        if(!row) return;
-        
-        row.innerHTML = `
-            <div class="video-box">
-                <video controls src="/plays/${clipId}" autoplay></video>
-            </div>
-            ${renderCardHTML(textData)}
-        `;
-    }
-
-    function renderCardHTML(text) {
-        try {
-            const jsonStart = text.indexOf('{');
-            const jsonEnd = text.lastIndexOf('}');
-            if (jsonStart > -1) {
-                const json = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
-                const r = json.scouting_report;
-                return `
-                    <div class="card-box">
-                        <div class="card-header">
-                            <span>${json.title}</span>
-                            <span style="color:var(--accent)">${json.data.formation}</span>
-                        </div>
-                        <div class="trait">
-                            <div class="trait-label">Summary</div>
-                            <div class="trait-content">${r.summary}</div>
-                        </div>
-                        <div class="trait">
-                            <div class="trait-label" style="color:#ef4444">Issues</div>
-                            <div class="trait-content">${r.mistakes ? r.mistakes.join(', ') : r.weakness}</div>
-                        </div>
-                        <div class="trait">
-                            <div class="trait-label" style="color:var(--accent)">Correction</div>
-                            <div class="trait-content">${r.action_plan}</div>
-                        </div>
-                    </div>`;
-            }
-            return `<div class="card-box"><div class="trait-content">${text}</div></div>`;
-        } catch(e) {
-            return `<div class="card-box"><div class="trait-content">${text}</div></div>`;
-        }
-    }
-
-    // --- LIBRARY ---
     async function loadLibrary() {
-        if(!currentSessionId) return;
-        const res = await apiFetch(`/api/search?sessionId=${currentSessionId}`);
+        if(!currentSessionId) { document.getElementById('library-feed').innerHTML = ''; document.getElementById('clip-count').innerText = 0; return; }
+        const res = await fetch(`/api/search?sessionId=${currentSessionId}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const clips = await res.json();
-        
+        libraryData = clips; 
+        renderLibrary(clips);
+    }
+
+    function renderLibrary(clips) {
+        document.getElementById('clip-count').innerText = clips.length;
         const feed = document.getElementById('library-feed');
         feed.innerHTML = '';
-        
-        clips.forEach(clip => {
-            const div = document.createElement('div');
-            div.className = 'lib-item';
-            div.innerHTML = `
-                <div class="lib-thumb">▶</div>
-                <div style="flex:1">
-                    <div style="font-weight:700; font-size:0.8rem; color:white;">${clip.title}</div>
-                    <div style="font-size:0.7rem;">${clip.formation}</div>
-                </div>
-            `;
-            // Scroll to specific clip in feed logic could go here
-            feed.appendChild(div);
+        const groups = {};
+        clips.forEach(clip => { const sec = clip.section || "General"; if(!groups[sec]) groups[sec] = []; groups[sec].push(clip); });
+        Object.keys(groups).forEach(section => {
+            feed.innerHTML += `<div class="panel-header" style="font-size:0.7rem; padding:10px 0;">${section}</div>`;
+            groups[section].forEach(clip => {
+                feed.innerHTML += `
+                    <div class="clip-card">
+                        <div class="clip-title" onclick="playVideo('${clip.id}')">${clip.title}</div>
+                        <div class="clip-meta"><span>${clip.formation}</span></div>
+                        <div class="library-actions">
+                            <div class="mini-btn" onclick="playVideo('${clip.id}')">Watch</div>
+                            <div class="mini-btn" onclick="openClipChat('${clip.id}')">Ask</div>
+                            <div class="mini-btn" onclick="changeSection('${clip.id}')">Organize</div>
+                            <div class="mini-btn" onclick="deleteClip('${clip.id}')" style="color:var(--danger)">Delete</div>
+                        </div>
+                    </div>`;
+            });
         });
     }
 
-    // --- AUTH ---
-    async function handleAuth(type) {
-        const email = document.getElementById('auth-email').value;
-        const pass = document.getElementById('auth-pass').value;
-        const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password: pass }) });
-        const data = await res.json();
-        if(data.success) {
-            authToken = data.token; localStorage.setItem('sideline_token', authToken); localStorage.setItem('sideline_email', email);
-            document.getElementById('auth-modal').style.display = 'none'; loadSessions();
-        } else alert(data.error);
+    function filterLibrary() {
+        const term = document.getElementById('lib-search').value.toLowerCase();
+        const filtered = libraryData.filter(c => c.title.toLowerCase().includes(term) || c.formation.toLowerCase().includes(term));
+        renderLibrary(filtered);
     }
-    function logout() { localStorage.clear(); location.reload(); }
 
+    function showReportOptions() { if(!currentSessionId) return alert("Select a session first."); openModal('report-select-modal'); }
+    async function generateReport(focus) {
+        closeModals(); document.getElementById('chat-feed').innerHTML += `<div class="msg user">Generating ${focus} report...</div>`; document.getElementById('progress-bar').style.display = 'block';
+        try { const res = await apiFetch('/api/session-summary', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, focus: focus }) }); const data = await res.json(); document.getElementById('progress-bar').style.display = 'none'; document.getElementById('report-content').innerHTML = data.report.replace(/\n/g, '<br>'); openModal('report-view-modal'); } catch(e) { document.getElementById('progress-bar').style.display = 'none'; alert("Report failed."); }
+    }
+
+    function openClipChat(id) { currentClipId = id; document.getElementById('clip-chat-history').innerHTML = ''; openModal('chat-modal'); }
+    async function sendClipMessage() {
+        const msg = document.getElementById('clip-chat-input').value;
+        const clip = libraryData.find(c => c.id === currentClipId); 
+        document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:right; margin:10px 0;">${msg}</div>`;
+        document.getElementById('clip-chat-input').value = '';
+        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: clip }) });
+        const data = await res.json();
+        const formatted = formatText(data.reply);
+        document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:left; margin:10px 0; color:var(--accent);">${formatted}</div>`;
+    }
+    async function deleteClip(id) { if(!confirm("Delete?")) return; await apiFetch('/api/delete-clip', { method: 'POST', body: JSON.stringify({ id }) }); loadLibrary(); }
+    async function changeSection(id) { const sec = prompt("New Folder Name:"); if(sec) { await apiFetch('/api/update-clip', { method: 'POST', body: JSON.stringify({ id, section: sec }) }); loadLibrary(); } }
+    
+    function handleNavClick() { if(authToken) { document.getElementById('set-email').innerText = currentUserEmail; document.getElementById('settings-modal').style.display = 'flex'; } else { document.getElementById('auth-modal').style.display = 'flex'; } }
+    function updateNavButton() { const btn = document.getElementById('nav-btn'); if(authToken) { btn.innerText = "Settings"; btn.style.background="transparent"; btn.style.border="1px solid var(--accent)"; btn.style.color="var(--accent)"; } else { btn.innerText = "Sign Up"; btn.style.background="var(--accent)"; btn.style.color="black"; } }
+    async function handleAuth(type) {
+        const email = document.getElementById('auth-email').value; const pass = document.getElementById('auth-pass').value;
+        try { const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password: pass }) }); const data = await res.json();
+        if(data.success) { authToken = data.token; currentUserEmail = email; localStorage.setItem('sideline_token', authToken); localStorage.setItem('sideline_email', email); closeModals(); updateNavButton(); loadSessions(); } else alert(data.error); } catch(e) { alert("Connection Error"); }
+    }
+    function logout() { localStorage.removeItem('sideline_token'); localStorage.removeItem('sideline_email'); location.reload(); }
+    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none'); document.getElementById('main-player').pause(); }
+    function playVideo(id) { document.getElementById('main-player').src = `/plays/${id}`; openModal('video-modal'); }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 </script>
 </body>
 </html>
