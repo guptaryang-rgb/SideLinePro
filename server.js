@@ -84,19 +84,18 @@ const authenticateToken = (req, res, next) => {
 
 // --- AUTH ROUTES ---
 
-// *** UPDATED: UNLIMITED CREDITS ON SIGNUP ***
 app.post('/api/signup', async (req, res) => {
     const { email, password } = req.body;
     const db = await readJSON(USER_DB_FILE);
     if (db[email]) return res.json({ error: "User exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    // Granting effectively unlimited credits (999,999)
-    db[email] = { password: hashedPassword, credits: 999999, userId: "user_" + Date.now() };
+    // REMOVED CREDITS
+    db[email] = { password: hashedPassword, userId: "user_" + Date.now() };
     await writeJSON(USER_DB_FILE, db);
     
     const token = jwt.sign({ email }, JWT_SECRET);
-    res.json({ success: true, credits: 999999, token });
+    res.json({ success: true, token });
 });
 
 app.post('/api/login', async (req, res) => {
@@ -108,26 +107,10 @@ app.post('/api/login', async (req, res) => {
 
     if (await bcrypt.compare(password, user.password)) {
         const token = jwt.sign({ email }, JWT_SECRET);
-        res.json({ success: true, credits: user.credits, token });
+        res.json({ success: true, token });
     } else {
         res.json({ error: "Invalid password" });
     }
-});
-
-app.get('/api/balance', authenticateToken, async (req, res) => {
-    const db = await readJSON(USER_DB_FILE);
-    res.json({ credits: db[req.user.email]?.credits || 0 });
-});
-
-app.post('/api/buy-credits', authenticateToken, async (req, res) => {
-    const email = req.user.email;
-    const db = await readJSON(USER_DB_FILE);
-    
-    if(db[email]) { 
-        db[email].credits += 50; 
-        await writeJSON(USER_DB_FILE, db); 
-    }
-    res.json({ success: true, message: "50 Credits Added (Free Mode)" });
 });
 
 // --- DATA ROUTES ---
@@ -155,21 +138,13 @@ app.post('/api/rename-session', authenticateToken, async (req, res) => {
     } else { res.json({ error: "Session not found" }); }
 });
 
-// --- AI LOGIC ---
+// --- AI LOGIC (No Credit Check) ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
         const { message, sessionId, fileData, mimeType } = req.body;
         const email = req.user.email;
         
-        const users = await readJSON(USER_DB_FILE);
         const chats = await readJSON(CHATS_FILE);
-
-        const cost = fileData ? 1 : 0;
-        if (users[email].credits < cost) return res.json({ error: "payment_required" });
-        if (cost > 0) {
-            users[email].credits -= cost;
-            await writeJSON(USER_DB_FILE, users);
-        }
 
         if (!chats[sessionId]) {
             chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [] };
@@ -241,7 +216,7 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
             } catch(e) { console.log("JSON Parse Failed"); }
         }
 
-        res.json({ reply, newClip, remainingCredits: users[email].credits });
+        res.json({ reply, newClip });
 
     } catch (e) {
         console.error("AI ERROR:", e);
