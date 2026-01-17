@@ -34,7 +34,7 @@ initJSON(USER_DB_FILE, '{}');
 initJSON(CHATS_FILE, '{}');
 
 app.use(cors());
-// 500MB Limit to handle the raw file upload to the server first
+// 500MB Limit for raw upload to server before sending to Google
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
@@ -48,7 +48,9 @@ app.get('/', (req, res) => {
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY); // *** FILE MANAGER ***
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
+// *** GEMINI 3 PRO PREVIEW ***
+const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
 const ANALYST_PROMPT = `
 You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
@@ -186,22 +188,22 @@ app.post('/api/chat', async (req, res) => {
         let savedFilename = null;
 
         if (fileData) {
-            // 1. Save locally
+            // 1. Save locally first
             const buffer = Buffer.from(fileData, 'base64');
             const ext = mimeType.split('/')[1];
             savedFilename = `${sessionId}-${Date.now()}.${ext}`;
             const filePath = path.join(UPLOAD_DIR, savedFilename);
             fs.writeFileSync(filePath, buffer);
 
-            // 2. *** UPLOAD TO GOOGLE FILE MANAGER *** (Fixes Size Limit)
+            // 2. *** UPLOAD TO GOOGLE FILE MANAGER *** // This is the key fix for "File too large" errors
             const uploadResponse = await fileManager.uploadFile(filePath, {
                 mimeType: mimeType,
                 displayName: savedFilename,
             });
 
-            // 3. Wait for file to be active (usually instant for small files, but good practice)
-            // For this demo, we assume it's ready quickly.
-
+            // 3. Wait for file to be active (usually instant for small files)
+            // In production, you might want to loop check getFile() state
+            
             promptContent = [
                 {
                     fileData: {
@@ -213,9 +215,6 @@ app.post('/api/chat', async (req, res) => {
             ];
         }
 
-        // 4. Generate Content
-        // We construct history carefully. Gemini File API uses 'user' role with file data.
-        // We will just send the CURRENT request with the file, rather than full history with files (to save tokens/complexity)
         const chat = model.startChat(); 
         const result = await chat.sendMessage(promptContent);
         const reply = result.response.text();
@@ -226,7 +225,6 @@ app.post('/api/chat', async (req, res) => {
         }
         writeJSON(CHATS_FILE, chats);
 
-        // 5. Save Metadata
         let newClip = null;
         const firstBrace = reply.indexOf('{');
         const lastBrace = reply.lastIndexOf('}');
