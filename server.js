@@ -109,13 +109,15 @@ app.post('/api/login', async (req, res) => {
     } else { res.json({ error: "Invalid password" }); }
 });
 
-// --- SESSION HANDLING (The Left Sidebar Fix) ---
+// --- SESSION LIST ---
 app.get('/api/sessions', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
     const userChats = Object.entries(chats)
         .filter(([id, chat]) => chat.owner === req.user.email)
-        .map(([id, chat]) => ({ id, title: chat.title, date: chat.timestamp, type: chat.type || 'team' }));
-    res.json(userChats.reverse());
+        // Ensure we sort by latest timestamp so new ones appear at top
+        .map(([id, chat]) => ({ id, title: chat.title, date: chat.timestamp, type: chat.type || 'team' }))
+        .sort((a, b) => b.date - a.date);
+    res.json(userChats);
 });
 
 app.get('/api/session/:id', authenticateToken, async (req, res) => {
@@ -123,17 +125,18 @@ app.get('/api/session/:id', authenticateToken, async (req, res) => {
     res.json({ history: chats[req.params.id]?.history || [], type: chats[req.params.id]?.type });
 });
 
+// --- SESSION CREATION & RENAMING ---
 app.post('/api/rename-session', authenticateToken, async (req, res) => {
     const { sessionId, newTitle, type } = req.body;
     const chats = await readJSON(CHATS_FILE);
     
-    // If session doesn't exist yet, create it fully so it appears in the sidebar
+    // IF NEW: Create it immediately so it appears in sidebar list
     if (!chats[sessionId]) {
         chats[sessionId] = { 
             owner: req.user.email, 
             title: newTitle, 
             timestamp: Date.now(), 
-            history: [], // Empty history to start
+            history: [],
             type: type || 'team' 
         };
     } else if (chats[sessionId].owner === req.user.email) {
@@ -144,7 +147,6 @@ app.post('/api/rename-session', authenticateToken, async (req, res) => {
     res.json({ success: true });
 });
 
-// --- AI CHAT ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
         const { message, sessionId, fileData, mimeType, sessionType } = req.body;
@@ -174,7 +176,6 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
             await fs.writeFile(filePath, buffer);
 
             const uploadResponse = await fileManager.uploadFile(filePath, { mimeType: mimeType, displayName: savedFilename });
-            
             let file = await fileManager.getFile(uploadResponse.file.name);
             while (file.state === FileState.PROCESSING) {
                 await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -225,22 +226,19 @@ app.post('/api/update-clip', authenticateToken, async (req, res) => {
     else { res.json({ error: "Clip not found" }); }
 });
 
-// *** UPDATED: ASK MORE QUESTIONS (MEMORY FIX) ***
+// *** UPDATED WAR ROOM (VISUAL FORMATTING) ***
 app.post('/api/clip-chat', authenticateToken, async (req, res) => {
     try {
         const { message, context } = req.body;
         
-        // This Prompt forces the AI to use the JSON data instead of asking for the file again.
+        // Instructing AI to be concise and use bullets for visuals
         const prompt = `
-        SYSTEM INSTRUCTION: You are analyzing a football play.
-        You have ALREADY watched the video. You do not need the video file again.
-        
-        Here is the technical data you extracted from the video:
-        ${JSON.stringify(context)}
-        
+        CONTEXT: Analyzing football play data: ${JSON.stringify(context)}.
         USER QUESTION: "${message}"
-        
-        TASK: Answer the user's question specifically based on the data above. Be detailed.
+        INSTRUCTIONS:
+        1. Answer based ONLY on the data. Do NOT ask for video.
+        2. Use bullet points for steps.
+        3. Be direct and coaching-focused.
         `;
         
         const result = await model.generateContent(prompt);
@@ -267,7 +265,7 @@ app.post('/api/session-summary', authenticateToken, async (req, res) => {
 app.get('/api/search', authenticateToken, async (req, res) => {
     const { sessionId } = req.query; 
     const library = await readJSON(DB_FILE);
-    const results = library.filter(p => p.owner === req.user.email && (!sessionId || p.sessionId === sessionId));
+    const results = library.filter(p => p.owner === req.user.email && p.sessionId === sessionId);
     res.json(results);
 });
 
