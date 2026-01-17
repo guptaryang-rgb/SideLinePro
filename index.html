@@ -16,15 +16,12 @@
         .logo { font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.2rem; color: white; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
         .logo span { color: var(--accent); }
         .toggle-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); width: 36px; height: 36px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .toggle-btn:hover { color: white; border-color: var(--accent); }
         .toggle-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
         
         .btn-glow { background: var(--accent); color: black; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 10px rgba(0, 230, 118, 0.2); text-transform: uppercase; }
         .btn-glow:hover { background: #33ff99; box-shadow: 0 0 20px rgba(0, 230, 118, 0.5); }
-        
-        /* PLAYER MODE BUTTON */
         .btn-player { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.2s; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
-        .btn-player:hover { background: var(--accent-dim); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2); }
+        .btn-player:hover { background: var(--accent-dim); }
 
         .app-body { flex: 1; display: flex; overflow: hidden; position: relative; }
         .sidebar-left { width: var(--sidebar-width); background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: margin-left 0.3s ease; flex-shrink: 0; }
@@ -34,14 +31,19 @@
         .main-stage { flex: 1; display: flex; flex-direction: column; background: var(--bg-deep); position: relative; min-width: 0; }
 
         .panel-header { padding: 20px; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
-        .session-list { flex: 1; overflow-y: auto; padding: 0 10px; }
-        .session-item { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; transition: 0.2s; display: flex; justify-content: space-between; }
+        .session-list, #library-feed { flex: 1; overflow-y: auto; padding: 0 10px; }
+        .session-item, .clip-card { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .session-item { color: var(--text-muted); display: flex; justify-content: space-between; }
         .session-item:hover { background: #1a1e1a; color: white; }
         .session-item.active { background: var(--accent-dim); color: var(--accent); border-left: 3px solid var(--accent); }
+        .clip-card { background: #111; border-color: var(--border); }
+        .clip-card:hover { border-color: var(--accent); transform: translateX(-2px); }
+        .clip-title { font-weight: 700; font-size: 0.9rem; color: white; margin-bottom: 4px; }
+        .clip-meta { font-size: 0.75rem; color: #666; display: flex; justify-content: space-between; }
 
         .chat-header { height: 50px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: center; background: rgba(5,5,5,0.8); backdrop-filter: blur(5px); position: absolute; top: 0; left: 0; right: 0; z-index: 10; }
-        .editable-title { font-weight: 700; color: white; cursor: pointer; padding: 5px 10px; border-radius: 4px; transition: 0.2s; border: 1px solid transparent; }
-        .editable-title:hover { background: #111; border-color: #333; }
+        .editable-title { font-weight: 700; color: white; cursor: pointer; padding: 5px 10px; border-radius: 4px; transition: 0.2s; }
+        .editable-title:hover { background: #111; }
         
         #chat-feed { flex: 1; overflow-y: auto; padding: 70px 40px 40px; display: flex; flex-direction: column; gap: 30px; scroll-behavior: smooth; }
         .msg { padding: 20px; border-radius: 12px; max-width: 85%; line-height: 1.6; font-size: 0.95rem; animation: fadeIn 0.3s; }
@@ -49,20 +51,13 @@
         .msg.model { align-self: flex-start; width: 100%; max-width: 800px; padding: 0; background: transparent; }
 
         .input-wrapper { padding: 20px; background: var(--bg-panel); border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
-        #file-indicator { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 10px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: none; align-items: center; justify-content: space-between; width: 100%; animation: slideUp 0.2s; }
+        #file-indicator { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 10px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: none; align-items: center; justify-content: space-between; width: 100%; }
         .remove-file { cursor: pointer; opacity: 0.7; font-size: 1.1rem; }
-        
         .input-bar { display: flex; gap: 10px; align-items: center; }
-        .input-field { flex: 1; background: #050505; border: 1px solid var(--border); color: white; padding: 12px 20px; border-radius: 30px; font-size: 1rem; transition: 0.2s; }
+        .input-field { flex: 1; background: #050505; border: 1px solid var(--border); color: white; padding: 12px 20px; border-radius: 30px; font-size: 1rem; }
         .input-field:focus { border-color: var(--accent); }
-        .icon-btn { background: #1a1e1a; border: 1px solid var(--border); color: var(--text-muted); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: 0.2s; }
+        .icon-btn { background: #1a1e1a; border: 1px solid var(--border); color: var(--text-muted); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
         .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-        #library-feed { flex: 1; overflow-y: auto; padding: 10px; }
-        .clip-card { background: #111; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
-        .clip-card:hover { border-color: var(--accent); transform: translateX(-2px); }
-        .clip-title { font-weight: 700; font-size: 0.9rem; color: white; margin-bottom: 4px; }
-        .clip-meta { font-size: 0.75rem; color: #666; display: flex; justify-content: space-between; }
 
         .tactical-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .card-header { font-size: 1.1rem; font-weight: 800; color: white; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; text-transform: uppercase; }
@@ -76,68 +71,45 @@
         .progress-bar { height: 100%; background: var(--accent); width: 0%; animation: load 2s infinite ease-in-out; }
         @keyframes load { 0% { width: 0%; transform: translateX(-100%); } 100% { width: 100%; transform: translateX(100%); } }
         @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; justify-content: center; align-items: center; }
         .modal-box { background: #111; border: 1px solid var(--border); width: 400px; padding: 30px; border-radius: 12px; text-align: center; }
         .modal-input { width: 100%; background: #050505; border: 1px solid #333; padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; }
+        .report-btn { flex: 1; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid var(--border); background: #222; color: white; transition: 0.2s; }
+        .report-btn:hover { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
     </style>
 </head>
 <body>
 
     <div class="navbar">
         <div class="nav-left">
-            <button class="toggle-btn active" onclick="toggleSidebar('left')" title="Toggle Sessions">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
-            </button>
+            <button class="toggle-btn active" onclick="toggleSidebar('left')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></button>
             <div class="logo">Sideline<span>Pro</span></div>
         </div>
-        
         <div class="nav-right">
-            <button class="btn-player" onclick="createNewChat('player')">
-                <span style="font-size:1.1rem">👤</span> I'm a Player
-            </button>
-            
+            <button class="btn-player" onclick="createNewChat('player')"><span style="font-size:1.1rem">👤</span> I'm a Player</button>
+            <button class="btn-glow" onclick="showReportOptions()" style="background:#222; border:1px solid var(--accent); color:var(--accent);">📋 Scouting Report</button>
             <button id="nav-btn" class="btn-glow" onclick="handleNavClick()">Sign Up</button>
-            
-            <button class="toggle-btn active" onclick="toggleSidebar('right')" title="Toggle Library">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
-            </button>
+            <button class="toggle-btn active" onclick="toggleSidebar('right')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg></button>
         </div>
     </div>
 
     <div class="app-body">
-        
         <div class="sidebar-left" id="sidebar-left">
-            <div class="panel-header">
-                <span>Sessions</span>
-                <span style="font-size:1.2rem; cursor:pointer;" onclick="createNewChat('team')">+</span>
-            </div>
+            <div class="panel-header"><span>Sessions</span><span style="font-size:1.2rem; cursor:pointer;" onclick="createNewChat('team')">+</span></div>
             <div id="session-list" class="session-list"></div>
-            <div style="padding:15px; border-top:1px solid #222;">
-                <div style="color:#666; font-size:0.8rem; cursor:pointer;" onclick="logout()">LOGOUT</div>
-            </div>
+            <div style="padding:15px; border-top:1px solid #222;"><div style="color:#666; font-size:0.8rem; cursor:pointer;" onclick="logout()">LOGOUT</div></div>
         </div>
 
         <div class="main-stage">
-            <div class="chat-header">
-                <span id="session-name" class="editable-title" onclick="renameCurrentSession()">Select Session</span>
-            </div>
-            
+            <div class="chat-header"><span id="session-name" class="editable-title" onclick="renameCurrentSession()">Select Session</span></div>
             <div class="progress-bar-container" id="progress-bar"><div class="progress-bar"></div></div>
-
             <div id="chat-feed">
-                <div class="msg model">
-                    <div style="font-size:1.2rem; font-weight:800; color:white; margin-bottom:5px;">System Online.</div>
-                    <div style="color:var(--text-muted);">Select a session or upload a clip to begin analysis.</div>
-                </div>
+                <div class="msg model"><div style="font-size:1.2rem; font-weight:800; color:white; margin-bottom:5px;">System Online.</div><div style="color:var(--text-muted);">Select a session or upload a clip to begin analysis.</div></div>
             </div>
-
             <div class="input-wrapper">
-                <div id="file-indicator">
-                    <span id="file-name">📎 Video Attached</span>
-                    <span class="remove-file" onclick="removeFile()">×</span>
-                </div>
-
+                <div id="file-indicator"><span id="file-name">📎 Video Attached</span><span class="remove-file" onclick="removeFile()">×</span></div>
                 <div class="input-bar">
                     <input type="file" id="file-input" accept="video/*" hidden>
                     <button class="icon-btn" onclick="document.getElementById('file-input').click()">📎</button>
@@ -148,10 +120,7 @@
         </div>
 
         <div class="sidebar-right" id="sidebar-right">
-            <div class="panel-header">
-                <span>Clip Library</span>
-                <span id="clip-count" style="color:var(--accent)">0</span>
-            </div>
+            <div class="panel-header"><span>Clip Library</span><span id="clip-count" style="color:var(--accent)">0</span></div>
             <div id="library-feed"></div>
         </div>
     </div>
@@ -169,10 +138,7 @@
     <div id="settings-modal" class="modal-overlay">
         <div class="modal-box">
             <h2 style="color:white; margin-bottom:20px;">Settings</h2>
-            <div style="text-align:left; margin-bottom:20px;">
-                <div style="color:#666; font-size:0.8rem;">EMAIL</div>
-                <div style="color:white;" id="set-email">--</div>
-            </div>
+            <div style="text-align:left; margin-bottom:20px;"><div style="color:#666; font-size:0.8rem;">EMAIL</div><div style="color:white;" id="set-email">--</div></div>
             <button class="btn-glow" style="background:transparent; border:1px solid #333; color:white; width:100%;" onclick="closeModals()">Close</button>
         </div>
     </div>
@@ -186,7 +152,7 @@
 
     <div id="chat-modal" class="modal-overlay">
         <div class="modal-box" style="width:500px; text-align:left;">
-            <div class="modal-title" style="font-size:1.2rem;">War Room</div>
+            <div class="modal-title" style="font-size:1.2rem;">Ask More Questions</div>
             <div id="clip-chat-history" style="height:300px; overflow-y:auto; background:#050505; padding:15px; border-radius:8px; margin-bottom:15px;"></div>
             <div style="display:flex; gap:10px;">
                 <input type="text" id="clip-chat-input" class="modal-input" placeholder="Ask specific question...">
@@ -196,39 +162,49 @@
         </div>
     </div>
 
+    <div id="report-select-modal" class="modal-overlay">
+        <div class="modal-box" style="width:500px;">
+            <h2 style="color:white; margin-bottom:20px;">Generate Scouting Report</h2>
+            <div style="display:flex; gap:15px; margin-bottom:20px;">
+                <button class="report-btn" onclick="generateReport('offense')">🏈 SCOUT OFFENSE</button>
+                <button class="report-btn" onclick="generateReport('defense')">🛡️ SCOUT DEFENSE</button>
+            </div>
+            <button class="btn-glow" style="background:transparent; border:1px solid #333; color:white; width:100%;" onclick="closeModals()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="report-view-modal" class="modal-overlay">
+        <div class="modal-box" style="width:700px; max-height:85vh; display:flex; flex-direction:column;">
+            <h2 style="color:var(--accent); margin-bottom:15px;">Tendency Report</h2>
+            <div id="report-content" style="text-align:left; color:#ccc; overflow-y:auto; flex:1; line-height:1.6; white-space: pre-wrap;"></div>
+            <button class="btn-glow" style="margin-top:20px;" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
 <script>
     let authToken = localStorage.getItem('sideline_token');
     let currentUserEmail = localStorage.getItem('sideline_email');
+    let currentUserPass = localStorage.getItem('sideline_pass');
     let currentSessionId = null;
-    let currentSessionType = 'team'; 
+    let currentSessionType = 'team';
     let currentClipId = null;
     let libraryData = [];
 
+    async function apiFetch(url, options = {}) {
+        if (!options.headers) options.headers = {};
+        options.headers['Authorization'] = `Bearer ${authToken}`;
+        options.headers['Content-Type'] = 'application/json';
+        return fetch(url, options);
+    }
+
     window.onload = () => {
         updateNavButton();
-        if(authToken) {
-            loadSessions();
-            loadLibrary(); // Initial load might be empty until session selected
-        } else {
-            document.getElementById('auth-modal').style.display = 'flex';
-        }
+        if(authToken) { loadSessions(); loadLibrary(); } else { document.getElementById('auth-modal').style.display = 'flex'; }
     };
 
-    function toggleSidebar(side) {
-        document.getElementById(`sidebar-${side}`).classList.toggle('closed');
-    }
-
-    document.getElementById('file-input').addEventListener('change', function() {
-        if(this.files[0]) {
-            document.getElementById('file-indicator').style.display = 'flex';
-            document.getElementById('file-name').innerText = `📎 ${this.files[0].name}`;
-        }
-    });
-
-    function removeFile() {
-        document.getElementById('file-input').value = '';
-        document.getElementById('file-indicator').style.display = 'none';
-    }
+    function toggleSidebar(side) { document.getElementById(`sidebar-${side}`).classList.toggle('closed'); }
+    function removeFile() { document.getElementById('file-input').value = ''; document.getElementById('file-indicator').style.display = 'none'; }
+    document.getElementById('file-input').addEventListener('change', function() { if(this.files[0]) { document.getElementById('file-indicator').style.display = 'flex'; document.getElementById('file-name').innerText = `📎 ${this.files[0].name}`; }});
 
     document.getElementById('send-btn').addEventListener('click', sendMessage);
 
@@ -236,7 +212,6 @@
         if(!authToken) return;
         const text = document.getElementById('user-input').value;
         const file = document.getElementById('file-input').files[0];
-
         if(!text && !file) return;
         if(!currentSessionId) await createNewChat('team');
 
@@ -244,49 +219,25 @@
         feed.innerHTML += `<div class="msg user">${text || "Analyzing Clip..."}</div>`;
         feed.scrollTop = feed.scrollHeight;
         document.getElementById('user-input').value = '';
-        
         document.getElementById('progress-bar').style.display = 'block';
-        removeFile(); 
+        removeFile();
 
         const payload = { message: text, sessionId: currentSessionId, sessionType: currentSessionType };
-        
         if (file) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
-            reader.onload = async () => {
-                payload.fileData = reader.result.split(',')[1];
-                payload.mimeType = file.type;
-                await apiCall('/api/chat', payload);
-            };
-        } else {
-            await apiCall('/api/chat', payload);
-        }
+            reader.onload = async () => { payload.fileData = reader.result.split(',')[1]; payload.mimeType = file.type; await apiCall('/api/chat', payload); };
+        } else { await apiCall('/api/chat', payload); }
     }
 
     async function apiCall(endpoint, body) {
         try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(body)
-            });
+            const res = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
             const data = await res.json();
-            
             document.getElementById('progress-bar').style.display = 'none';
-            
-            if(data.error) {
-                alert(data.error);
-            } else {
-                renderResponse(data.reply, data.newClip?.id);
-                if(data.newClip) loadLibrary();
-            }
-        } catch(e) {
-            document.getElementById('progress-bar').style.display = 'none';
-            alert("Error communicating with server.");
-        }
+            if(data.error) alert(data.error);
+            else { renderResponse(data.reply, data.newClip?.id); if(data.newClip) loadLibrary(); }
+        } catch(e) { document.getElementById('progress-bar').style.display = 'none'; alert("Error communicating with server."); }
     }
 
     function renderResponse(text, clipId) {
@@ -296,35 +247,23 @@
             if (jsonStart > -1) {
                 const json = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
                 const report = json.scouting_report;
-                
                 const html = `
                     <div class="tactical-card">
                         <div class="card-header">${json.title}</div>
-                        <div class="section-label">FOCUS</div>
-                        <div class="section-content" style="color:var(--accent);">${json.data.formation} vs ${json.data.coverage}</div>
-                        
-                        <div class="section-label">SUMMARY</div>
-                        <div class="section-content">${report.summary}</div>
-                        
-                        <div class="section-label" style="color:var(--danger)">WEAKNESS/MISTAKES</div>
-                        <div class="section-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div>
-
-                        <div class="section-label" style="color:var(--accent)">ACTION PLAN</div>
-                        <div class="section-content">${report.action_plan}</div>
-
+                        <div class="section-label">FOCUS</div><div class="section-content" style="color:var(--accent);">${json.data.formation} vs ${json.data.coverage}</div>
+                        <div class="section-label">SUMMARY</div><div class="section-content">${report.summary}</div>
+                        <div class="section-label" style="color:var(--danger)">WEAKNESS/MISTAKES</div><div class="section-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div>
+                        <div class="section-label" style="color:var(--accent)">ACTION PLAN</div><div class="section-content">${report.action_plan}</div>
                         <div class="card-actions">
                             ${clipId ? `<div class="action-chip" onclick="playVideo('${clipId}')">▶ Watch Clip</div>` : ''}
-                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">War Room</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask More Questions</div>` : ''}
                             ${clipId ? `<div class="action-chip" onclick="deleteClip('${clipId}')" style="color:var(--danger); border-color:var(--danger);">Delete</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="changeSection('${clipId}')">Organize</div>` : ''}
                         </div>
                     </div>`;
                 document.getElementById('chat-feed').innerHTML += html;
-            } else {
-                document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`;
-            }
-        } catch(e) {
-            document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`;
-        }
+            } else { document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`; }
+        } catch(e) { document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`; }
         document.getElementById('chat-feed').scrollTop = document.getElementById('chat-feed').scrollHeight;
     }
 
@@ -333,24 +272,10 @@
         if(!name) return;
         currentSessionId = Math.random().toString(36).substr(2, 9);
         currentSessionType = type;
-        
         await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: name, type: type }) });
         loadSessions();
-        
-        const welcomeMsg = type === 'player' 
-            ? "This is meant for individual review to improve. State what position you play and upload film." 
-            : "Team Session Started. Upload clip.";
+        const welcomeMsg = type === 'player' ? "This is meant for individual review to improve. State what position you play and upload film." : "Team Session Started. Upload clip.";
         document.getElementById('chat-feed').innerHTML = `<div class="msg model">${welcomeMsg}</div>`;
-    }
-
-    async function renameCurrentSession() {
-        if(!currentSessionId) return;
-        const newName = prompt("Rename Session:", document.getElementById('session-name').innerText);
-        if(newName) {
-            await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: newName }) });
-            document.getElementById('session-name').innerText = newName;
-            loadSessions();
-        }
     }
 
     async function loadSessions() {
@@ -367,16 +292,11 @@
     async function loadChat(id, title) {
         const res = await fetch(`/api/session/${id}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const data = await res.json();
-        currentSessionId = id;
-        currentSessionType = data.type;
+        currentSessionId = id; currentSessionType = data.type;
         document.getElementById('session-name').innerText = title;
-        
         const feed = document.getElementById('chat-feed');
         feed.innerHTML = '';
-        data.history.forEach(h => {
-            if(h.role === 'model') renderResponse(h.text);
-            else feed.innerHTML += `<div class="msg user">${h.text}</div>`;
-        });
+        data.history.forEach(h => { if(h.role === 'model') renderResponse(h.text); else feed.innerHTML += `<div class="msg user">${h.text}</div>`; });
         loadLibrary();
     }
 
@@ -384,6 +304,7 @@
         if(!currentSessionId) return;
         const res = await fetch(`/api/search?sessionId=${currentSessionId}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const clips = await res.json();
+        libraryData = clips;
         document.getElementById('clip-count').innerText = clips.length;
         const feed = document.getElementById('library-feed');
         feed.innerHTML = '';
@@ -391,65 +312,41 @@
         clips.forEach(clip => { const sec = clip.section || "General"; if(!groups[sec]) groups[sec] = []; groups[sec].push(clip); });
         Object.keys(groups).forEach(section => {
             feed.innerHTML += `<div class="panel-header" style="font-size:0.7rem; padding:10px 0;">${section}</div>`;
-            groups[section].forEach(clip => {
-                feed.innerHTML += `
-                    <div class="clip-card" onclick="playVideo('${clip.id}')">
-                        <div class="clip-title">${clip.title}</div>
-                        <div class="clip-meta"><span>${clip.formation}</span><span>▶</span></div>
-                    </div>`;
-            });
+            groups[section].forEach(clip => { feed.innerHTML += `<div class="clip-card" onclick="playVideo('${clip.id}')"><div class="clip-title">${clip.title}</div><div class="clip-meta"><span>${clip.formation}</span><span>▶</span></div></div>`; });
         });
     }
 
-    function openClipChat(id) { currentClipId = id; document.getElementById('clip-chat-history').innerHTML = ''; document.getElementById('chat-modal').style.display = 'flex'; }
-    
+    function showReportOptions() { if(!currentSessionId) return alert("Select a session first."); openModal('report-select-modal'); }
+    async function generateReport(focus) {
+        closeModals(); document.getElementById('chat-feed').innerHTML += `<div class="msg user">Generating ${focus} report...</div>`; document.getElementById('progress-bar').style.display = 'block';
+        try { const res = await apiFetch('/api/session-summary', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, focus: focus }) }); const data = await res.json(); document.getElementById('progress-bar').style.display = 'none'; document.getElementById('report-content').innerHTML = data.report.replace(/\n/g, '<br>'); openModal('report-view-modal'); } catch(e) { document.getElementById('progress-bar').style.display = 'none'; alert("Report failed."); }
+    }
+
+    function openClipChat(id) { currentClipId = id; document.getElementById('clip-chat-history').innerHTML = ''; openModal('chat-modal'); }
     async function sendClipMessage() {
         const msg = document.getElementById('clip-chat-input').value;
         const clip = libraryData.find(c => c.id === currentClipId); 
         document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:right; margin:10px 0;">${msg}</div>`;
         document.getElementById('clip-chat-input').value = '';
-        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: {} }) });
+        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: clip }) });
         const data = await res.json();
         document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:left; margin:10px 0; color:var(--accent);">${data.reply}</div>`;
     }
-
     async function deleteClip(id) { if(!confirm("Delete?")) return; await apiFetch('/api/delete-clip', { method: 'POST', body: JSON.stringify({ id }) }); loadLibrary(); }
+    async function changeSection(id) { const sec = prompt("New Folder Name:"); if(sec) { await apiFetch('/api/update-clip', { method: 'POST', body: JSON.stringify({ id, section: sec }) }); loadLibrary(); } }
+    async function renameCurrentSession() { if(!currentSessionId) return; const newName = prompt("Rename:", document.getElementById('session-name').innerText); if(newName) { await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: newName }) }); document.getElementById('session-name').innerText = newName; loadSessions(); } }
     
-    function handleNavClick() {
-        if(authToken) { document.getElementById('set-email').innerText = currentUserEmail; document.getElementById('settings-modal').style.display = 'flex'; }
-        else { document.getElementById('auth-modal').style.display = 'flex'; }
-    }
-
-    function updateNavButton() {
-        const btn = document.getElementById('nav-btn');
-        if(authToken) { btn.innerText = "Settings"; btn.style.background = "transparent"; btn.style.border="1px solid var(--accent)"; btn.style.color="var(--accent)"; }
-        else { btn.innerText = "Sign Up"; btn.style.background = "var(--accent)"; btn.style.color = "black"; }
-    }
-
+    function handleNavClick() { if(authToken) { document.getElementById('set-email').innerText = currentUserEmail; document.getElementById('settings-modal').style.display = 'flex'; } else { document.getElementById('auth-modal').style.display = 'flex'; } }
+    function updateNavButton() { const btn = document.getElementById('nav-btn'); if(authToken) { btn.innerText = "Settings"; btn.style.background="transparent"; btn.style.border="1px solid var(--accent)"; btn.style.color="var(--accent)"; } else { btn.innerText = "Sign Up"; btn.style.background="var(--accent)"; btn.style.color="black"; } }
     async function handleAuth(type) {
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-pass').value;
-        try {
-            const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
-            const data = await res.json();
-            if (data.success) {
-                authToken = data.token; currentUserEmail = email; localStorage.setItem('sideline_token', authToken); localStorage.setItem('sideline_email', email);
-                document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none'); updateNavButton(); loadSessions();
-                document.getElementById('chat-feed').innerHTML = `<div class="msg model"><b>Welcome, Coach.</b><br>System Online.<br>Ready for analysis.</div>`;
-            } else { alert(data.error); }
-        } catch(e) { alert("Connection Error"); }
+        const email = document.getElementById('auth-email').value; const pass = document.getElementById('auth-pass').value;
+        try { const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password: pass }) }); const data = await res.json();
+        if(data.success) { authToken = data.token; currentUserEmail = email; localStorage.setItem('sideline_token', authToken); localStorage.setItem('sideline_email', email); closeModals(); updateNavButton(); loadSessions(); } else alert(data.error); } catch(e) { alert("Connection Error"); }
     }
-
     function logout() { localStorage.removeItem('sideline_token'); localStorage.removeItem('sideline_email'); location.reload(); }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none'); document.getElementById('main-player').pause(); }
-    
-    // *** VIDEO FIX: Correct Path Logic ***
-    function playVideo(id) { 
-        const player = document.getElementById('main-player');
-        // Ensure path starts with /plays/
-        player.src = `/plays/${id}`; 
-        document.getElementById('video-modal').style.display = 'flex'; 
-    }
+    function playVideo(id) { document.getElementById('main-player').src = `/plays/${id}`; openModal('video-modal'); }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 </script>
 </body>
 </html>
