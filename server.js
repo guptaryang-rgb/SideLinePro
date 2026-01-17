@@ -13,11 +13,13 @@ const app = express();
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_football_key"; 
 
+// --- CRITICAL: FILE SYSTEM CONFIG ---
 const UPLOAD_DIR = path.join(__dirname, 'saved_plays');
 const DB_FILE = path.join(__dirname, 'stats_db.json');
 const USER_DB_FILE = path.join(__dirname, 'users_db.json');
 const CHATS_FILE = path.join(__dirname, 'chats_db.json');
 
+// Ensure folders exist immediately
 if (!fsSync.existsSync(UPLOAD_DIR)) fsSync.mkdirSync(UPLOAD_DIR);
 const initJSON = (file) => { if (!fsSync.existsSync(file)) fsSync.writeFileSync(file, JSON.stringify(file.includes('db.json') ? [] : {})); };
 initJSON(DB_FILE); initJSON(USER_DB_FILE); initJSON(CHATS_FILE);
@@ -25,11 +27,15 @@ initJSON(DB_FILE); initJSON(USER_DB_FILE); initJSON(CHATS_FILE);
 app.use(cors());
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
+// *** FIX: SERVE VIDEOS BEFORE AUTH ***
+// This allows the browser to load the video file even if the API call is protected
 app.use('/plays', express.static(UPLOAD_DIR));
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
+// --- AI CONFIGURATION ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
@@ -54,23 +60,23 @@ JSON STRUCTURE:
 }
 `;
 
-// *** NEW: PLAYER COACH PROMPT ***
+// *** NEW: 1-ON-1 COACHING PROMPT ***
 const PLAYER_PROMPT = `
-You are an elite Position Coach. The user is a player analyzing their own film.
-1. Identify the focus player based on context or the central figure.
-2. Critique their specific technique (footwork, hand placement, eyes, leverage).
-3. Prescribe specific drills to fix these issues.
+You are an elite private Position Coach. This is a 1-on-1 session with a player.
+1. Identify the focus player.
+2. Roast their technique constructively.
+3. Prescribe a specific WORKOUT plan.
 CRITICAL: Output ONLY valid JSON.
 
 JSON STRUCTURE:
 {
   "title": "Player Grade & Technique",
-  "data": { "formation": "Alignment", "coverage": "Assignment", "play_type": "Technique Focus" },
+  "data": { "formation": "Alignment", "coverage": "Role", "play_type": "Technique Focus" },
   "scouting_report": {
-    "summary": "Assessment of your individual performance on this rep.",
-    "mistakes": ["Specific technical flaws (e.g., 'False step at start', 'Hands too wide')"],
-    "weakness": "What opponents will exploit in your technique.",
-    "action_plan": "SPECIFIC DRILLS to fix this (e.g., 'Do 5 reps of T-Step Drill')."
+    "summary": "Direct feedback to the player on this rep.",
+    "mistakes": ["Specific mechanical flaws (e.g. 'Heels clicking', 'Eyes down')"],
+    "weakness": "What scouts will knock you for.",
+    "action_plan": "SPECIFIC DRILL & WORKOUT (e.g. '3 sets of T-Step Drills, Focus on hip fluidity')."
   },
   "section": "Individual"
 }
@@ -108,10 +114,10 @@ app.post('/api/signup', async (req, res) => {
     const db = await readJSON(USER_DB_FILE);
     if (db[email]) return res.json({ error: "User exists" });
     const hashedPassword = await bcrypt.hash(password, 10);
-    db[email] = { password: hashedPassword, credits: 999999, userId: "user_" + Date.now() };
+    db[email] = { password: hashedPassword, userId: "user_" + Date.now() };
     await writeJSON(USER_DB_FILE, db);
     const token = jwt.sign({ email }, JWT_SECRET);
-    res.json({ success: true, credits: 999999, token });
+    res.json({ success: true, token });
 });
 
 app.post('/api/login', async (req, res) => {
@@ -121,21 +127,10 @@ app.post('/api/login', async (req, res) => {
     if (!user) return res.json({ error: "User not found" });
     if (await bcrypt.compare(password, user.password)) {
         const token = jwt.sign({ email }, JWT_SECRET);
-        res.json({ success: true, credits: user.credits, token });
+        res.json({ success: true, token });
     } else {
         res.json({ error: "Invalid password" });
     }
-});
-
-app.get('/api/balance', authenticateToken, async (req, res) => {
-    const db = await readJSON(USER_DB_FILE);
-    res.json({ credits: db[req.user.email]?.credits || 0 });
-});
-
-app.post('/api/buy-credits', authenticateToken, async (req, res) => {
-    const db = await readJSON(USER_DB_FILE);
-    if(db[req.user.email]) { db[req.user.email].credits += 50; await writeJSON(USER_DB_FILE, db); }
-    res.json({ success: true });
 });
 
 // --- DATA ---
@@ -143,7 +138,7 @@ app.get('/api/sessions', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
     const userChats = Object.entries(chats)
         .filter(([id, chat]) => chat.owner === req.user.email)
-        .map(([id, chat]) => ({ id, title: chat.title, date: chat.timestamp, type: chat.type || 'team' })); // Return Type
+        .map(([id, chat]) => ({ id, title: chat.title, date: chat.timestamp, type: chat.type || 'team' }));
     res.json(userChats.reverse());
 });
 
@@ -152,19 +147,17 @@ app.get('/api/session/:id', authenticateToken, async (req, res) => {
     res.json({ history: chats[req.params.id]?.history || [], type: chats[req.params.id]?.type });
 });
 
-// *** UPDATED: CREATE/RENAME SESSION WITH TYPE ***
 app.post('/api/rename-session', authenticateToken, async (req, res) => {
-    const { sessionId, newTitle, type } = req.body; // Accept type
+    const { sessionId, newTitle, type } = req.body;
     const chats = await readJSON(CHATS_FILE);
     
-    // Create new if doesn't exist (for initial setup)
     if (!chats[sessionId]) {
         chats[sessionId] = { 
             owner: req.user.email, 
             title: newTitle, 
             timestamp: Date.now(), 
             history: [],
-            type: type || 'team' // Default to team
+            type: type || 'team'
         };
     } else if (chats[sessionId].owner === req.user.email) {
         chats[sessionId].title = newTitle;
@@ -177,11 +170,10 @@ app.post('/api/rename-session', authenticateToken, async (req, res) => {
 // --- AI LOGIC ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
-        const { message, sessionId, fileData, mimeType, sessionType } = req.body; // Accept sessionType
+        const { message, sessionId, fileData, mimeType, sessionType } = req.body;
         const email = req.user.email;
         const chats = await readJSON(CHATS_FILE);
 
-        // Ensure session exists with correct type
         if (!chats[sessionId]) {
             chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [], type: sessionType || 'team' };
         }
@@ -191,7 +183,7 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
         let promptContent = [{ text: message }];
         let savedFilename = null;
 
-        // *** SELECT PROMPT BASED ON SESSION TYPE ***
+        // SWITCH PROMPT BASED ON TYPE
         const SYSTEM_PROMPT = (chats[sessionId].type === 'player') ? PLAYER_PROMPT : TEAM_PROMPT;
 
         if (fileData) {
