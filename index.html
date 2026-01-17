@@ -23,12 +23,14 @@
         .session-list { flex: 1; overflow-y: auto; padding: 10px 15px; }
         .session-item { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; color: #88a; font-size: 0.9rem; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
         .session-item.active { background: #0f1f0f; color: var(--accent); border-left: 2px solid var(--accent); }
+        .edit-icon { opacity: 0; font-size: 0.8rem; cursor: pointer; }
+        .session-item:hover .edit-icon { opacity: 1; }
         .credits-panel { padding: 20px; border-top: 1px solid var(--border); background: #020502; }
         .buy-btn { width: 100%; background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 8px; font-weight: bold; }
 
         .chat-section { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
         .header-top { padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #0a140a; }
-        .session-title { font-weight: 800; font-size: 1.1rem; color: white; }
+        .session-title { font-weight: 800; font-size: 1.1rem; color: white; display: flex; align-items: center; gap: 10px;}
         
         #chat-window { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 25px; }
         .message { padding: 20px; border-radius: 8px; font-size: 0.95rem; line-height: 1.6; max-width: 800px; animation: fadeIn 0.3s; }
@@ -67,7 +69,8 @@
         /* LIBRARY & MODALS */
         .library-section { width: 350px; background: #0a140a; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
         .lib-header { padding: 20px; font-weight: 800; color: #668866; border-bottom: 1px solid var(--border); font-size: 0.8rem; letter-spacing: 1px; }
-        .play-card { background: #050a05; border: 1px solid #1a2e1a; padding: 15px; margin: 10px 15px; border-radius: 6px; cursor: pointer; }
+        .section-title { font-size: 0.75rem; font-weight: 700; color: var(--accent); text-transform: uppercase; margin: 15px 15px 5px; letter-spacing: 0.5px; }
+        .play-card { background: #050a05; border: 1px solid #1a2e1a; padding: 15px; margin: 5px 15px 15px; border-radius: 6px; cursor: pointer; }
         .play-card:hover { border-color: var(--accent); }
         
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; display: none; align-items: center; justify-content: center; }
@@ -91,7 +94,7 @@
 
     <div class="chat-section">
         <div class="header-top">
-            <span id="current-chat-title" class="session-title">Select a Session</span>
+            <span id="current-chat-title" class="session-title">Select a Session <span onclick="renameCurrentSession()" style="cursor:pointer; font-size:0.8rem; margin-left:10px; opacity:0.5;">✏️</span></span>
             <button onclick="generateSessionSummary()" style="background:#1a2e1a; border:1px solid #1a331a; color:var(--accent); padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.8rem;">📄 SESSION REPORT</button>
         </div>
         
@@ -308,13 +311,14 @@
         sessions.forEach(s => {
             const div = document.createElement('div');
             div.className = `session-item ${s.id === currentSessionId ? 'active' : ''}`;
-            div.innerHTML = `<span onclick="loadChat('${s.id}', '${s.title}')" style="flex:1">${s.title}</span>`;
+            div.innerHTML = `<span onclick="loadChat('${s.id}', '${s.title}')" style="flex:1">${s.title}</span><span class="edit-icon" onclick="renameSession('${s.id}')">✏️</span>`;
             list.appendChild(div);
         });
     }
 
     async function createNewChat() {
         currentSessionId = Math.random().toString(36).substr(2, 9);
+        document.getElementById('current-chat-title').textContent = "New Session";
         document.getElementById('chat-window').innerHTML = '<div class="message ai-msg">System Online.</div>';
         document.getElementById('library-content').innerHTML = '';
         loadSessions();
@@ -332,24 +336,49 @@
         loadLibrary();
     }
 
+    // NEW: RENAME SESSION
+    async function renameSession(id) {
+        const newName = prompt("Rename Session:");
+        if(newName) {
+            await fetch('/api/rename-session', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ sessionId: id, newTitle: newName, email: currentUser }) });
+            loadSessions();
+        }
+    }
+    
+    function renameCurrentSession() {
+        if(currentSessionId) renameSession(currentSessionId);
+    }
+
+    // --- LIBRARY WITH FOLDERS ---
     async function loadLibrary() {
         const res = await fetch(`/api/search?email=${currentUser}&sessionId=${currentSessionId}`);
         libraryData = await res.json();
         const lib = document.getElementById('library-content');
         lib.innerHTML = '';
         
+        const groups = {};
         libraryData.forEach(clip => {
-            const div = document.createElement('div');
-            div.className = 'play-card';
-            div.innerHTML = `
-                <div style="font-weight:bold; color:white;">${clip.title}</div>
-                <div style="font-size:0.7rem; color:#666;">${clip.formation} vs ${clip.coverage}</div>
-                <div style="display:flex; gap:5px; margin-top:8px;">
-                    <button class="buy-btn" style="padding:4px; font-size:0.6rem;" onclick="openClipChat('${clip.id}')">CHAT</button>
-                    <button class="buy-btn" style="padding:4px; font-size:0.6rem; border-color:#ff5555; color:#ff5555;" onclick="deleteClip('${clip.id}')">DEL</button>
-                </div>
-            `;
-            lib.appendChild(div);
+            const sec = clip.section || "General";
+            if(!groups[sec]) groups[sec] = [];
+            groups[sec].push(clip);
+        });
+
+        Object.keys(groups).forEach(section => {
+            lib.innerHTML += `<div class="section-title">${section}</div>`;
+            groups[section].forEach(clip => {
+                const div = document.createElement('div');
+                div.className = 'play-card';
+                div.innerHTML = `
+                    <div style="font-weight:bold; color:white;">${clip.title}</div>
+                    <div style="font-size:0.7rem; color:#666;">${clip.formation} vs ${clip.coverage}</div>
+                    <div style="display:flex; gap:5px; margin-top:8px;">
+                        <button class="buy-btn" style="padding:4px; font-size:0.6rem;" onclick="openClipChat('${clip.id}')">CHAT</button>
+                        <button class="buy-btn" style="padding:4px; font-size:0.6rem;" onclick="changeSection('${clip.id}')">MOVE</button>
+                        <button class="buy-btn" style="padding:4px; font-size:0.6rem; border-color:#ff5555; color:#ff5555;" onclick="deleteClip('${clip.id}')">DEL</button>
+                    </div>
+                `;
+                lib.appendChild(div);
+            });
         });
     }
 
@@ -374,6 +403,14 @@
         if(!confirm("Delete this clip?")) return;
         await fetch('/api/delete-clip', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id, owner: currentUser }) });
         loadLibrary();
+    }
+
+    async function changeSection(id) {
+        const sec = prompt("Enter new folder name (e.g. Redzone):");
+        if(sec) {
+            await fetch('/api/update-clip', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id, section: sec, owner: currentUser }) });
+            loadLibrary();
+        }
     }
 
     async function generateSessionSummary() {
