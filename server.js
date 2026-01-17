@@ -136,6 +136,7 @@ app.get('/api/session/:id', (req, res) => {
     res.json(chats[req.params.id]?.history || []);
 });
 
+// *** NEW: RENAME SESSION ***
 app.post('/api/rename-session', (req, res) => {
     const { sessionId, newTitle, email } = req.body;
     const chats = readJSON(CHATS_FILE);
@@ -226,7 +227,7 @@ app.post('/api/chat', async (req, res) => {
                     title: parsed.title || "Analyzed Play",
                     formation: parsed.data?.formation || "Unknown",
                     coverage: parsed.data?.coverage || "Unknown",
-                    section: "General",
+                    section: "General", // Default Section
                     fullData: parsed 
                 };
                 
@@ -244,17 +245,7 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
-// CLIP CHAT (Ask Questions)
-app.post('/api/clip-chat', async (req, res) => {
-    try {
-        const { message, context } = req.body;
-        const prompt = `Context: Analyzing a football play. Data: ${JSON.stringify(context)}. User Question: ${message}`;
-        const result = await model.generateContent(prompt);
-        res.json({ reply: result.response.text() });
-    } catch(e) { res.status(500).json({ error: "Chat failed" }); }
-});
-
-// UPDATE CLIP (Move Section)
+// *** NEW: UPDATE CLIP (Move Section) ***
 app.post('/api/update-clip', (req, res) => {
     const { id, section, owner } = req.body;
     let library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
@@ -264,6 +255,15 @@ app.post('/api/update-clip', (req, res) => {
         fs.writeFileSync(DB_FILE, JSON.stringify(library));
         res.json({ success: true });
     } else { res.json({ error: "Clip not found" }); }
+});
+
+app.post('/api/clip-chat', async (req, res) => {
+    try {
+        const { message, context } = req.body;
+        const prompt = `Context: Analyzing a football play. Data: ${JSON.stringify(context)}. User Question: ${message}`;
+        const result = await model.generateContent(prompt);
+        res.json({ reply: result.response.text() });
+    } catch(e) { res.status(500).json({ error: "Chat failed" }); }
 });
 
 app.post('/api/session-summary', async (req, res) => {
