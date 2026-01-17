@@ -34,6 +34,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
+// --- PROMPTS ---
 const TEAM_PROMPT = `
 You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
 CRITICAL: Output ONLY valid JSON.
@@ -85,6 +86,7 @@ const authenticateToken = (req, res, next) => {
     jwt.verify(token, JWT_SECRET, (err, user) => { if (err) return res.sendStatus(403); req.user = user; next(); });
 };
 
+// --- AUTH ---
 app.post('/api/signup', async (req, res) => {
     const { email, password } = req.body;
     const db = await readJSON(USER_DB_FILE);
@@ -107,6 +109,7 @@ app.post('/api/login', async (req, res) => {
     } else { res.json({ error: "Invalid password" }); }
 });
 
+// --- SESSION HANDLING (The Left Sidebar Fix) ---
 app.get('/api/sessions', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
     const userChats = Object.entries(chats)
@@ -123,15 +126,25 @@ app.get('/api/session/:id', authenticateToken, async (req, res) => {
 app.post('/api/rename-session', authenticateToken, async (req, res) => {
     const { sessionId, newTitle, type } = req.body;
     const chats = await readJSON(CHATS_FILE);
+    
+    // If session doesn't exist yet, create it fully so it appears in the sidebar
     if (!chats[sessionId]) {
-        chats[sessionId] = { owner: req.user.email, title: newTitle, timestamp: Date.now(), history: [], type: type || 'team' };
+        chats[sessionId] = { 
+            owner: req.user.email, 
+            title: newTitle, 
+            timestamp: Date.now(), 
+            history: [], // Empty history to start
+            type: type || 'team' 
+        };
     } else if (chats[sessionId].owner === req.user.email) {
         chats[sessionId].title = newTitle;
     }
+    
     await writeJSON(CHATS_FILE, chats);
     res.json({ success: true });
 });
 
+// --- AI CHAT ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
         const { message, sessionId, fileData, mimeType, sessionType } = req.body;
@@ -161,6 +174,7 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
             await fs.writeFile(filePath, buffer);
 
             const uploadResponse = await fileManager.uploadFile(filePath, { mimeType: mimeType, displayName: savedFilename });
+            
             let file = await fileManager.getFile(uploadResponse.file.name);
             while (file.state === FileState.PROCESSING) {
                 await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -176,9 +190,6 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
         const reply = result.response.text();
 
         chats[sessionId].history.push({ role: 'model', text: reply });
-        if (chats[sessionId].title === "New Analysis" && chats[sessionId].history.length <= 2) {
-            chats[sessionId].title = message.substring(0, 30);
-        }
         await writeJSON(CHATS_FILE, chats);
 
         let newClip = null;
@@ -214,10 +225,24 @@ app.post('/api/update-clip', authenticateToken, async (req, res) => {
     else { res.json({ error: "Clip not found" }); }
 });
 
+// *** UPDATED: ASK MORE QUESTIONS (MEMORY FIX) ***
 app.post('/api/clip-chat', authenticateToken, async (req, res) => {
     try {
         const { message, context } = req.body;
-        const prompt = `Context: Analyzing football play (Already Processed). Data: ${JSON.stringify(context)}. Question: ${message}`;
+        
+        // This Prompt forces the AI to use the JSON data instead of asking for the file again.
+        const prompt = `
+        SYSTEM INSTRUCTION: You are analyzing a football play.
+        You have ALREADY watched the video. You do not need the video file again.
+        
+        Here is the technical data you extracted from the video:
+        ${JSON.stringify(context)}
+        
+        USER QUESTION: "${message}"
+        
+        TASK: Answer the user's question specifically based on the data above. Be detailed.
+        `;
+        
         const result = await model.generateContent(prompt);
         res.json({ reply: result.response.text() });
     } catch(e) { res.status(500).json({ error: "Chat failed" }); }
@@ -239,12 +264,10 @@ app.post('/api/session-summary', authenticateToken, async (req, res) => {
     } catch(e) { res.json({ report: "Could not generate summary." }); }
 });
 
-// *** CRITICAL FIX: ENSURE FILTERING BY SESSION ID ***
 app.get('/api/search', authenticateToken, async (req, res) => {
     const { sessionId } = req.query; 
     const library = await readJSON(DB_FILE);
-    // Strict filter: Must match owner AND sessionID
-    const results = library.filter(p => p.owner === req.user.email && p.sessionId === sessionId);
+    const results = library.filter(p => p.owner === req.user.email && (!sessionId || p.sessionId === sessionId));
     res.json(results);
 });
 
