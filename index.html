@@ -3,308 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sideline Pro | Tactical Analysis</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <title>Sideline Pro | Elite Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        :root {
-            /* THEME: Deepest Black-Green & Neon */
-            --bg-body: #020402;
-            --bg-panel: #050a05;
-            --bg-card: #0a110a;
-            --border: #142214;
-            --accent: #00e676; /* Neon Green */
-            --accent-glow: rgba(0, 230, 118, 0.15);
-            --text-main: #ffffff;
-            --text-muted: #668866;
-            --btn-dark: #111a11;
-            
-            --sidebar-width: 260px;
-            --library-width: 300px;
-        }
-
+        :root { --bg-deep: #050505; --bg-panel: #0a0c0a; --bg-card: #111411; --border: #1f261f; --accent: #00e676; --accent-dim: rgba(0, 230, 118, 0.1); --text-main: #ffffff; --text-muted: #889988; --danger: #ff4444; --sidebar-width: 280px; }
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { background-color: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-        /* SCROLLBAR */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #223322; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-
-        /* --- NAVBAR --- */
-        .navbar {
-            height: 70px;
-            background: rgba(2, 4, 2, 0.95);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 30px;
-            z-index: 50;
-            backdrop-filter: blur(10px);
-        }
-
-        .logo { font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.4rem; color: white; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
+        .navbar { height: 60px; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 50; }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 15px; }
+        .logo { font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.2rem; color: white; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
         .logo span { color: var(--accent); }
-
-        /* HEADER BUTTONS */
-        .nav-actions { display: flex; gap: 15px; }
-        .nav-btn {
-            background: transparent; border: 1px solid var(--text-muted); color: #ccc;
-            padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s;
-        }
-        .nav-btn:hover { border-color: white; color: white; }
+        .toggle-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); width: 36px; height: 36px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .toggle-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
         
-        .btn-signup {
-            background: var(--accent); color: #000; border: none; padding: 10px 24px; border-radius: 20px;
-            font-weight: 800; font-size: 0.9rem; cursor: pointer; box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);
-            text-transform: uppercase; letter-spacing: 0.5px; transition: 0.2s;
-        }
-        .btn-signup:hover { background: #33ff99; box-shadow: 0 0 25px rgba(0, 230, 118, 0.6); transform: translateY(-1px); }
+        .btn-glow { background: var(--accent); color: black; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 10px rgba(0, 230, 118, 0.2); text-transform: uppercase; }
+        .btn-glow:hover { background: #33ff99; box-shadow: 0 0 20px rgba(0, 230, 118, 0.5); }
+        .btn-player { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.2s; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+        .btn-player:hover { background: var(--accent-dim); }
 
-        /* --- LAYOUT --- */
         .app-body { flex: 1; display: flex; overflow: hidden; position: relative; }
-
-        /* LEFT SIDEBAR (SESSIONS) */
-        .sidebar-left {
-            width: var(--sidebar-width); background: var(--bg-panel); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; padding: 20px; transition: 0.3s ease;
-        }
+        .sidebar-left { width: var(--sidebar-width); background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: margin-left 0.3s ease; flex-shrink: 0; }
         .sidebar-left.closed { margin-left: calc(var(--sidebar-width) * -1); }
+        .sidebar-right { width: var(--sidebar-width); background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: margin-right 0.3s ease; flex-shrink: 0; }
+        .sidebar-right.closed { margin-right: calc(var(--sidebar-width) * -1); }
+        .main-stage { flex: 1; display: flex; flex-direction: column; background: var(--bg-deep); position: relative; min-width: 0; }
 
-        /* RIGHT SIDEBAR (LIBRARY) */
-        .sidebar-right {
-            width: var(--library-width); background: var(--bg-panel); border-left: 1px solid var(--border);
-            display: flex; flex-direction: column; padding: 0; transition: 0.3s ease;
-        }
-        .sidebar-right.closed { margin-right: calc(var(--library-width) * -1); }
-
-        /* CENTER STAGE */
-        .main-stage {
-            flex: 1; display: flex; flex-direction: column; background: var(--bg-body); position: relative; min-width: 0; padding: 0;
-        }
-
-        /* --- COMPONENTS --- */
-        .panel-header {
-            padding: 15px 20px; border-bottom: 1px solid var(--border);
-            font-size: 0.75rem; font-weight: 800; color: var(--text-muted);
-            text-transform: uppercase; letter-spacing: 1px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        /* SESSION LIST */
-        .session-btn {
-            background: transparent; border: 1px solid var(--border); color: var(--accent);
-            padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-bottom: 20px; width: 100%; transition: 0.2s;
-        }
-        .session-btn:hover { background: var(--accent-glow); border-color: var(--accent); }
-
-        .session-item {
-            padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; color: #88a; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; gap: 10px;
-        }
-        .session-item:hover { background: #0f1f0f; color: white; }
-        .session-item.active { background: #0f1f0f; color: var(--accent); border-left: 3px solid var(--accent); }
-
-        /* --- VIDEO & CHAT AREA --- */
-        #content-scroll { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 30px; }
-
-        /* 1. VIDEO PLAYER CONTAINER */
-        .video-container {
-            width: 100%; max-width: 900px;
-            background: black; border-radius: 12px; overflow: hidden;
-            border: 1px solid #333; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            position: relative;
-        }
-        video { width: 100%; display: block; max-height: 500px; }
-
-        /* 2. ACTION BAR (From Image 2) */
-        .action-bar {
-            display: flex; gap: 15px; width: 100%; max-width: 900px; margin-top: -10px;
-        }
-        .action-btn {
-            flex: 1; padding: 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; border: none; transition: 0.2s; text-align: center;
-        }
-        /* Watch Button - Primary Blue/Green from reference, we use Green to match theme */
-        .btn-watch { background: var(--accent); color: black; box-shadow: 0 0 10px rgba(0, 230, 118, 0.2); }
-        .btn-watch:hover { background: #33ff99; }
+        .panel-header { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+        .session-list, #library-feed { flex: 1; overflow-y: auto; padding: 0 10px; }
+        .session-item, .clip-card { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .session-item { color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+        .session-item:hover { background: #1a1e1a; color: white; }
+        .session-item.active { background: var(--accent-dim); color: var(--accent); border-left: 3px solid var(--accent); }
         
-        /* Secondary Buttons */
-        .btn-secondary { background: var(--btn-dark); border: 1px solid var(--border); color: #ccc; }
-        .btn-secondary:hover { border-color: #666; color: white; background: #1a241a; }
+        .clip-card { background: #111; border-color: var(--border); display: flex; flex-direction: column; gap: 8px; }
+        .clip-card:hover { border-color: var(--accent); transform: translateX(-2px); }
+        .clip-title { font-weight: 700; font-size: 0.9rem; color: white; }
+        .clip-meta { font-size: 0.75rem; color: #666; display: flex; justify-content: space-between; }
+        .library-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; }
+        .mini-btn { background: #222; border: 1px solid #333; color: #ccc; font-size: 0.7rem; padding: 4px; cursor: pointer; border-radius: 3px; }
+        .mini-btn:hover { border-color: var(--accent); color: white; }
 
-        /* 3. TACTICAL CARD (From Image 1) */
-        .tactical-card {
-            width: 100%; max-width: 900px;
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 12px; padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            animation: fadeIn 0.5s ease;
-        }
-        .card-title { font-size: 1.2rem; font-weight: 800; color: white; margin-bottom: 25px; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .chat-header { height: 50px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: center; background: rgba(5,5,5,0.8); backdrop-filter: blur(5px); position: absolute; top: 0; left: 0; right: 0; z-index: 10; }
+        .editable-title { font-weight: 700; color: white; cursor: pointer; padding: 5px 10px; border-radius: 4px; transition: 0.2s; }
+        .editable-title:hover { background: #111; }
         
-        .trait-row { margin-bottom: 20px; }
-        .trait-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-        .trait-text { font-size: 0.95rem; line-height: 1.6; color: #d0d0d0; }
-        
-        /* Highlight specific words green like in the image */
-        .h-green { color: var(--accent); font-weight: 600; }
-        
-        /* Progress Bar style from Image 1 */
-        .stat-bar { height: 6px; background: #1a1a1a; border-radius: 3px; margin-top: 25px; overflow: hidden; }
-        .stat-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1s ease; }
-        .stat-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: #fff; margin-top: 8px; font-weight: 600; }
+        #chat-feed { flex: 1; overflow-y: auto; padding: 70px 40px 40px; display: flex; flex-direction: column; gap: 30px; scroll-behavior: smooth; }
+        .msg { padding: 20px; border-radius: 12px; max-width: 85%; line-height: 1.6; font-size: 0.95rem; animation: fadeIn 0.3s; }
+        .msg.user { align-self: flex-end; background: #1a1a1a; color: white; border: 1px solid #333; }
+        .msg.model { align-self: flex-start; width: 100%; max-width: 800px; padding: 0; background: transparent; }
 
-        /* CLIP LIBRARY (RIGHT) */
-        .clip-list { padding: 10px; overflow-y: auto; flex: 1; }
-        .clip-item {
-            display: flex; align-items: center; gap: 10px;
-            background: var(--btn-dark); border: 1px solid var(--border);
-            padding: 12px; margin-bottom: 8px; border-radius: 8px;
-            cursor: pointer; transition: 0.2s;
-        }
-        .clip-item:hover { border-color: var(--accent); transform: translateX(-3px); }
-        .play-icon { color: var(--text-muted); font-size: 0.8rem; }
-        .clip-info { flex: 1; }
-        .clip-name { font-size: 0.85rem; font-weight: 700; color: white; }
-        .clip-sub { font-size: 0.7rem; color: var(--text-muted); }
+        .input-wrapper { padding: 20px; background: var(--bg-panel); border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        #file-indicator { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 10px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: none; align-items: center; justify-content: space-between; width: 100%; }
+        .remove-file { cursor: pointer; opacity: 0.7; font-size: 1.1rem; }
+        .input-bar { display: flex; gap: 10px; align-items: center; }
+        .input-field { flex: 1; background: #050505; border: 1px solid var(--border); color: white; padding: 12px 20px; border-radius: 30px; font-size: 1rem; }
+        .input-field:focus { border-color: var(--accent); }
+        .icon-btn { background: #1a1e1a; border: 1px solid var(--border); color: var(--text-muted); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-        /* INPUT AREA (Bottom) */
-        .input-dock {
-            padding: 20px; background: var(--bg-panel); border-top: 1px solid var(--border);
-            display: flex; gap: 15px; align-items: center;
-        }
-        .file-upload { color: var(--text-muted); cursor: pointer; font-size: 1.2rem; padding: 10px; border-radius: 50%; border: 1px solid var(--border); transition: 0.2s; }
-        .file-upload:hover { color: var(--accent); border-color: var(--accent); }
-        
-        .chat-input {
-            flex: 1; background: #020402; border: 1px solid var(--border); color: white;
-            padding: 14px 20px; border-radius: 30px; font-size: 0.95rem; font-family: 'Inter';
-        }
-        .chat-input:focus { border-color: var(--accent); }
+        .tactical-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .card-header { font-size: 1.1rem; font-weight: 800; color: white; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; text-transform: uppercase; }
+        .section-label { color: #668866; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+        .section-content { color: #e0e0e0; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; }
+        .card-actions { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #222; }
+        .action-chip { flex: 1; background: #222; border: 1px solid var(--border); color: #ccc; padding: 8px; border-radius: 6px; font-size: 0.8rem; text-align: center; cursor: pointer; }
+        .action-chip:hover { color: var(--accent); border-color: var(--accent); }
 
-        /* LOADING */
-        .loader { height: 3px; width: 100%; background: transparent; position: absolute; top: 0; left: 0; z-index: 100; display: none; }
-        .loader-bar { height: 100%; background: var(--accent); width: 0%; animation: loading 2s infinite; }
-        @keyframes loading { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
+        .embedded-video { width: 100%; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; }
+
+        .progress-bar-container { width: 100%; height: 3px; display: none; position: absolute; top: 0; left: 0; }
+        .progress-bar { height: 100%; background: var(--accent); width: 0%; animation: load 2s infinite ease-in-out; }
+        @keyframes load { 0% { width: 0%; transform: translateX(-100%); } 100% { width: 100%; transform: translateX(100%); } }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* MODALS */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-box { background: #0a110a; border: 1px solid var(--border); width: 450px; padding: 40px; border-radius: 16px; text-align: center; box-shadow: 0 0 40px rgba(0, 230, 118, 0.1); }
-        .modal-input { width: 100%; background: #020402; border: 1px solid #333; padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; font-size: 1rem; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-box { background: #111; border: 1px solid var(--border); width: 400px; padding: 30px; border-radius: 12px; text-align: center; }
+        .modal-input { width: 100%; background: #050505; border: 1px solid #333; padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; }
+        .report-btn { flex: 1; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid var(--border); background: #222; color: white; transition: 0.2s; }
+        .report-btn:hover { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
     </style>
 </head>
 <body>
 
-    <div class="loader" id="loader"><div class="loader-bar"></div></div>
-
     <div class="navbar">
-        <div class="logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent); margin-right:8px;"><path d="M2 20h20M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M12 12v.01"/><path d="M7 7v.01"/><path d="M17 7v.01"/><path d="M7 17v.01"/><path d="M17 17v.01"/></svg>
-            Sideline<span>Pro</span>
+        <div class="nav-left">
+            <button class="toggle-btn active" onclick="toggleSidebar('left')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></button>
+            <div class="logo">Sideline<span>Pro</span></div>
         </div>
-        <div class="nav-actions">
-            <button class="nav-btn" onclick="createNewChat('player')">👤 I'm a Player</button>
-            <button class="nav-btn" onclick="showReportOptions()">📋 Scout Report</button>
-            <button id="auth-btn" class="btn-signup" onclick="handleNavClick()">Sign Up</button>
+        <div class="nav-right">
+            <button class="btn-player" onclick="createNewChat('player')"><span style="font-size:1.1rem">👤</span> I'm a Player</button>
+            <button class="btn-glow" onclick="showReportOptions()" style="background:#222; border:1px solid var(--accent); color:var(--accent);">📋 Scouting Report</button>
+            <button id="nav-btn" class="btn-glow" onclick="handleNavClick()">Sign Up</button>
+            <button class="toggle-btn active" onclick="toggleSidebar('right')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg></button>
         </div>
     </div>
 
     <div class="app-body">
-        
-        <div class="sidebar-left">
-            <div class="panel-header">Sessions</div>
-            <div style="padding: 15px 0;">
-                <button class="session-btn" onclick="createNewChat('team')">+ New Team Session</button>
-                <div id="session-list" style="overflow-y: auto; max-height: calc(100vh - 200px);"></div>
-            </div>
+        <div class="sidebar-left" id="sidebar-left">
+            <div class="panel-header"><span>Sessions</span><span style="font-size:1.2rem; cursor:pointer;" onclick="createNewChat('team')">+</span></div>
+            <div id="session-list" class="session-list"></div>
+            <div style="padding:15px; border-top:1px solid #222;"><div style="color:#666; font-size:0.8rem; cursor:pointer;" onclick="logout()">LOGOUT</div></div>
         </div>
 
         <div class="main-stage">
-            
-            <div id="content-scroll">
-                
-                <div class="video-container">
-                    <video id="main-player" controls poster="https://via.placeholder.com/900x500/000000/333333?text=Upload+Clip+to+Analyze"></video>
-                </div>
-
-                <div class="action-bar">
-                    <button class="action-btn btn-watch" onclick="document.getElementById('main-player').play()">▶ WATCH</button>
-                    <button class="action-btn btn-secondary" onclick="openClipChat()">💬 ASK MORE QUESTIONS</button>
-                    <button class="action-btn btn-secondary" onclick="changeSection()">⊞ ORGANIZE</button>
-                    <button class="action-btn btn-secondary" style="color:#ff4444; border-color:#331111;" onclick="deleteCurrentClip()">🗑 DELETE</button>
-                </div>
-
-                <div id="analysis-feed" style="width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px;">
-                    <div class="tactical-card">
-                        <div class="card-title">Welcome to the Film Room</div>
-                        <div class="trait-row">
-                            <div class="trait-label">Status</div>
-                            <div class="trait-text">Select a <span class="h-green">Session</span> on the left or upload a clip below to begin analysis.</div>
-                        </div>
-                    </div>
-                </div>
-
+            <div class="chat-header"><span id="session-name" class="editable-title" onclick="renameCurrentSession()">Select Session</span></div>
+            <div class="progress-bar-container" id="progress-bar"><div class="progress-bar"></div></div>
+            <div id="chat-feed">
+                <div class="msg model"><div style="font-size:1.2rem; font-weight:800; color:white; margin-bottom:5px;">System Online.</div><div style="color:var(--text-muted);">Select a session or upload a clip to begin analysis.</div></div>
             </div>
-
-            <div class="input-dock">
-                <input type="file" id="file-input" accept="video/*" hidden>
-                <button class="file-upload" onclick="document.getElementById('file-input').click()">📎</button>
-                <input type="text" id="user-input" class="chat-input" placeholder="Upload a clip or ask a question..." autocomplete="off">
-                <button class="btn-signup" id="send-btn" style="padding: 10px 30px;">SEND</button>
+            <div class="input-wrapper">
+                <div id="file-indicator"><span id="file-name">📎 Video Attached</span><span class="remove-file" onclick="removeFile()">×</span></div>
+                <div class="input-bar">
+                    <input type="file" id="file-input" accept="video/*" hidden>
+                    <button class="icon-btn" onclick="document.getElementById('file-input').click()">📎</button>
+                    <input type="text" id="user-input" class="input-field" placeholder="Analyze this play..." autocomplete="off">
+                    <button class="btn-glow" id="send-btn">SEND</button>
+                </div>
             </div>
-
         </div>
 
-        <div class="sidebar-right">
-            <div class="panel-header">
-                <span>Clip Library</span>
-                <span id="clip-count" style="color:var(--accent)">0</span>
-            </div>
-            <div style="padding: 10px; border-bottom: 1px solid var(--border);">
-                <input type="text" id="lib-search" placeholder="Search clips..." style="width:100%; background:#111; border:1px solid #333; padding:8px; color:white; border-radius:4px;" oninput="filterLibrary()">
-            </div>
-            <div id="library-feed" class="clip-list"></div>
+        <div class="sidebar-right" id="sidebar-right">
+            <div class="panel-header"><span>Clip Library</span><span id="clip-count" style="color:var(--accent)">0</span></div>
+            <div id="library-feed"></div>
         </div>
-
     </div>
 
     <div id="auth-modal" class="modal-overlay">
         <div class="modal-box">
-            <h2 style="color:white; margin-bottom:20px;">Enter the Locker Room</h2>
-            <input type="email" id="auth-email" class="modal-input" placeholder="coach@team.com">
+            <h2 style="color:white; margin-bottom:20px;">Welcome</h2>
+            <input type="email" id="auth-email" class="modal-input" placeholder="Email">
             <input type="password" id="auth-pass" class="modal-input" placeholder="Password">
-            <button class="btn-signup" style="width:100%;" onclick="handleAuth('signup')">Create Account</button>
-            <div style="margin-top:15px; color:#666; font-size:0.8rem; cursor:pointer;" onclick="handleAuth('login')">Login</div>
+            <button class="btn-glow" style="width:100%;" onclick="handleAuth('signup')">Create Account</button>
+            <div style="margin-top:15px; color:#666; font-size:0.8rem; cursor:pointer;" onclick="handleAuth('login')">Login instead</div>
         </div>
     </div>
 
     <div id="settings-modal" class="modal-overlay">
         <div class="modal-box">
             <h2 style="color:white; margin-bottom:20px;">Settings</h2>
-            <div style="text-align:left; margin-bottom:10px; color:#888;">EMAIL</div>
-            <div id="set-email" style="text-align:left; color:white; font-family:'JetBrains Mono'; margin-bottom:20px;">--</div>
-            <button class="btn-signup" style="background:transparent; border:1px solid #333; color:white; width:100%;" onclick="closeModals()">Close</button>
-            <button class="btn-signup" style="background:transparent; border:1px solid #442222; color:#ff4444; width:100%; margin-top:10px;" onclick="logout()">Log Out</button>
+            <div style="text-align:left; margin-bottom:20px;"><div style="color:#666; font-size:0.8rem;">EMAIL</div><div style="color:white;" id="set-email">--</div></div>
+            <button class="btn-glow" style="background:transparent; border:1px solid #333; color:white; width:100%;" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
+    <div id="video-modal" class="modal-overlay">
+        <div class="modal-box" style="width:800px; padding:0; background:black;">
+            <video id="main-player" controls style="width:100%; display:block;"></video>
+            <button class="btn-glow" style="margin:10px;" onclick="closeModals()">Close</button>
         </div>
     </div>
 
     <div id="chat-modal" class="modal-overlay">
         <div class="modal-box" style="width:600px; text-align:left;">
-            <div class="card-title" style="font-size:1.2rem; border:none; margin-bottom:10px;">War Room</div>
-            <div id="clip-chat-history" style="height:300px; overflow-y:auto; background:#020402; padding:15px; border-radius:8px; margin-bottom:15px; color:#ddd; line-height:1.5;"></div>
+            <div class="modal-title" style="font-size:1.2rem;">Ask More Questions</div>
+            <div id="clip-chat-history" style="height:300px; overflow-y:auto; background:#050505; padding:15px; border-radius:8px; margin-bottom:15px; font-size:0.95rem; line-height:1.5;"></div>
             <div style="display:flex; gap:10px;">
-                <input type="text" id="clip-chat-input" class="modal-input" placeholder="Ask specific question..." style="margin:0;">
-                <button class="btn-signup" style="padding:10px 20px;" onclick="sendClipMessage()">Ask</button>
+                <input type="text" id="clip-chat-input" class="modal-input" placeholder="Ask specific question...">
+                <button class="btn-glow" style="padding:10px 20px;" onclick="sendClipMessage()">Ask</button>
             </div>
-            <button class="btn-signup" style="background:transparent; border:1px solid #333; width:100%; margin-top:10px; color:#888;" onclick="closeModals()">Close</button>
+            <button class="btn-glow" style="background:transparent; border:1px solid #333; width:100%; margin-top:10px;" onclick="closeModals()">Close</button>
+        </div>
+    </div>
+
+    <div id="report-select-modal" class="modal-overlay">
+        <div class="modal-box" style="width:500px;">
+            <h2 style="color:white; margin-bottom:20px;">Generate Scouting Report</h2>
+            <div style="display:flex; gap:15px; margin-bottom:20px;">
+                <button class="report-btn" onclick="generateReport('offense')">🏈 SCOUT OFFENSE</button>
+                <button class="report-btn" onclick="generateReport('defense')">🛡️ SCOUT DEFENSE</button>
+            </div>
+            <button class="btn-glow" style="background:transparent; border:1px solid #333; color:white; width:100%;" onclick="closeModals()">Cancel</button>
         </div>
     </div>
 
     <div id="report-view-modal" class="modal-overlay">
-        <div class="modal-box" style="width:700px; max-height:85vh; text-align:left; overflow-y:auto;">
-            <div class="card-title" style="color:var(--accent);">Tendency Report</div>
-            <div id="report-content" style="color:#ccc; line-height:1.6;"></div>
-            <button class="btn-signup" style="margin-top:20px; width:100%;" onclick="closeModals()">Close</button>
+        <div class="modal-box" style="width:700px; max-height:85vh; display:flex; flex-direction:column;">
+            <h2 style="color:var(--accent); margin-bottom:15px;">Tendency Report</h2>
+            <div id="report-content" style="text-align:left; color:#ccc; overflow-y:auto; flex:1; line-height:1.6; white-space: pre-wrap;"></div>
+            <button class="btn-glow" style="margin-top:20px;" onclick="closeModals()">Close</button>
         </div>
     </div>
 
@@ -313,8 +192,7 @@
     let currentUserEmail = localStorage.getItem('sideline_email');
     let currentSessionId = null;
     let currentSessionType = 'team';
-    let currentClipId = null; // Currently loaded clip ID
-    let currentClipData = null; // Full JSON of current clip for "Ask" feature
+    let currentClipId = null;
     let libraryData = [];
 
     async function apiFetch(url, options = {}) {
@@ -329,13 +207,17 @@
         if(authToken) { loadSessions(); } else { document.getElementById('auth-modal').style.display = 'flex'; }
     };
 
-    // --- UPLOAD & CHAT ---
-    document.getElementById('file-input').addEventListener('change', function() {
-        if(this.files[0]) {
-            document.getElementById('user-input').value = `Analyze: ${this.files[0].name}`;
-            document.getElementById('user-input').focus();
-        }
-    });
+    // --- FIX: VISUAL FORMATTER FOR "ASK" RESPONSES ---
+    function formatText(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Bold
+            .replace(/\* /g, '<br>• ') // Bullets
+            .replace(/\n/g, '<br>'); // Newlines
+    }
+
+    function toggleSidebar(side) { document.getElementById(`sidebar-${side}`).classList.toggle('closed'); }
+    function removeFile() { document.getElementById('file-input').value = ''; document.getElementById('file-indicator').style.display = 'none'; }
+    document.getElementById('file-input').addEventListener('change', function() { if(this.files[0]) { document.getElementById('file-indicator').style.display = 'flex'; document.getElementById('file-name').innerText = `📎 ${this.files[0].name}`; }});
 
     document.getElementById('send-btn').addEventListener('click', sendMessage);
 
@@ -343,107 +225,65 @@
         if(!authToken) return;
         const text = document.getElementById('user-input').value;
         const file = document.getElementById('file-input').files[0];
-
         if(!text && !file) return;
         if(!currentSessionId) await createNewChat('team');
 
+        const feed = document.getElementById('chat-feed');
+        feed.innerHTML += `<div class="msg user">${text || "Analyzing Clip..."}</div>`;
+        feed.scrollTop = feed.scrollHeight;
         document.getElementById('user-input').value = '';
-        document.getElementById('loader').style.display = 'block';
-        document.getElementById('file-input').value = ''; 
+        document.getElementById('progress-bar').style.display = 'block';
+        removeFile();
 
         const payload = { message: text, sessionId: currentSessionId, sessionType: currentSessionType };
         if (file) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
-            reader.onload = async () => { 
-                payload.fileData = reader.result.split(',')[1]; 
-                payload.mimeType = file.type; 
-                await apiCall('/api/chat', payload); 
-            };
-        } else { 
-            await apiCall('/api/chat', payload); 
-        }
+            reader.onload = async () => { payload.fileData = reader.result.split(',')[1]; payload.mimeType = file.type; await apiCall('/api/chat', payload); };
+        } else { await apiCall('/api/chat', payload); }
     }
 
     async function apiCall(endpoint, body) {
         try {
             const res = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
             const data = await res.json();
-            document.getElementById('loader').style.display = 'none';
+            document.getElementById('progress-bar').style.display = 'none';
             if(data.error) alert(data.error);
-            else { 
-                renderResponse(data.reply); 
-                if(data.newClip) {
-                    loadLibrary();
-                    loadClipIntoPlayer(data.newClip); // Auto load new clip
-                }
-            }
-        } catch(e) { document.getElementById('loader').style.display = 'none'; alert("Network Error"); }
+            else { renderResponse(data.reply, data.newClip?.id); if(data.newClip) loadLibrary(); }
+        } catch(e) { document.getElementById('progress-bar').style.display = 'none'; alert("Error communicating with server."); }
     }
 
-    // --- RENDER TACTICAL CARD (IMAGE 1 STYLE) ---
-    function renderResponse(text) {
-        const feed = document.getElementById('analysis-feed');
-        // Try parsing JSON
+    function renderResponse(text, clipId) {
         try {
             const jsonStart = text.indexOf('{');
             const jsonEnd = text.lastIndexOf('}');
             if (jsonStart > -1) {
                 const json = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
                 const report = json.scouting_report;
-                
-                // Highlight keywords in summary
-                let formattedSummary = report.summary.replace(/(vision|speed|leverage|gap|technique)/gi, '<span class="h-green">$1</span>');
-
                 const html = `
                     <div class="tactical-card">
-                        <div class="card-title">${json.title}</div>
-                        
-                        <div class="trait-row">
-                            <div class="trait-label">FORMATION / COVERAGE</div>
-                            <div class="trait-text"><span class="h-green">${json.data.formation}</span> vs ${json.data.coverage}</div>
+                        <div class="card-header">${json.title}</div>
+                        ${clipId ? `<video class="embedded-video" controls preload="metadata"><source src="/plays/${clipId}" type="video/mp4"></video>` : ''}
+                        <div class="section-label">FOCUS</div><div class="section-content" style="color:var(--accent);">${json.data.formation} vs ${json.data.coverage}</div>
+                        <div class="section-label">SUMMARY</div><div class="section-content">${report.summary}</div>
+                        <div class="section-label" style="color:var(--danger)">WEAKNESS/MISTAKES</div><div class="section-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div>
+                        <div class="section-label" style="color:var(--accent)">ACTION PLAN</div><div class="section-content">${report.action_plan}</div>
+                        <div class="card-actions">
+                            ${clipId ? `<div class="action-chip" onclick="playVideo('${clipId}')">Watch</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="deleteClip('${clipId}')" style="color:var(--danger); border-color:var(--danger);">Delete</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="changeSection('${clipId}')">Organize</div>` : ''}
                         </div>
-
-                        <div class="trait-row">
-                            <div class="trait-label">TACTICAL BREAKDOWN</div>
-                            <div class="trait-text">${formattedSummary}</div>
-                        </div>
-
-                        <div class="trait-row">
-                            <div class="trait-label" style="color:#ff5555">CRITICAL ERRORS</div>
-                            <div class="trait-text">${report.mistakes ? report.mistakes.join(' • ') : report.weakness}</div>
-                        </div>
-
-                        <div class="trait-row">
-                            <div class="trait-label" style="color:var(--accent)">ACTION PLAN</div>
-                            <div class="trait-text">${report.action_plan}</div>
-                        </div>
-
-                        <div class="stat-bar"><div class="stat-fill" style="width: 85%"></div></div>
-                        <div class="stat-label"><span>CONFIDENCE SCORE</span><span>85/100</span></div>
                     </div>`;
-                
-                // Prepend to feed (newest top) or append? Let's append.
-                feed.innerHTML = html + feed.innerHTML; // Show newest at top of feed div
-            } else {
-                feed.innerHTML = `<div class="tactical-card"><div class="trait-text">${text}</div></div>` + feed.innerHTML;
-            }
-        } catch(e) {
-            feed.innerHTML = `<div class="tactical-card"><div class="trait-text">${text}</div></div>` + feed.innerHTML;
-        }
+                document.getElementById('chat-feed').innerHTML += html;
+            } else { document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`; }
+        } catch(e) { document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`; }
+        document.getElementById('chat-feed').scrollTop = document.getElementById('chat-feed').scrollHeight;
     }
 
-    function loadClipIntoPlayer(clip) {
-        const player = document.getElementById('main-player');
-        player.src = `/plays/${clip.id}`;
-        player.play();
-        currentClipId = clip.id;
-        currentClipData = clip.fullData || clip; // Save for War Room
-    }
-
-    // --- SESSION LOGIC ---
+    // *** FIX: CREATE SESSION PROPERLY ***
     async function createNewChat(type) {
-        const name = prompt("Name this session:", type === 'player' ? "Player Eval 1" : "Game 1 Analysis");
+        const name = prompt("Session Name:", type === 'player' ? "Player Evaluation" : "Team Analysis");
         if(!name) return;
         
         const res = await apiFetch('/api/create-session', { method: 'POST', body: JSON.stringify({ title: name, type: type }) });
@@ -452,10 +292,21 @@
         if(data.success) {
             currentSessionId = data.sessionId;
             currentSessionType = type;
-            loadSessions();
-            document.getElementById('analysis-feed').innerHTML = ''; // Clear feed
+            document.getElementById('session-name').innerText = name;
+            const welcomeMsg = type === 'player' ? "This is meant for individual review. State your position and upload film." : "Team Session Started. Upload clip.";
+            document.getElementById('chat-feed').innerHTML = `<div class="msg model">${welcomeMsg}</div>`;
             document.getElementById('library-feed').innerHTML = '';
-            document.getElementById('clip-count').innerText = '0';
+            loadSessions(); // Updates sidebar now
+        }
+    }
+
+    async function renameCurrentSession() {
+        if(!currentSessionId) return;
+        const newName = prompt("Rename:", document.getElementById('session-name').innerText);
+        if(newName) {
+            await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: newName }) });
+            document.getElementById('session-name').innerText = newName;
+            loadSessions();
         }
     }
 
@@ -466,136 +317,87 @@
         container.innerHTML = '';
         list.forEach(s => {
             const icon = s.type === 'player' ? '👤' : '🛡️';
-            const activeClass = s.id === currentSessionId ? 'active' : '';
-            container.innerHTML += `
-                <div class="session-item ${activeClass}" onclick="loadChat('${s.id}')">
-                    <span>${icon} ${s.title}</span>
-                    <span style="font-size:0.7rem; opacity:0.5;">${new Date(s.date).toLocaleDateString()}</span>
-                </div>`;
+            const isActive = s.id === currentSessionId ? 'active' : '';
+            container.innerHTML += `<div class="session-item ${isActive}" onclick="loadChat('${s.id}', '${s.title}')"><span>${icon} ${s.title}</span></div>`;
         });
     }
 
-    async function loadChat(id) {
-        currentSessionId = id;
-        loadSessions(); // Update active highlight
+    async function loadChat(id, title) {
         const res = await fetch(`/api/session/${id}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const data = await res.json();
-        currentSessionType = data.type;
-        
-        // Load history into feed
-        const feed = document.getElementById('analysis-feed');
+        currentSessionId = id; currentSessionType = data.type;
+        document.getElementById('session-name').innerText = title;
+        loadSessions(); // refresh active state
+        const feed = document.getElementById('chat-feed');
         feed.innerHTML = '';
-        // Only render model messages as cards, ignore user texts for clean look (or render them simply)
-        data.history.forEach(h => {
-            if(h.role === 'model') renderResponse(h.text);
-        });
-        
+        data.history.forEach(h => { if(h.role === 'model') renderResponse(h.text); else feed.innerHTML += `<div class="msg user">${h.text}</div>`; });
         loadLibrary();
     }
 
     async function loadLibrary() {
+        if(!currentSessionId) { document.getElementById('library-feed').innerHTML = ''; document.getElementById('clip-count').innerText = 0; return; }
         const res = await fetch(`/api/search?sessionId=${currentSessionId}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const clips = await res.json();
-        libraryData = clips;
+        libraryData = clips; 
         document.getElementById('clip-count').innerText = clips.length;
-        
         const feed = document.getElementById('library-feed');
         feed.innerHTML = '';
-        
         const groups = {};
-        clips.forEach(clip => { 
-            const sec = clip.section || "General"; 
-            if(!groups[sec]) groups[sec] = []; 
-            groups[sec].push(clip); 
-        });
-
+        clips.forEach(clip => { const sec = clip.section || "General"; if(!groups[sec]) groups[sec] = []; groups[sec].push(clip); });
         Object.keys(groups).forEach(section => {
-            feed.innerHTML += `<div class="panel-header" style="font-size:0.65rem; padding:8px 0; border:none; color:var(--accent);">${section}</div>`;
+            feed.innerHTML += `<div class="panel-header" style="font-size:0.7rem; padding:10px 0;">${section}</div>`;
             groups[section].forEach(clip => {
-                // Store full data in onclick
-                const clipStr = JSON.stringify(clip).replace(/"/g, '&quot;');
                 feed.innerHTML += `
-                    <div class="clip-item" onclick='loadClipFromLib(${clipStr})'>
-                        <span class="play-icon">▶</span>
-                        <div class="clip-info">
-                            <div class="clip-name">${clip.title}</div>
-                            <div class="clip-sub">${clip.formation}</div>
+                    <div class="clip-card">
+                        <div class="clip-title" onclick="playVideo('${clip.id}')">${clip.title}</div>
+                        <div class="clip-meta"><span>${clip.formation}</span></div>
+                        <div class="library-actions">
+                            <div class="mini-btn" onclick="playVideo('${clip.id}')">Watch</div>
+                            <div class="mini-btn" onclick="openClipChat('${clip.id}')">Ask</div>
+                            <div class="mini-btn" onclick="changeSection('${clip.id}')">Organize</div>
+                            <div class="mini-btn" onclick="deleteClip('${clip.id}')" style="color:var(--danger)">Delete</div>
                         </div>
                     </div>`;
             });
         });
     }
 
-    function loadClipFromLib(clip) {
-        loadClipIntoPlayer(clip);
+    function showReportOptions() { if(!currentSessionId) return alert("Select a session first."); openModal('report-select-modal'); }
+    async function generateReport(focus) {
+        closeModals(); document.getElementById('chat-feed').innerHTML += `<div class="msg user">Generating ${focus} report...</div>`; document.getElementById('progress-bar').style.display = 'block';
+        try { const res = await apiFetch('/api/session-summary', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, focus: focus }) }); const data = await res.json(); document.getElementById('progress-bar').style.display = 'none'; document.getElementById('report-content').innerHTML = data.report.replace(/\n/g, '<br>'); openModal('report-view-modal'); } catch(e) { document.getElementById('progress-bar').style.display = 'none'; alert("Report failed."); }
     }
 
-    function filterLibrary() {
-        const term = document.getElementById('lib-search').value.toLowerCase();
-        // Implement simple client-side filtering if needed, or just reload
-    }
-
-    // --- ACTIONS ---
-    function openClipChat() {
-        if(!currentClipId) return alert("Select a clip first.");
-        document.getElementById('clip-chat-history').innerHTML = '';
-        document.getElementById('chat-modal').style.display = 'flex';
-    }
-
+    function openClipChat(id) { currentClipId = id; document.getElementById('clip-chat-history').innerHTML = ''; openModal('chat-modal'); }
+    
     async function sendClipMessage() {
         const msg = document.getElementById('clip-chat-input').value;
-        document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:right; margin:10px 0; color:white;">${msg}</div>`;
+        const clip = libraryData.find(c => c.id === currentClipId); 
+        document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:right; margin:10px 0;">${msg}</div>`;
         document.getElementById('clip-chat-input').value = '';
         
-        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: currentClipData }) });
+        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: clip }) });
         const data = await res.json();
         
-        // Simple formatter
-        const fmt = data.reply.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\* /g, '<br>• ');
-        document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:left; margin:10px 0; color:var(--accent);">${fmt}</div>`;
+        // USE FORMATTER HERE
+        const formatted = formatText(data.reply);
+        document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:left; margin:10px 0; color:var(--accent);">${formatted}</div>`;
     }
 
-    async function changeSection() {
-        if(!currentClipId) return alert("Select a clip first.");
-        const sec = prompt("New Folder Name (e.g. Redzone):");
-        if(sec) {
-            await apiFetch('/api/update-clip', { method: 'POST', body: JSON.stringify({ id: currentClipId, section: sec }) });
-            loadLibrary();
-        }
-    }
-
-    async function deleteCurrentClip() {
-        if(!currentClipId) return alert("Select a clip first.");
-        if(!confirm("Delete this clip?")) return;
-        await apiFetch('/api/delete-clip', { method: 'POST', body: JSON.stringify({ id: currentClipId }) });
-        document.getElementById('main-player').src = '';
-        loadLibrary();
-    }
-
-    async function generateReport(focus) {
-        if(!currentSessionId) return alert("Select a session.");
-        closeModals();
-        document.getElementById('loader').style.display = 'block';
-        const res = await apiFetch('/api/session-summary', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, focus: focus }) });
-        const data = await res.json();
-        document.getElementById('loader').style.display = 'none';
-        document.getElementById('report-content').innerHTML = data.report.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b style="color:white;">$1</b>');
-        document.getElementById('report-view-modal').style.display = 'flex';
-    }
-
-    function showReportOptions() { if(!currentSessionId) return alert("Select a session."); document.getElementById('report-select-modal').style.display = 'flex'; }
-
-    // --- AUTH & UI ---
+    async function deleteClip(id) { if(!confirm("Delete?")) return; await apiFetch('/api/delete-clip', { method: 'POST', body: JSON.stringify({ id }) }); loadLibrary(); }
+    async function changeSection(id) { const sec = prompt("New Folder Name:"); if(sec) { await apiFetch('/api/update-clip', { method: 'POST', body: JSON.stringify({ id, section: sec }) }); loadLibrary(); } }
+    
     function handleNavClick() { if(authToken) { document.getElementById('set-email').innerText = currentUserEmail; document.getElementById('settings-modal').style.display = 'flex'; } else { document.getElementById('auth-modal').style.display = 'flex'; } }
-    function updateNavButton() { const btn = document.getElementById('auth-btn'); if(authToken) { btn.innerText = "Settings"; btn.style.background="transparent"; btn.style.border="1px solid #333"; } else { btn.innerText = "Sign Up"; btn.style.background="var(--accent)"; } }
+    function updateNavButton() { const btn = document.getElementById('nav-btn'); if(authToken) { btn.innerText = "Settings"; btn.style.background="transparent"; btn.style.border="1px solid var(--accent)"; btn.style.color="var(--accent)"; } else { btn.innerText = "Sign Up"; btn.style.background="var(--accent)"; btn.style.color="black"; } }
     async function handleAuth(type) {
         const email = document.getElementById('auth-email').value; const pass = document.getElementById('auth-pass').value;
-        const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password: pass }) });
-        const data = await res.json();
-        if(data.success) { authToken = data.token; currentUserEmail = email; localStorage.setItem('sideline_token', authToken); localStorage.setItem('sideline_email', email); closeModals(); updateNavButton(); loadSessions(); } else alert(data.error);
+        try { const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password: pass }) }); const data = await res.json();
+        if(data.success) { authToken = data.token; currentUserEmail = email; localStorage.setItem('sideline_token', authToken); localStorage.setItem('sideline_email', email); closeModals(); updateNavButton(); loadSessions(); } else alert(data.error); } catch(e) { alert("Connection Error"); }
     }
-    function logout() { localStorage.clear(); location.reload(); }
-    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none'); }
+    function logout() { localStorage.removeItem('sideline_token'); localStorage.removeItem('sideline_email'); location.reload(); }
+    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none'); document.getElementById('main-player').pause(); }
+    function playVideo(id) { document.getElementById('main-player').src = `/plays/${id}`; openModal('video-modal'); }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 </script>
 </body>
 </html>
