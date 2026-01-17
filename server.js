@@ -34,8 +34,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
+// --- DISTINCT PROMPTS ---
 const TEAM_PROMPT = `
-You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
+You are an expert Football Coordinator (Team Focus). Analyze this clip for a Scouting Report.
 CRITICAL: Output ONLY valid JSON.
 
 JSON STRUCTURE:
@@ -43,34 +44,37 @@ JSON STRUCTURE:
   "title": "Concept Name",
   "data": { "formation": "Offense", "coverage": "Defense", "play_type": "Run/Pass" },
   "scouting_report": {
-    "summary": "Technical summary.",
-    "mistakes": ["Player errors"],
-    "weakness": "Structural weakness",
-    "action_plan": "Exploit plan"
+    "summary": "Technical summary of the play concept.",
+    "mistakes": ["Schematic/Assignment errors"],
+    "weakness": "Structural weakness in the scheme.",
+    "action_plan": "Gameplan adjustment."
   },
   "section": "General"
 }
 `;
 
 const PLAYER_PROMPT = `
-You are an elite private Position Coach. 1-on-1 session.
-1. Identify focus player. 2. Roast technique. 3. Prescribe workout.
+You are an elite Position Coach (Individual Focus). 1-on-1 session.
+1. Identify the focus player (or ask if unclear). 
+2. Roast their technique constructively. 
+3. Prescribe drills.
 CRITICAL: Output ONLY valid JSON.
 
 JSON STRUCTURE:
 {
-  "title": "Player Grade",
-  "data": { "formation": "Alignment", "coverage": "Role", "play_type": "Focus" },
+  "title": "Player Grade & Technique",
+  "data": { "formation": "Alignment", "coverage": "Assignment", "play_type": "Technique" },
   "scouting_report": {
-    "summary": "Direct feedback.",
-    "mistakes": ["Mechanical flaws"],
-    "weakness": "Scouting knock",
+    "summary": "Direct feedback to the player.",
+    "mistakes": ["Mechanical flaws (e.g. 'False step', 'High pad level')"],
+    "weakness": "What scouts will knock you for.",
     "action_plan": "SPECIFIC DRILL & WORKOUT."
   },
   "section": "Individual"
 }
 `;
 
+// --- HELPERS ---
 async function readJSON(file) {
     try { const data = await fs.readFile(file, 'utf8'); return JSON.parse(data); } 
     catch (e) { return file.includes('users') || file.includes('chats') ? {} : []; }
@@ -85,6 +89,7 @@ const authenticateToken = (req, res, next) => {
     jwt.verify(token, JWT_SECRET, (err, user) => { if (err) return res.sendStatus(403); req.user = user; next(); });
 };
 
+// --- ROUTES ---
 app.post('/api/signup', async (req, res) => {
     const { email, password } = req.body;
     const db = await readJSON(USER_DB_FILE);
@@ -107,6 +112,7 @@ app.post('/api/login', async (req, res) => {
     } else { res.json({ error: "Invalid password" }); }
 });
 
+// --- SESSION MANAGEMENT ---
 app.get('/api/sessions', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
     const userChats = Object.entries(chats)
@@ -120,24 +126,37 @@ app.get('/api/session/:id', authenticateToken, async (req, res) => {
     res.json({ history: chats[req.params.id]?.history || [], type: chats[req.params.id]?.type });
 });
 
+// Create or Rename Session
 app.post('/api/rename-session', authenticateToken, async (req, res) => {
     const { sessionId, newTitle, type } = req.body;
     const chats = await readJSON(CHATS_FILE);
+    
     if (!chats[sessionId]) {
-        chats[sessionId] = { owner: req.user.email, title: newTitle, timestamp: Date.now(), history: [], type: type || 'team' };
+        // New Session Creation
+        chats[sessionId] = { 
+            owner: req.user.email, 
+            title: newTitle, 
+            timestamp: Date.now(), 
+            history: [],
+            type: type || 'team' 
+        };
     } else if (chats[sessionId].owner === req.user.email) {
+        // Rename Existing
         chats[sessionId].title = newTitle;
     }
+    
     await writeJSON(CHATS_FILE, chats);
     res.json({ success: true });
 });
 
+// --- AI CHAT LOGIC ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
         const { message, sessionId, fileData, mimeType, sessionType } = req.body;
         const email = req.user.email;
         const chats = await readJSON(CHATS_FILE);
 
+        // Ensure session exists
         if (!chats[sessionId]) {
             chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [], type: sessionType || 'team' };
         }
@@ -151,7 +170,10 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
 
         let promptContent = [{ text: message }];
         let savedFilename = null;
-        const SYSTEM_PROMPT = (chats[sessionId].type === 'player') ? PLAYER_PROMPT : TEAM_PROMPT;
+
+        // ** SELECT PROMPT BASED ON SAVED SESSION TYPE **
+        const currentType = chats[sessionId].type || 'team';
+        const SYSTEM_PROMPT = (currentType === 'player') ? PLAYER_PROMPT : TEAM_PROMPT;
 
         if (fileData) {
             const buffer = Buffer.from(fileData, 'base64');
@@ -177,11 +199,13 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
         const reply = result.response.text();
 
         chats[sessionId].history.push({ role: 'model', text: reply });
+        // Auto-name new session
         if (chats[sessionId].title === "New Analysis" && chats[sessionId].history.length <= 2) {
-            chats[sessionId].title = message.substring(0, 30);
+            chats[sessionId].title = message.substring(0, 25);
         }
         await writeJSON(CHATS_FILE, chats);
 
+        // Save to Library
         let newClip = null;
         const firstBrace = reply.indexOf('{');
         const lastBrace = reply.lastIndexOf('}');
@@ -195,7 +219,8 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
                     title: parsed.title,
                     formation: parsed.data?.formation,
                     coverage: parsed.data?.coverage,
-                    section: (chats[sessionId].type === 'player') ? "Individual" : "General",
+                    // Default section based on mode
+                    section: (currentType === 'player') ? "My Reps" : "Team Film",
                     fullData: parsed 
                 };
                 const library = await readJSON(DB_FILE);
@@ -207,6 +232,7 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Analysis failed. " + e.message }); }
 });
 
+// --- LIBRARY MANAGEMENT ---
 app.post('/api/update-clip', authenticateToken, async (req, res) => {
     const { id, section } = req.body;
     let library = await readJSON(DB_FILE);
@@ -215,22 +241,10 @@ app.post('/api/update-clip', authenticateToken, async (req, res) => {
     else { res.json({ error: "Clip not found" }); }
 });
 
-// *** UPDATED: CLIP CHAT WITH MEMORY INSTRUCTION ***
 app.post('/api/clip-chat', authenticateToken, async (req, res) => {
     try {
         const { message, context } = req.body;
-        // Stronger instruction to use existing data and not ask for the file
-        const prompt = `
-        CONTEXT: You are discussing a football play that has ALREADY been uploaded and analyzed.
-        Here is the technical data extracted from the clip: ${JSON.stringify(context)}.
-        
-        USER QUESTION: ${message}
-        
-        INSTRUCTIONS:
-        1. Answer the user's question using ONLY the provided data.
-        2. Do NOT ask the user to upload the video again. You already have the analysis.
-        3. Be specific and helpful.
-        `;
+        const prompt = `Context: Analyzing football play (Already Processed). Data: ${JSON.stringify(context)}. Question: ${message}`;
         const result = await model.generateContent(prompt);
         res.json({ reply: result.response.text() });
     } catch(e) { res.status(500).json({ error: "Chat failed" }); }
@@ -240,20 +254,13 @@ app.post('/api/session-summary', authenticateToken, async (req, res) => {
     const { sessionId, focus } = req.body; 
     const library = await readJSON(DB_FILE);
     const clips = library.filter(p => p.owner === req.user.email && p.sessionId === sessionId);
-    if (clips.length === 0) return res.json({ report: "No clips found in this session to analyze." });
+    if (clips.length === 0) return res.json({ report: "No clips found." });
 
     const summaryPrompt = `
-    You are a veteran coordinator writing a game-plan.
-    Based on the following ${clips.length} plays from this session: ${JSON.stringify(clips)}
-    
-    TASK: Write a detailed "Tendency Report" specifically for the **${focus.toUpperCase()}**.
-    1. What are their top tendencies (formations, play types)?
-    2. What are their most common weaknesses shown in these clips?
-    3. If I am the opposing coordinator, how do I beat this ${focus}?
-    
-    Format nicely with bullet points and bold text.
+    You are a veteran coordinator. Based on these ${clips.length} plays: ${JSON.stringify(clips)}
+    TASK: Write a "Tendency Report" for **${focus.toUpperCase()}**.
+    Format cleanly with bullet points.
     `;
-    
     try {
         const result = await model.generateContent(summaryPrompt);
         res.json({ report: result.response.text() });
