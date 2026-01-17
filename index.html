@@ -37,10 +37,6 @@
         .session-item:hover { background: #1a1e1a; color: white; }
         .session-item.active { background: var(--accent-dim); color: var(--accent); border-left: 3px solid var(--accent); }
         
-        /* LIBRARY SEARCH */
-        .search-box { padding: 10px; border-bottom: 1px solid var(--border); }
-        .search-input { width: 100%; background: #111; border: 1px solid #333; padding: 8px; border-radius: 4px; color: white; font-size: 0.8rem; }
-
         .clip-card { background: #111; border-color: var(--border); display: flex; flex-direction: column; gap: 8px; }
         .clip-card:hover { border-color: var(--accent); transform: translateX(-2px); }
         .clip-title { font-weight: 700; font-size: 0.9rem; color: white; }
@@ -75,7 +71,6 @@
         .action-chip { flex: 1; background: #222; border: 1px solid var(--border); color: #ccc; padding: 8px; border-radius: 6px; font-size: 0.8rem; text-align: center; cursor: pointer; }
         .action-chip:hover { color: var(--accent); border-color: var(--accent); }
 
-        /* EMBEDDED VIDEO PLAYER */
         .embedded-video { width: 100%; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; }
 
         .progress-bar-container { width: 100%; height: 3px; display: none; position: absolute; top: 0; left: 0; }
@@ -132,7 +127,6 @@
 
         <div class="sidebar-right" id="sidebar-right">
             <div class="panel-header"><span>Clip Library</span><span id="clip-count" style="color:var(--accent)">0</span></div>
-            <div class="search-box"><input type="text" id="lib-search" class="search-input" placeholder="Search clips..." oninput="filterLibrary()"></div>
             <div id="library-feed"></div>
         </div>
     </div>
@@ -261,14 +255,11 @@
                 const html = `
                     <div class="tactical-card">
                         <div class="card-header">${json.title}</div>
-                        
                         ${clipId ? `<video class="embedded-video" controls preload="metadata"><source src="/plays/${clipId}" type="video/mp4"></video>` : ''}
-
                         <div class="section-label">FOCUS</div><div class="section-content" style="color:var(--accent);">${json.data.formation} vs ${json.data.coverage}</div>
                         <div class="section-label">SUMMARY</div><div class="section-content">${report.summary}</div>
                         <div class="section-label" style="color:var(--danger)">WEAKNESS/MISTAKES</div><div class="section-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div>
                         <div class="section-label" style="color:var(--accent)">ACTION PLAN</div><div class="section-content">${report.action_plan}</div>
-                        
                         <div class="card-actions">
                             ${clipId ? `<div class="action-chip" onclick="playVideo('${clipId}')">Watch</div>` : ''}
                             ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask</div>` : ''}
@@ -288,11 +279,11 @@
         currentSessionId = Math.random().toString(36).substr(2, 9);
         currentSessionType = type;
         await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: name, type: type }) });
-        loadSessions(); // Updates sidebar immediately
+        loadSessions(); // This now updates the sidebar instantly
         const welcomeMsg = type === 'player' ? "This is meant for individual review. State your position and upload film." : "Team Session Started. Upload clip.";
         document.getElementById('chat-feed').innerHTML = `<div class="msg model">${welcomeMsg}</div>`;
         document.getElementById('session-name').innerText = name;
-        loadLibrary(); // Clears library for new session
+        loadLibrary(); 
     }
 
     async function renameCurrentSession() {
@@ -322,10 +313,7 @@
         const data = await res.json();
         currentSessionId = id; currentSessionType = data.type;
         document.getElementById('session-name').innerText = title;
-        
-        // Refresh sidebar highlighting
-        loadSessions();
-
+        loadSessions(); // refresh active state
         const feed = document.getElementById('chat-feed');
         feed.innerHTML = '';
         data.history.forEach(h => { if(h.role === 'model') renderResponse(h.text); else feed.innerHTML += `<div class="msg user">${h.text}</div>`; });
@@ -333,14 +321,10 @@
     }
 
     async function loadLibrary() {
-        if(!currentSessionId) {
-            document.getElementById('library-feed').innerHTML = '';
-            document.getElementById('clip-count').innerText = 0;
-            return;
-        }
+        if(!currentSessionId) { document.getElementById('library-feed').innerHTML = ''; document.getElementById('clip-count').innerText = 0; return; }
         const res = await fetch(`/api/search?sessionId=${currentSessionId}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const clips = await res.json();
-        libraryData = clips; // Store for search
+        libraryData = clips; 
         renderLibrary(clips);
     }
 
@@ -368,12 +352,6 @@
         });
     }
 
-    function filterLibrary() {
-        const term = document.getElementById('lib-search').value.toLowerCase();
-        const filtered = libraryData.filter(c => c.title.toLowerCase().includes(term) || c.formation.toLowerCase().includes(term));
-        renderLibrary(filtered);
-    }
-
     function showReportOptions() { if(!currentSessionId) return alert("Select a session first."); openModal('report-select-modal'); }
     async function generateReport(focus) {
         closeModals(); document.getElementById('chat-feed').innerHTML += `<div class="msg user">Generating ${focus} report...</div>`; document.getElementById('progress-bar').style.display = 'block';
@@ -386,7 +364,7 @@
         const clip = libraryData.find(c => c.id === currentClipId); 
         document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:right; margin:10px 0;">${msg}</div>`;
         document.getElementById('clip-chat-input').value = '';
-        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: {} }) });
+        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: clip }) });
         const data = await res.json();
         document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:left; margin:10px 0; color:var(--accent);">${data.reply}</div>`;
     }
