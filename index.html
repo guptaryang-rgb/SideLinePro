@@ -33,7 +33,7 @@
         .panel-header { padding: 20px; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
         .session-list, #library-feed { flex: 1; overflow-y: auto; padding: 0 10px; }
         .session-item, .clip-card { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
-        .session-item { color: var(--text-muted); display: flex; justify-content: space-between; }
+        .session-item { color: var(--text-muted); display: flex; align-items: center; gap: 10px; }
         .session-item:hover { background: #1a1e1a; color: white; }
         .session-item.active { background: var(--accent-dim); color: var(--accent); border-left: 3px solid var(--accent); }
         .clip-card { background: #111; border-color: var(--border); }
@@ -184,7 +184,6 @@
 <script>
     let authToken = localStorage.getItem('sideline_token');
     let currentUserEmail = localStorage.getItem('sideline_email');
-    let currentUserPass = localStorage.getItem('sideline_pass');
     let currentSessionId = null;
     let currentSessionType = 'team';
     let currentClipId = null;
