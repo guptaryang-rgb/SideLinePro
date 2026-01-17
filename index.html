@@ -10,54 +10,38 @@
             --bg: #050a05; 
             --panel: #0a140a; 
             --border: #142914; 
-            --accent: #009933; /* Turf Green */
+            --accent: #009933; 
             --accent-glow: #00cc44;
             --text: #e0e0e0; 
-            --muted: #668866;
         }
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
-
-        /* SCROLLBAR */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-thumb { background: #222; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-
+        
         .app-container { display: flex; width: 100%; height: 100%; }
         
-        /* SIDEBAR */
         .sidebar { width: 260px; background: #020502; border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
-        .sidebar-header { padding: 25px; font-family: 'JetBrains Mono'; color: var(--accent-glow); font-weight: 800; font-size: 1.2rem; letter-spacing: -1px; display: flex; align-items: center; gap: 10px; }
-        
+        .sidebar-header { padding: 25px; font-family: 'JetBrains Mono'; color: var(--accent-glow); font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
         .btn-new { background: var(--accent); color: #000; border: none; padding: 12px; margin: 0 15px 10px; border-radius: 6px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-size: 0.8rem; }
-        .btn-new:hover { background: var(--accent-glow); box-shadow: 0 0 15px rgba(0, 153, 51, 0.4); }
-        
         .session-list { flex: 1; overflow-y: auto; padding: 10px 15px; }
         .session-item { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; color: #88a; font-size: 0.9rem; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
-        .session-item:hover { background: #0f1f0f; color: white; }
         .session-item.active { background: #0f1f0f; color: var(--accent); border-left: 2px solid var(--accent); }
         .edit-icon { opacity: 0; font-size: 0.8rem; }
         .session-item:hover .edit-icon { opacity: 1; }
-
         .credits-panel { padding: 20px; border-top: 1px solid var(--border); background: #020502; }
         .buy-btn { width: 100%; background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 8px; font-weight: bold; }
-        .buy-btn:hover { background: var(--accent); color: black; }
 
-        /* CHAT SECTION */
         .chat-section { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
         .header-top { padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #0a140a; }
         .session-title { font-weight: 800; font-size: 1.1rem; color: white; }
         
         #chat-window { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 25px; }
-        
-        /* MESSAGES */
         .message { padding: 20px; border-radius: 8px; font-size: 0.95rem; line-height: 1.6; max-width: 800px; animation: fadeIn 0.3s; }
         .user-msg { align-self: flex-end; background: #1a2e1a; color: white; border-right: 3px solid var(--accent); }
         .ai-msg { align-self: flex-start; color: #ccc; width: 100%; border-left: 3px solid #333; padding-left: 25px; }
-        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* CARD STYLING */
         .scout-card { background: #0e1c0e; border: 1px solid #1a331a; border-radius: 8px; padding: 20px; margin-top: 10px; }
         .scout-header { display: flex; justify-content: space-between; border-bottom: 1px solid #1a331a; padding-bottom: 10px; margin-bottom: 15px; }
         .scout-title { font-weight: 800; color: var(--accent); font-size: 1.1rem; text-transform: uppercase; }
@@ -65,34 +49,43 @@
         .stat-box { background: #050a05; padding: 10px; border-radius: 4px; }
         .stat-label { font-size: 0.7rem; color: #668866; text-transform: uppercase; letter-spacing: 1px; }
         .stat-val { color: white; font-weight: 600; font-size: 0.9rem; margin-top: 4px; }
-        
         .highlight-red { color: #ff5555; font-weight: bold; }
         .highlight-green { color: var(--accent); font-weight: bold; }
-        
-        /* ACTIONS */
         .action-row { display: flex; gap: 10px; margin-top: 15px; }
         .action-btn { flex: 1; background: #1a331a; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; text-align: center; text-decoration: none; }
-        .action-btn:hover { background: var(--accent); color: black; }
 
-        /* INPUT AREA */
-        .input-area { padding: 25px; border-top: 1px solid var(--border); background: #0a140a; display: flex; gap: 15px; align-items: center; }
+        /* INPUT AREA & PREVIEW */
+        .input-wrapper { background: #0a140a; border-top: 1px solid var(--border); padding: 0; }
+        
+        /* FILE PREVIEW POPUP */
+        #file-preview { 
+            background: #1a2e1a; 
+            padding: 10px 25px; 
+            border-bottom: 1px solid #1a331a; 
+            display: none; /* Hidden by default */
+            align-items: center; 
+            gap: 10px; 
+            font-size: 0.85rem; 
+            color: var(--accent-glow);
+            font-weight: bold;
+            animation: slideUp 0.2s;
+        }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .input-area { padding: 25px; display: flex; gap: 15px; align-items: center; }
         input[type="text"] { background: #050a05; border: 1px solid #1a2e1a; color: white; padding: 15px; border-radius: 6px; flex: 1; outline: none; font-family: 'Inter'; font-size: 1rem; transition: 0.2s; }
         input[type="text"]:focus { border-color: var(--accent); }
         .file-btn { background: #1a2e1a; color: #88a; width: 50px; height: 50px; border-radius: 6px; border: 1px solid #1a331a; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
         .send-btn { background: var(--accent); color: black; border: none; padding: 0 30px; font-weight: 800; cursor: pointer; height: 50px; border-radius: 6px; }
         
-        /* PROGRESS BAR */
         .progress-container { width: 100%; background: #111; height: 4px; border-radius: 2px; margin-top: 10px; display: none; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; animation: load 2s infinite; }
         @keyframes load { 0% { width: 0%; transform: translateX(-100%); } 100% { width: 100%; transform: translateX(100%); } }
 
-        /* LIBRARY SIDEBAR */
         .library-section { width: 320px; background: #0a140a; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
         .lib-header { padding: 20px; font-weight: 800; color: #668866; border-bottom: 1px solid var(--border); font-size: 0.8rem; letter-spacing: 1px; }
         .play-card { background: #050a05; border: 1px solid #1a2e1a; padding: 15px; margin: 15px; border-radius: 6px; transition: 0.2s; }
-        .play-card:hover { border-color: var(--accent); transform: translateX(-2px); }
         
-        /* AUTH MODAL */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: #0a140a; padding: 40px; border: 1px solid #1a2e1a; border-radius: 12px; width: 350px; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
         .auth-input { width: 100%; padding: 15px; margin: 10px 0; background: #020502; border: 1px solid #1a2e1a; color: white; border-radius: 4px; }
@@ -105,7 +98,6 @@
         <div class="sidebar-header"><span>⚡</span> SIDELINE PRO</div>
         <button class="btn-new" onclick="createNewChat()">+ New Session</button>
         <div id="session-list" class="session-list"></div>
-        
         <div class="credits-panel">
             <div style="display:flex; justify-content:space-between; color:#888; font-size:0.8rem;">
                 <span>CREDITS</span>
@@ -126,11 +118,18 @@
             <div class="message ai-msg">System Online. Ready for analysis.</div>
         </div>
         
-        <div class="input-area">
-            <input type="file" id="file-input" accept="video/*" style="display:none;">
-            <button class="file-btn" onclick="document.getElementById('file-input').click()" id="file-label">📎</button>
-            <input type="text" id="user-input" placeholder="Analyze this play..." autocomplete="off">
-            <button class="send-btn" id="send-btn">SEND</button>
+        <div class="input-wrapper">
+            <div id="file-preview">
+                <span id="file-name"></span>
+                <span style="color:#666; cursor:pointer; font-size:0.8rem; margin-left:auto;" onclick="removeFile()">✕ Remove</span>
+            </div>
+
+            <div class="input-area">
+                <input type="file" id="file-input" accept="video/*" style="display:none;">
+                <button class="file-btn" onclick="document.getElementById('file-input').click()" id="file-label">📎</button>
+                <input type="text" id="user-input" placeholder="Analyze this play..." autocomplete="off">
+                <button class="send-btn" id="send-btn">SEND</button>
+            </div>
         </div>
     </div>
 
@@ -159,6 +158,22 @@
         else { loadSessions(); loadLibrary(); refreshCredits(); }
     };
 
+    // --- FILE PREVIEW LOGIC ---
+    document.getElementById('file-input').addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            document.getElementById('file-preview').style.display = 'flex';
+            document.getElementById('file-name').innerHTML = `📎 ${file.name} <span style="font-weight:normal; color:#888;">(${Math.round(file.size/1024/1024)}MB)</span>`;
+            document.querySelector('.file-btn').style.borderColor = 'var(--accent)';
+        }
+    });
+
+    function removeFile() {
+        document.getElementById('file-input').value = '';
+        document.getElementById('file-preview').style.display = 'none';
+        document.querySelector('.file-btn').style.borderColor = '#1a331a';
+    }
+
     // --- AUTHENTICATION ---
     async function handleAuth(type) {
         const email = document.getElementById('auth-email').value;
@@ -176,9 +191,7 @@
             loadSessions(); loadLibrary(); refreshCredits();
         } else alert(data.error);
     }
-
     function logout() { localStorage.removeItem('sideline_user'); location.reload(); }
-
     async function refreshCredits() {
         const res = await fetch('/api/balance', {
             method: 'POST',
@@ -188,8 +201,6 @@
         const data = await res.json();
         document.getElementById('credit-display').textContent = data.credits;
     }
-
-    // --- PAYMENTS ---
     async function buyCredits() {
         const res = await fetch('/api/buy-credits', {
             method: 'POST',
@@ -198,12 +209,11 @@
         });
         const data = await res.json();
         if(data.success) {
-            if(data.url) window.location.href = data.url; // Real Stripe
-            else { alert(data.message); refreshCredits(); } // Demo Mode
+            if(data.url) window.location.href = data.url; 
+            else { alert(data.message); refreshCredits(); }
         }
     }
 
-    // --- SESSIONS ---
     async function loadSessions() {
         const res = await fetch(`/api/sessions?email=${currentUser}`);
         const sessions = await res.json();
@@ -212,10 +222,7 @@
         sessions.forEach(s => {
             const div = document.createElement('div');
             div.className = `session-item ${s.id === currentSessionId ? 'active' : ''}`;
-            div.innerHTML = `
-                <span onclick="loadChat('${s.id}', '${s.title}')" style="flex:1">${s.title}</span>
-                <span class="edit-icon" onclick="renameSession('${s.id}')">✏️</span>
-            `;
+            div.innerHTML = `<span onclick="loadChat('${s.id}', '${s.title}')" style="flex:1">${s.title}</span><span class="edit-icon" onclick="renameSession('${s.id}')">✏️</span>`;
             list.appendChild(div);
         });
     }
@@ -252,7 +259,6 @@
         }
     }
 
-    // --- MESSAGING ---
     document.getElementById('send-btn').addEventListener('click', async () => {
         const text = document.getElementById('user-input').value;
         const file = document.getElementById('file-input').files[0];
@@ -262,6 +268,9 @@
         addMessage(text || "Analyzing video clip...", 'user');
         document.getElementById('user-input').value = '';
         
+        // Hide preview
+        removeFile();
+
         // Progress Bar
         const win = document.getElementById('chat-window');
         const progressDiv = document.createElement('div');
@@ -289,7 +298,7 @@
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-            progressDiv.remove(); // Remove progress bar
+            progressDiv.remove();
             
             if(data.error) addMessage("Error: " + data.error, 'model');
             else {
@@ -303,31 +312,23 @@
     function addMessage(text, role) {
         const div = document.createElement('div');
         div.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
-        
         if (role === 'model') {
             try {
-                // Check if response is JSON (Analysis)
                 const firstBrace = text.indexOf('{');
                 const lastBrace = text.lastIndexOf('}');
                 if (firstBrace !== -1 && lastBrace !== -1) {
                     const jsonString = text.substring(firstBrace, lastBrace + 1);
                     const data = JSON.parse(jsonString);
                     div.innerHTML = renderScoutCard(data);
-                } else {
-                    div.textContent = text;
-                }
+                } else { div.textContent = text; }
             } catch(e) { div.textContent = text; }
-        } else {
-            div.textContent = text;
-        }
-        
+        } else { div.textContent = text; }
         const win = document.getElementById('chat-window');
         win.appendChild(div);
         win.scrollTop = win.scrollHeight;
     }
 
     function renderScoutCard(data) {
-        // Highlight logic
         const report = data.scouting_report || {};
         return `
             <div class="scout-card">
@@ -340,27 +341,12 @@
                     <div class="stat-box"><div class="stat-label">COVERAGE</div><div class="stat-val">${data.data?.coverage}</div></div>
                 </div>
                 <div style="margin-bottom:15px; color:#ccc;">${report.summary}</div>
-                
-                <div style="margin-bottom:15px;">
-                    <div class="stat-label highlight-red">MISTAKES DETECTED</div>
-                    <ul style="margin:5px 0; padding-left:20px; color:#ddd;">
-                        ${(report.mistakes || []).map(m => `<li>${m}</li>`).join('')}
-                    </ul>
-                </div>
-
-                <div style="margin-bottom:15px;">
-                    <div class="stat-label highlight-green">ACTION PLAN</div>
-                    <div style="color:white; margin-top:5px;">${report.action_plan}</div>
-                </div>
-
-                <div class="action-row">
-                    <a href="/plays/${data.id}" target="_blank" class="action-btn">WATCH CLIP</a>
-                </div>
-            </div>
-        `;
+                <div style="margin-bottom:15px;"><div class="stat-label highlight-red">MISTAKES</div><ul style="margin:5px 0; padding-left:20px; color:#ddd;">${(report.mistakes || []).map(m => `<li>${m}</li>`).join('')}</ul></div>
+                <div style="margin-bottom:15px;"><div class="stat-label highlight-green">ACTION PLAN</div><div style="color:white; margin-top:5px;">${report.action_plan}</div></div>
+                <div class="action-row"><a href="/plays/${data.id}" target="_blank" class="action-btn">WATCH CLIP</a></div>
+            </div>`;
     }
 
-    // --- LIBRARY ---
     async function loadLibrary() {
         const res = await fetch(`/api/search?email=${currentUser}&sessionId=${currentSessionId}`);
         const clips = await res.json();
@@ -369,15 +355,11 @@
         clips.forEach(c => {
             const div = document.createElement('div');
             div.className = 'play-card';
-            div.innerHTML = `
-                <div style="font-weight:bold; color:#fff; font-size:0.9rem;">${c.title}</div>
-                <div style="font-size:0.7rem; color:#668866; margin-top:5px;">${c.formation} vs ${c.coverage}</div>
-            `;
+            div.innerHTML = `<div style="font-weight:bold; color:#fff; font-size:0.9rem;">${c.title}</div><div style="font-size:0.7rem; color:#668866; margin-top:5px;">${c.formation} vs ${c.coverage}</div>`;
             lib.appendChild(div);
         });
     }
 
-    // --- SESSION REPORT ---
     async function generateSessionSummary() {
         if(!currentSessionId) return alert("Select a session first.");
         addMessage("Generating full session report...", 'user');
