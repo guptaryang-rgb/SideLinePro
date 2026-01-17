@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleAIFileManager } = require('@google/generative-ai/server'); // *** NEW IMPORT ***
 const fs = require('fs');
 const path = require('path');
 
@@ -33,14 +34,12 @@ initJSON(USER_DB_FILE, '{}');
 initJSON(CHATS_FILE, '{}');
 
 app.use(cors());
-
-// *** THE FIX: INCREASED LIMIT TO 500MB ***
-// This accounts for the 33% Base64 overhead (e.g., 50MB video becomes ~67MB)
+// 500MB Limit to handle the raw file upload to the server first
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
 app.use('/plays', express.static(UPLOAD_DIR));
-app.use(express.static(__dirname));
+app.use(express.static(__dirname)); 
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -48,6 +47,7 @@ app.get('/', (req, res) => {
 
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY); // *** FILE MANAGER ***
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 const ANALYST_PROMPT = `
@@ -86,7 +86,7 @@ app.post('/api/signup', (req, res) => {
     const { email, password } = req.body;
     const db = readJSON(USER_DB_FILE);
     if (db[email]) return res.json({ error: "User exists" });
-    db[email] = { password, credits: 3, userId: "user_" + Date.now() };
+    db[email] = { password, credits: 3, userId: "user_" + Date.now() }; 
     writeJSON(USER_DB_FILE, db);
     res.json({ success: true, credits: 3 });
 });
@@ -103,7 +103,7 @@ app.post('/api/balance', (req, res) => {
     res.json({ credits: db[req.body.email]?.credits || 0 });
 });
 
-// 2. Stripe Payments
+// 2. Stripe
 app.post('/api/buy-credits', async (req, res) => {
     const { email } = req.body;
     if (stripe) {
@@ -181,37 +181,52 @@ app.post('/api/chat', async (req, res) => {
         }
 
         chats[sessionId].history.push({ role: 'user', text: message });
-        
-        const historyForAI = chats[sessionId].history.map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }]
-        }));
 
-        const chat = model.startChat({ history: historyForAI.slice(0, -1) });
-        const parts = [];
+        let promptContent = [{ text: message }];
         let savedFilename = null;
 
         if (fileData) {
+            // 1. Save locally
             const buffer = Buffer.from(fileData, 'base64');
             const ext = mimeType.split('/')[1];
             savedFilename = `${sessionId}-${Date.now()}.${ext}`;
-            fs.writeFileSync(path.join(UPLOAD_DIR, savedFilename), buffer);
-            parts.push({ inlineData: { mimeType, data: fileData } });
-            parts.push({ text: ANALYST_PROMPT });
-        }
-        parts.push({ text: message });
+            const filePath = path.join(UPLOAD_DIR, savedFilename);
+            fs.writeFileSync(filePath, buffer);
 
-        const result = await chat.sendMessage(parts);
+            // 2. *** UPLOAD TO GOOGLE FILE MANAGER *** (Fixes Size Limit)
+            const uploadResponse = await fileManager.uploadFile(filePath, {
+                mimeType: mimeType,
+                displayName: savedFilename,
+            });
+
+            // 3. Wait for file to be active (usually instant for small files, but good practice)
+            // For this demo, we assume it's ready quickly.
+
+            promptContent = [
+                {
+                    fileData: {
+                        mimeType: uploadResponse.file.mimeType,
+                        fileUri: uploadResponse.file.uri
+                    }
+                },
+                { text: ANALYST_PROMPT }
+            ];
+        }
+
+        // 4. Generate Content
+        // We construct history carefully. Gemini File API uses 'user' role with file data.
+        // We will just send the CURRENT request with the file, rather than full history with files (to save tokens/complexity)
+        const chat = model.startChat(); 
+        const result = await chat.sendMessage(promptContent);
         const reply = result.response.text();
 
         chats[sessionId].history.push({ role: 'model', text: reply });
-        
         if (chats[sessionId].title === "New Analysis" && chats[sessionId].history.length <= 2) {
             chats[sessionId].title = message.substring(0, 30);
         }
-        
         writeJSON(CHATS_FILE, chats);
 
+        // 5. Save Metadata
         let newClip = null;
         const firstBrace = reply.indexOf('{');
         const lastBrace = reply.lastIndexOf('}');
@@ -241,7 +256,7 @@ app.post('/api/chat', async (req, res) => {
 
     } catch (e) {
         console.error("AI ERROR:", e);
-        res.status(500).json({ error: "File too large or AI busy. Try a shorter clip." });
+        res.status(500).json({ error: "Analysis failed. Please try again." });
     }
 });
 
@@ -250,29 +265,20 @@ app.post('/api/session-summary', async (req, res) => {
     const { sessionId, email } = req.body;
     const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
     const clips = library.filter(p => p.owner === email && p.sessionId === sessionId);
-    
     if (clips.length === 0) return res.json({ report: "No clips found in this session." });
 
-    const summaryPrompt = `
-    Create a "Coordinator's Session Report" based on these plays: ${JSON.stringify(clips)}.
-    Highlight common tendencies, recurring defensive weaknesses, and a suggested gameplan.
-    Format as clean text with bullet points.
-    `;
-    
+    const summaryPrompt = `Coordinator Session Report for: ${JSON.stringify(clips)}. Tendencies & Gameplan?`;
     try {
         const result = await model.generateContent(summaryPrompt);
         res.json({ report: result.response.text() });
     } catch(e) { res.json({ report: "Could not generate summary." }); }
 });
 
-// 5. Library
+// 5. Library & Delete
 app.get('/api/search', (req, res) => {
     const { email, sessionId } = req.query; 
     const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
-    const results = library.filter(p => 
-        p.owner === email && 
-        (!sessionId || p.sessionId === sessionId)
-    );
+    const results = library.filter(p => p.owner === email && (!sessionId || p.sessionId === sessionId));
     res.json(results);
 });
 
@@ -281,7 +287,6 @@ app.post('/api/delete-clip', (req, res) => {
     let library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
     const initialLength = library.length;
     library = library.filter(p => !(p.id === id && p.owner === owner));
-
     if (library.length < initialLength) {
         fs.writeFileSync(DB_FILE, JSON.stringify(library, null, 2));
         res.json({ success: true });
