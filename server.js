@@ -5,7 +5,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
 
-// Initialize Stripe (Try/Catch in case key is missing)
+// Initialize Stripe
 let stripe;
 try {
     stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -33,10 +33,14 @@ initJSON(USER_DB_FILE, '{}');
 initJSON(CHATS_FILE, '{}');
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// *** THE FIX: INCREASED LIMIT TO 500MB ***
+// This accounts for the 33% Base64 overhead (e.g., 50MB video becomes ~67MB)
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
 app.use('/plays', express.static(UPLOAD_DIR));
-app.use(express.static(__dirname)); // Serve frontend
+app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -44,9 +48,6 @@ app.get('/', (req, res) => {
 
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// *** CRITICAL FIX: USING THE HIGHEST TIER AVAILABLE MODEL ***
-// "gemini-3" causes a crash. 1.5 Pro is the current SOTA Pro model.
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 const ANALYST_PROMPT = `
@@ -85,7 +86,7 @@ app.post('/api/signup', (req, res) => {
     const { email, password } = req.body;
     const db = readJSON(USER_DB_FILE);
     if (db[email]) return res.json({ error: "User exists" });
-    db[email] = { password, credits: 3, userId: "user_" + Date.now() }; // 3 Free Credits
+    db[email] = { password, credits: 3, userId: "user_" + Date.now() };
     writeJSON(USER_DB_FILE, db);
     res.json({ success: true, credits: 3 });
 });
@@ -113,7 +114,7 @@ app.post('/api/buy-credits', async (req, res) => {
                     price_data: {
                         currency: 'usd',
                         product_data: { name: '50 Scouting Credits' },
-                        unit_amount: 1500, // $15.00
+                        unit_amount: 1500,
                     },
                     quantity: 1,
                 }],
@@ -124,7 +125,6 @@ app.post('/api/buy-credits', async (req, res) => {
             return res.json({ success: true, url: session.url });
         } catch (e) { console.log("Stripe Error:", e.message); }
     }
-    // DEMO MODE
     const db = readJSON(USER_DB_FILE);
     if(db[email]) {
         db[email].credits += 50;
@@ -240,8 +240,8 @@ app.post('/api/chat', async (req, res) => {
         res.json({ reply, newClip, remainingCredits: users[email].credits });
 
     } catch (e) {
-        console.error("AI CRASH REPORT:", e);
-        res.status(500).json({ error: "Analysis failed. Please try a shorter video." });
+        console.error("AI ERROR:", e);
+        res.status(500).json({ error: "File too large or AI busy. Try a shorter clip." });
     }
 });
 
