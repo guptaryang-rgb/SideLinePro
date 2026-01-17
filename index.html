@@ -6,28 +6,32 @@
     <title>Sideline Pro | Elite</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #000000; --panel: #0a0a0a; --border: #1f1f1f; --accent: #3b82f6; --text: #e5e5e5; }
+        :root { --bg: #000000; --panel: #0a0a0a; --border: #1f1f1f; --accent: #3b82f6; --text: #e5e5e5; --danger: #ef4444; }
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
         
-        .sidebar { width: 260px; background: #050505; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; }
-        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
-        .library { width: 340px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar { width: 260px; background: #050505; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; z-index: 5; }
+        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position:relative; }
+        .library { width: 350px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; z-index: 5; }
         
         .logo { color: #fff; font-weight: 900; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: -0.5px; }
         .logo span { color: var(--accent); }
         
-        .btn { background: var(--accent); color: #fff; border: none; padding: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; transition: 0.2s; }
+        .btn { background: var(--accent); color: #fff; border: none; padding: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; transition: 0.2s; font-size:0.9rem; }
         .btn:hover { opacity: 0.9; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .btn-outline:hover { border-color: #666; color: #fff; }
         
-        .session-item { padding: 12px; color: #666; cursor: pointer; border-radius: 6px; font-size: 0.9rem; margin-bottom: 2px; }
+        .session-item { padding: 10px; color: #666; cursor: pointer; border-radius: 6px; font-size: 0.9rem; margin-bottom: 2px; display:flex; justify-content:space-between; align-items:center; }
         .session-item:hover { background: #111; color: #fff; }
         .session-item.active { background: #111; color: var(--accent); border-left: 2px solid var(--accent); }
-        
+        .edit-icon { opacity: 0; cursor: pointer; font-size: 0.8rem; }
+        .session-item:hover .edit-icon { opacity: 1; }
+
         #chat-feed { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 20px; }
         .msg { padding: 15px 20px; border-radius: 8px; max-width: 85%; line-height: 1.6; font-size: 0.95rem; }
         .msg.user { align-self: flex-end; background: #1a1a1a; color: #fff; }
-        .msg.model { align-self: flex-start; color: #ccc; }
+        .msg.model { align-self: flex-start; color: #ccc; white-space: pre-wrap; }
         
         .input-box { padding: 25px; background: #050505; border-top: 1px solid var(--border); display: flex; gap: 10px; }
         input[type="text"] { flex: 1; padding: 14px; background: #111; border: 1px solid #333; color: #fff; border-radius: 6px; outline: none; }
@@ -35,41 +39,89 @@
         
         /* CLIP CARDS */
         .clip-card { background: #000; border: 1px solid #222; margin: 15px; padding: 20px; border-radius: 8px; }
-        .clip-title { font-weight: bold; color: #fff; margin-bottom: 5px; }
-        .clip-meta { font-size: 0.8rem; color: var(--accent); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .clip-title { font-weight: bold; color: #fff; margin-bottom: 5px; font-size:0.95rem; }
+        .clip-meta { font-size: 0.8rem; color: var(--accent); margin-bottom: 12px; text-transform: uppercase; }
         .clip-body { font-size: 0.85rem; color: #888; line-height: 1.5; margin-bottom: 15px; }
-        .watch-link { display: block; text-align: center; background: #111; color: #fff; padding: 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; transition: 0.2s; }
-        .watch-link:hover { background: #222; }
+        
+        .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .card-btn { background: #111; color: #ccc; border: 1px solid #333; padding: 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; text-align: center; }
+        .card-btn:hover { background: #222; color: #fff; border-color: #555; }
+        
+        /* MODALS */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 50; display: none; justify-content: center; align-items: center; }
+        .modal-box { background: #111; border: 1px solid #333; border-radius: 12px; width: 600px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; }
+        .modal-title { font-weight: bold; color: #fff; }
+        .modal-content { padding: 30px; overflow-y: auto; color: #ccc; line-height: 1.6; }
+        
+        /* WAR ROOM */
+        .war-room-chat { height: 400px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; background: #050505; }
+        .war-input { padding: 15px; background: #111; border-top: 1px solid #222; display: flex; gap: 10px; }
+
+        /* Report Styles */
+        .report-section { margin-bottom: 20px; }
+        .report-label { color: var(--accent); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+        .mistake-list { color: var(--danger); list-style: none; padding: 0; margin: 0; }
+        .mistake-list li::before { content: "✖ "; }
+        .action-list { color: #fff; list-style: none; padding: 0; margin: 0; }
 
         /* AUTH */
-        #auth-overlay { position: fixed; inset: 0; background: #000; z-index: 50; display: flex; justify-content: center; align-items: center; }
-        .auth-box { width: 350px; text-align: center; }
-        .auth-input { width: 100%; padding: 15px; margin: 10px 0; background: #111; border: 1px solid #333; color: #fff; border-radius: 6px; }
+        .auth-box { width: 350px; text-align: center; padding: 40px; background: #111; border: 1px solid #333; border-radius: 12px; }
+        .auth-input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; }
     </style>
 </head>
 <body>
 
-    <div id="auth-overlay">
+    <div id="auth-modal" class="modal-overlay" style="display:flex;">
         <div class="auth-box">
             <div class="logo">SIDELINE <span>PRO</span></div>
             <input id="email" class="auth-input" placeholder="Email" type="email">
             <input id="password" class="auth-input" placeholder="Password" type="password">
             <button class="btn" onclick="handleAuth('login')">LOGIN</button>
-            <button class="btn" onclick="handleAuth('signup')" style="background:transparent; color:#666; margin-top:10px;">CREATE ACCOUNT</button>
+            <button class="btn" style="background:transparent; color:#666; margin-top:10px;" onclick="handleAuth('signup')">CREATE ACCOUNT (3 CREDITS)</button>
+        </div>
+    </div>
+
+    <div id="report-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title">COORDINATOR'S REPORT</span>
+                <button onclick="closeModals()" style="background:none; border:none; color:#666; cursor:pointer;">✕</button>
+            </div>
+            <div id="report-content" class="modal-content"></div>
+        </div>
+    </div>
+
+    <div id="war-room-modal" class="modal-overlay">
+        <div class="modal-box" style="width: 500px;">
+            <div class="modal-header">
+                <span class="modal-title" id="war-room-title">CLIP WAR ROOM</span>
+                <button onclick="closeModals()" style="background:none; border:none; color:#666; cursor:pointer;">✕</button>
+            </div>
+            <div id="war-room-feed" class="war-room-chat"></div>
+            <div class="war-input">
+                <input type="text" id="war-input" placeholder="Ask specific questions about this clip...">
+                <button class="btn" style="width:auto;" onclick="sendWarMessage()">SEND</button>
+            </div>
         </div>
     </div>
 
     <div class="sidebar">
         <div class="logo">SIDELINE <span>PRO</span></div>
-        <button class="btn" onclick="newSession()">+ NEW ANALYSIS</button>
+        <button class="btn" onclick="newSession()">+ NEW SESSION</button>
+        <button class="btn btn-outline" style="margin-top:10px;" onclick="generateSessionReport()">📄 SESSION SUMMARY</button>
+        
         <div id="session-list" style="flex:1; overflow-y:auto; margin-top:20px;"></div>
-        <div id="credits" style="color:#666; font-size:0.8rem; padding-top:20px; border-top:1px solid #111;">Credits: --</div>
-        <button onclick="logout()" style="background:none; border:none; color:#444; font-size:0.7rem; cursor:pointer; margin-top:5px; text-align:left; padding:0;">LOGOUT</button>
+        
+        <div style="border-top:1px solid #222; padding-top:15px; margin-top:10px;">
+            <div id="credits" style="color:#666; font-size:0.8rem; margin-bottom:5px;">Credits: --</div>
+            <div onclick="logout()" style="color:#444; font-size:0.75rem; cursor:pointer;">LOGOUT</div>
+        </div>
     </div>
 
     <div class="main">
         <div id="chat-feed">
-            <div class="msg model">System Ready. Upload film for analysis.</div>
+            <div class="msg model">Ready for analysis using Gemini 3 Pro. Upload game film.</div>
         </div>
         <div class="input-box">
             <input type="file" id="file-upload" hidden accept="video/*">
@@ -80,27 +132,30 @@
     </div>
 
     <div class="library">
-        <div style="padding:20px; border-bottom:1px solid #111; font-weight:bold; font-size:0.8rem; color:#666;">SESSION INTEL</div>
+        <div style="padding:20px; border-bottom:1px solid #222; font-weight:bold; font-size:0.8rem; color:#666; display:flex; justify-content:space-between;">
+            <span>INTEL LIBRARY</span>
+            <span style="color:var(--accent);" id="clip-count">0 CLIPS</span>
+        </div>
         <div id="library-feed" style="flex:1; overflow-y:auto;"></div>
     </div>
 
     <script>
         let user = localStorage.getItem('sideline_user');
         let currentSession = null;
+        let activeClipId = null;
+        let libraryData = [];
 
         window.onload = () => {
             if(user) {
-                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('auth-modal').style.display = 'none';
                 loadUserData();
             }
         };
 
-        // --- AUTH ---
         async function handleAuth(type) {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             try {
-                // FIXED: Relative path
                 const res = await fetch('/api/auth', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -110,38 +165,46 @@
                 if(data.success) {
                     user = email;
                     localStorage.setItem('sideline_user', email);
-                    document.getElementById('auth-overlay').style.display = 'none';
+                    document.getElementById('auth-modal').style.display = 'none';
                     loadUserData();
-                } else {
-                    alert(data.error);
-                }
-            } catch(e) { alert("Server connection failed."); }
+                } else alert(data.error);
+            } catch(e) { alert("Server error."); }
         }
-
         function logout() { localStorage.removeItem('sideline_user'); location.reload(); }
 
-        // --- DATA ---
         async function loadUserData() {
-            try {
-                const res = await fetch(`/api/user-data?email=${user}`);
-                const data = await res.json();
-                document.getElementById('credits').innerText = `PRO CREDITS: ${data.credits}`;
-                
-                const list = document.getElementById('session-list');
-                list.innerHTML = '';
-                data.sessions.forEach(s => {
-                    const div = document.createElement('div');
-                    div.className = `session-item ${s.id === currentSession ? 'active' : ''}`;
-                    div.innerText = s.title;
-                    div.onclick = () => loadSession(s.id);
-                    list.appendChild(div);
+            const res = await fetch(`/api/user-data?email=${user}`);
+            const data = await res.json();
+            document.getElementById('credits').innerText = `CREDITS: ${data.credits}`;
+            
+            const list = document.getElementById('session-list');
+            list.innerHTML = '';
+            data.sessions.forEach(s => {
+                const div = document.createElement('div');
+                div.className = `session-item ${s.id === currentSession ? 'active' : ''}`;
+                div.innerHTML = `
+                    <span onclick="loadSession('${s.id}')" style="flex:1;">${s.title}</span>
+                    <span class="edit-icon" onclick="renameSession('${s.id}')">✏️</span>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function renameSession(id) {
+            const newName = prompt("Rename Session:");
+            if(newName) {
+                await fetch('/api/rename-session', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ sessionId: id, newTitle: newName, email: user })
                 });
-            } catch(e) {}
+                loadUserData();
+            }
         }
 
         function newSession() {
             currentSession = Math.random().toString(36).substr(2, 9);
-            document.getElementById('chat-feed').innerHTML = '<div class="msg model">New Session.</div>';
+            document.getElementById('chat-feed').innerHTML = '<div class="msg model">New Session Started.</div>';
             document.getElementById('library-feed').innerHTML = '';
             loadUserData();
         }
@@ -164,24 +227,117 @@
 
         async function loadLibrary() {
             const res = await fetch(`/api/library?email=${user}&sessionId=${currentSession}`);
-            const clips = await res.json();
+            libraryData = await res.json();
             const feed = document.getElementById('library-feed');
             feed.innerHTML = '';
-            clips.forEach(clip => {
+            document.getElementById('clip-count').innerText = `${libraryData.length} CLIPS`;
+
+            libraryData.forEach(clip => {
                 const div = document.createElement('div');
                 div.className = 'clip-card';
                 div.innerHTML = `
                     <div class="clip-title">${clip.title}</div>
                     <div class="clip-meta">${clip.formation} vs ${clip.coverage}</div>
                     <div class="clip-body">${clip.summary}</div>
-                    <div class="clip-body" style="color:#ff5555">⚠️ ${clip.weakness}</div>
-                    <a href="/uploads/${clip.id}" target="_blank" class="watch-link">WATCH REPLAY</a>
+                    <div class="card-actions">
+                        <div class="card-btn" onclick="openReport('${clip.id}')">📄 EXTEND REPORT</div>
+                        <div class="card-btn" onclick="openWarRoom('${clip.id}')">💬 ASK QUESTIONS</div>
+                    </div>
                 `;
                 feed.appendChild(div);
             });
         }
 
-        // --- MESSAGING ---
+        function openReport(clipId) {
+            const clip = libraryData.find(c => c.id === clipId);
+            if(!clip) return;
+            
+            const mistakes = clip.mistakes ? clip.mistakes.map(m => `<li>${m}</li>`).join('') : '<li>No major errors detected.</li>';
+            
+            const html = `
+                <div class="report-section">
+                    <div class="report-label">Formation / Coverage</div>
+                    <div>${clip.formation} vs ${clip.coverage}</div>
+                </div>
+                <div class="report-section">
+                    <div class="report-label">Structural Weakness</div>
+                    <div>${clip.weakness}</div>
+                </div>
+                <div class="report-section">
+                    <div class="report-label">Mistake Tracker (Multiple Players)</div>
+                    <ul class="mistake-list">${mistakes}</ul>
+                </div>
+                <div class="report-section" style="background:#111; padding:15px; border-radius:8px; border:1px solid #333;">
+                    <div class="report-label">ACTION PLAN</div>
+                    <div style="white-space: pre-wrap;">${clip.action_plan || "No action plan generated."}</div>
+                </div>
+            `;
+            document.getElementById('report-content').innerHTML = html;
+            document.getElementById('report-modal').style.display = 'flex';
+        }
+
+        async function generateSessionReport() {
+            if(!currentSession) return alert("No session active.");
+            const feed = document.getElementById('chat-feed');
+            feed.innerHTML += `<div class="msg model">Generating Session Summary...</div>`;
+            
+            const res = await fetch('/api/session-report', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ sessionId: currentSession, email: user })
+            });
+            const data = await res.json();
+            feed.innerHTML += `<div class="msg model" style="border-color:var(--accent);"><b>SESSION REPORT:</b>\n\n${data.report}</div>`;
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        async function openWarRoom(clipId) {
+            activeClipId = clipId;
+            const clip = libraryData.find(c => c.id === clipId);
+            document.getElementById('war-room-title').innerText = `WAR ROOM: ${clip.title.toUpperCase()}`;
+            document.getElementById('war-room-modal').style.display = 'flex';
+            
+            const res = await fetch(`/api/clip-history?clipId=${clipId}`);
+            const history = await res.json();
+            const feed = document.getElementById('war-room-feed');
+            feed.innerHTML = '';
+            
+            if(history.length === 0) {
+                feed.innerHTML = '<div class="msg model">Ask me specific questions about this clip.</div>';
+            } else {
+                history.forEach(h => {
+                    feed.innerHTML += `<div class="msg ${h.role}">${h.parts[0].text}</div>`;
+                });
+            }
+        }
+
+        async function sendWarMessage() {
+            const input = document.getElementById('war-input');
+            const text = input.value;
+            if(!text) return;
+            
+            const feed = document.getElementById('war-room-feed');
+            feed.innerHTML += `<div class="msg user">${text}</div>`;
+            input.value = '';
+            
+            const clip = libraryData.find(c => c.id === activeClipId);
+            
+            const res = await fetch('/api/clip-chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ clipId: activeClipId, message: text, context: clip })
+            });
+            const data = await res.json();
+            feed.innerHTML += `<div class="msg model">${data.reply}</div>`;
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.modal-overlay').forEach(el => {
+                if(el.id !== 'auth-modal') el.style.display = 'none';
+            });
+        }
+
         async function sendMessage() {
             if(!currentSession) newSession();
             
@@ -193,7 +349,7 @@
             if(!text && !file) return;
 
             const feed = document.getElementById('chat-feed');
-            feed.innerHTML += `<div class="msg user">${text || "Analyzing video..."}</div>`;
+            feed.innerHTML += `<div class="msg user">${text || "Analyzing..."}</div>`;
             input.value = '';
 
             const payload = { email: user, message: text, sessionId: currentSession };
@@ -222,10 +378,10 @@
                 
                 const feed = document.getElementById('chat-feed');
                 if(data.error) {
-                    feed.innerHTML += `<div class="msg model" style="color:red">Error: ${data.error}</div>`;
+                    feed.innerHTML += `<div class="msg model" style="color:red">⚠️ ${data.error}</div>`;
                 } else {
                     if(data.analysis) {
-                        feed.innerHTML += `<div class="msg model">✅ <b>Report Generated.</b> Check the Intel panel.</div>`;
+                        feed.innerHTML += `<div class="msg model">✅ <b>Analysis Complete.</b> Clip added to Library.</div>`;
                         loadLibrary(); 
                     } else {
                         feed.innerHTML += `<div class="msg model">${data.reply}</div>`;
@@ -234,7 +390,7 @@
                 }
                 feed.scrollTop = feed.scrollHeight;
                 document.getElementById('file-upload').value = ''; 
-            } catch(e) { alert("Error sending message."); }
+            } catch(e) { alert("Error connecting to server."); }
         }
     </script>
 </body>
