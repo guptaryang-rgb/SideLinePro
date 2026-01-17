@@ -3,145 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sideline Pro | Secure Elite Analytics</title>
+    <title>Sideline Pro | Elite Analytics</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        :root { --bg-deep: #050505; --bg-panel: #0a0c0a; --bg-card: #111411; --border: #1f261f; --accent: #00e676; --accent-dim: rgba(0, 230, 118, 0.1); --text-main: #ffffff; --text-muted: #889988; --danger: #ff4444; }
+        :root { --bg-deep: #050505; --bg-panel: #0a0c0a; --bg-card: #111411; --border: #1f261f; --accent: #00e676; --accent-dim: rgba(0, 230, 118, 0.1); --text-main: #ffffff; --text-muted: #889988; --danger: #ff4444; --sidebar-width: 280px; }
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
         body { background-color: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; } ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-        .navbar { height: 70px; background: rgba(5, 5, 5, 0.95); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; z-index: 20; backdrop-filter: blur(10px); }
-        .logo { font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.4rem; color: white; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
+        .navbar { height: 60px; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 50; }
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 15px; }
+        .logo { font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.2rem; color: white; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
         .logo span { color: var(--accent); }
-        .btn-glow { background: var(--accent); color: black; border: none; padding: 10px 24px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 10px rgba(0, 230, 118, 0.3); text-transform: uppercase; letter-spacing: 0.5px; }
-        .btn-glow:hover { background: #33ff99; box-shadow: 0 0 20px rgba(0, 230, 118, 0.6); transform: translateY(-1px); }
-
-        .app-body { flex: 1; display: flex; overflow: hidden; }
-        .sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; }
-        .sidebar-title { color: var(--text-muted); font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 15px; text-transform: uppercase; }
+        .toggle-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); width: 36px; height: 36px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .toggle-btn:hover { color: white; border-color: var(--accent); }
+        .toggle-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
         
-        .btn-new-session { background: transparent; border: 1px solid var(--border); color: var(--accent); padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 10px; transition: 0.2s; }
-        .btn-new-session:hover { border-color: var(--accent); background: var(--accent-dim); }
+        .btn-glow { background: var(--accent); color: black; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 10px rgba(0, 230, 118, 0.2); text-transform: uppercase; }
+        .btn-glow:hover { background: #33ff99; box-shadow: 0 0 20px rgba(0, 230, 118, 0.5); }
         
-        /* NEW: PLAYER MODE BUTTON */
-        .btn-player-mode { background: #1a1e1a; border: 1px dashed var(--accent); color: white; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 20px; transition: 0.2s; }
-        .btn-player-mode:hover { background: var(--accent-dim); }
+        /* PLAYER MODE BUTTON */
+        .btn-player { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.2s; text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+        .btn-player:hover { background: var(--accent-dim); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2); }
 
-        .session-list { flex: 1; overflow-y: auto; }
-        .session-item { padding: 12px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; transition: 0.2s; display: flex; justify-content: space-between; }
+        .app-body { flex: 1; display: flex; overflow: hidden; position: relative; }
+        .sidebar-left { width: var(--sidebar-width); background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: margin-left 0.3s ease; flex-shrink: 0; }
+        .sidebar-left.closed { margin-left: calc(var(--sidebar-width) * -1); }
+        .sidebar-right { width: var(--sidebar-width); background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: margin-right 0.3s ease; flex-shrink: 0; }
+        .sidebar-right.closed { margin-right: calc(var(--sidebar-width) * -1); }
+        .main-stage { flex: 1; display: flex; flex-direction: column; background: var(--bg-deep); position: relative; min-width: 0; }
+
+        .panel-header { padding: 20px; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+        .session-list { flex: 1; overflow-y: auto; padding: 0 10px; }
+        .session-item { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; transition: 0.2s; display: flex; justify-content: space-between; }
         .session-item:hover { background: #1a1e1a; color: white; }
         .session-item.active { background: var(--accent-dim); color: var(--accent); border-left: 3px solid var(--accent); }
 
-        .main-stage { flex: 1; display: flex; flex-direction: column; background: var(--bg-deep); position: relative; }
-        #chat-feed { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 30px; scroll-behavior: smooth; }
+        .chat-header { height: 50px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: center; background: rgba(5,5,5,0.8); backdrop-filter: blur(5px); position: absolute; top: 0; left: 0; right: 0; z-index: 10; }
+        .editable-title { font-weight: 700; color: white; cursor: pointer; padding: 5px 10px; border-radius: 4px; transition: 0.2s; border: 1px solid transparent; }
+        .editable-title:hover { background: #111; border-color: #333; }
+        
+        #chat-feed { flex: 1; overflow-y: auto; padding: 70px 40px 40px; display: flex; flex-direction: column; gap: 30px; scroll-behavior: smooth; }
         .msg { padding: 20px; border-radius: 12px; max-width: 85%; line-height: 1.6; font-size: 0.95rem; animation: fadeIn 0.3s; }
         .msg.user { align-self: flex-end; background: #1a1a1a; color: white; border: 1px solid #333; }
-        .msg.model { align-self: flex-start; width: 100%; max-width: 900px; padding: 0; background: transparent; }
+        .msg.model { align-self: flex-start; width: 100%; max-width: 800px; padding: 0; background: transparent; }
 
-        .input-wrapper { padding: 25px; background: var(--bg-panel); border-top: 1px solid var(--border); display: flex; gap: 15px; align-items: center; }
-        .input-field { flex: 1; background: #050505; border: 1px solid var(--border); color: white; padding: 15px 20px; border-radius: 30px; font-size: 1rem; transition: 0.2s; }
+        .input-wrapper { padding: 20px; background: var(--bg-panel); border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        #file-indicator { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 10px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: none; align-items: center; justify-content: space-between; width: 100%; animation: slideUp 0.2s; }
+        .remove-file { cursor: pointer; opacity: 0.7; font-size: 1.1rem; }
+        
+        .input-bar { display: flex; gap: 10px; align-items: center; }
+        .input-field { flex: 1; background: #050505; border: 1px solid var(--border); color: white; padding: 12px 20px; border-radius: 30px; font-size: 1rem; transition: 0.2s; }
         .input-field:focus { border-color: var(--accent); }
-        .icon-btn { background: #1a1e1a; border: 1px solid var(--border); color: var(--text-muted); width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: 0.2s; }
+        .icon-btn { background: #1a1e1a; border: 1px solid var(--border); color: var(--text-muted); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: 0.2s; }
         .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-        .library-panel { width: 320px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; }
-        #library-feed { flex: 1; overflow-y: auto; }
+        #library-feed { flex: 1; overflow-y: auto; padding: 10px; }
+        .clip-card { background: #111; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        .clip-card:hover { border-color: var(--accent); transform: translateX(-2px); }
+        .clip-title { font-weight: 700; font-size: 0.9rem; color: white; margin-bottom: 4px; }
+        .clip-meta { font-size: 0.75rem; color: #666; display: flex; justify-content: space-between; }
 
         .tactical-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .card-header { font-size: 1.1rem; font-weight: 800; color: white; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .trait-box { margin-bottom: 15px; }
-        .trait-title { color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
-        .trait-content { color: #ccc; font-size: 0.9rem; line-height: 1.5; }
-        .highlight { color: var(--accent); font-weight: 600; }
-        .card-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .action-btn { flex: 1; padding: 10px; background: #222; border: 1px solid var(--border); color: white; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; }
-        .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .card-header { font-size: 1.1rem; font-weight: 800; color: white; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; text-transform: uppercase; }
+        .section-label { color: #668866; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+        .section-content { color: #e0e0e0; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; }
+        .card-actions { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #222; }
+        .action-chip { flex: 1; background: #222; border: 1px solid var(--border); color: #ccc; padding: 8px; border-radius: 6px; font-size: 0.8rem; text-align: center; cursor: pointer; }
+        .action-chip:hover { color: var(--accent); border-color: var(--accent); }
 
-        .upload-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 3px; display: none; }
-        .upload-bar { height: 100%; background: var(--accent); width: 0%; animation: load 2s infinite ease-in-out; }
+        .progress-bar-container { width: 100%; height: 3px; display: none; position: absolute; top: 0; left: 0; }
+        .progress-bar { height: 100%; background: var(--accent); width: 0%; animation: load 2s infinite ease-in-out; }
         @keyframes load { 0% { width: 0%; transform: translateX(-100%); } 100% { width: 100%; transform: translateX(100%); } }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-box { background: #111; border: 1px solid var(--border); width: 400px; padding: 40px; border-radius: 16px; text-align: center; box-shadow: 0 0 50px rgba(0,230,118,0.1); }
-        .modal-title { font-size: 1.5rem; font-weight: 800; color: white; margin-bottom: 30px; }
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px; }
-        .modal-input { width: 100%; background: #050505; border: 1px solid #333; padding: 12px; border-radius: 8px; color: white; font-size: 1rem; }
-        .settings-row { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 15px 0; font-size: 0.9rem; }
-        .settings-label { color: var(--text-muted); }
-        .settings-val { color: white; font-family: 'JetBrains Mono'; }
-        
-        .section-header { padding: 10px 0; color: var(--accent); font-size: 0.8rem; font-weight: bold; border-bottom: 1px solid var(--border); margin-top: 15px; margin-bottom: 10px; }
-        .clip-item { background: #111; padding: 10px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
-        .clip-item:hover { border-color: var(--accent); }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-box { background: #111; border: 1px solid var(--border); width: 400px; padding: 30px; border-radius: 12px; text-align: center; }
+        .modal-input { width: 100%; background: #050505; border: 1px solid #333; padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div class="logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#00E676" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Sideline<span>Pro</span>
+        <div class="nav-left">
+            <button class="toggle-btn active" onclick="toggleSidebar('left')" title="Toggle Sessions">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+            </button>
+            <div class="logo">Sideline<span>Pro</span></div>
         </div>
-        <button id="nav-btn" class="btn-glow" onclick="handleNavClick()">Sign Up</button>
+        
+        <div class="nav-right">
+            <button class="btn-player" onclick="createNewChat('player')">
+                <span style="font-size:1.1rem">👤</span> I'm a Player
+            </button>
+            
+            <button id="nav-btn" class="btn-glow" onclick="handleNavClick()">Sign Up</button>
+            
+            <button class="toggle-btn active" onclick="toggleSidebar('right')" title="Toggle Library">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+            </button>
+        </div>
     </div>
 
     <div class="app-body">
         
-        <div class="sidebar">
-            <button class="btn-new-session" onclick="createNewChat('team')">+ Team Session</button>
-            <button class="btn-player-mode" onclick="createNewChat('player')">+ I'm The Player</button>
-            <div class="sidebar-title">Recent Sessions</div>
+        <div class="sidebar-left" id="sidebar-left">
+            <div class="panel-header">
+                <span>Sessions</span>
+                <span style="font-size:1.2rem; cursor:pointer;" onclick="createNewChat('team')">+</span>
+            </div>
             <div id="session-list" class="session-list"></div>
-        </div>
-
-        <div class="main-stage">
-            <div class="upload-bar-container" id="progress-bar"><div class="upload-bar"></div></div>
-            <div id="chat-feed"></div>
-            <div class="input-wrapper">
-                <input type="file" id="file-input" accept="video/*" hidden>
-                <button class="icon-btn" onclick="document.getElementById('file-input').click()">📎</button>
-                <input type="text" id="user-input" class="input-field" placeholder="Analyze this play..." autocomplete="off">
-                <button class="btn-glow" id="send-btn" style="padding: 12px 30px;">SEND</button>
+            <div style="padding:15px; border-top:1px solid #222;">
+                <div style="color:#666; font-size:0.8rem; cursor:pointer;" onclick="logout()">LOGOUT</div>
             </div>
         </div>
 
-        <div class="library-panel">
-            <div class="sidebar-title">Clip Library</div>
+        <div class="main-stage">
+            <div class="chat-header">
+                <span id="session-name" class="editable-title" onclick="renameCurrentSession()">Select Session</span>
+            </div>
+            
+            <div class="progress-bar-container" id="progress-bar"><div class="progress-bar"></div></div>
+
+            <div id="chat-feed">
+                <div class="msg model">
+                    <div style="font-size:1.2rem; font-weight:800; color:white; margin-bottom:5px;">System Online.</div>
+                    <div style="color:var(--text-muted);">Select a session or upload a clip to begin analysis.</div>
+                </div>
+            </div>
+
+            <div class="input-wrapper">
+                <div id="file-indicator">
+                    <span id="file-name">📎 Video Attached</span>
+                    <span class="remove-file" onclick="removeFile()">×</span>
+                </div>
+
+                <div class="input-bar">
+                    <input type="file" id="file-input" accept="video/*" hidden>
+                    <button class="icon-btn" onclick="document.getElementById('file-input').click()">📎</button>
+                    <input type="text" id="user-input" class="input-field" placeholder="Analyze this play..." autocomplete="off">
+                    <button class="btn-glow" id="send-btn">SEND</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-right" id="sidebar-right">
+            <div class="panel-header">
+                <span>Clip Library</span>
+                <span id="clip-count" style="color:var(--accent)">0</span>
+            </div>
             <div id="library-feed"></div>
         </div>
     </div>
 
     <div id="auth-modal" class="modal-overlay">
         <div class="modal-box">
-            <div class="modal-title">Get Started</div>
-            <div class="input-group"><label class="input-label">Email</label><input type="email" id="auth-email" class="modal-input" placeholder="coach@team.com"></div>
-            <div class="input-group"><label class="input-label">Password</label><input type="password" id="auth-pass" class="modal-input" placeholder="••••••••"></div>
-            <button class="btn-glow" style="width:100%; margin-bottom:15px;" onclick="handleAuth('signup')">Create Account (Unlimited)</button>
-            <div style="color:#666; font-size:0.8rem; cursor:pointer;" onclick="handleAuth('login')">Already have an account? <b>Login</b></div>
+            <h2 style="color:white; margin-bottom:20px;">Welcome</h2>
+            <input type="email" id="auth-email" class="modal-input" placeholder="Email">
+            <input type="password" id="auth-pass" class="modal-input" placeholder="Password">
+            <button class="btn-glow" style="width:100%;" onclick="handleAuth('signup')">Create Account</button>
+            <div style="margin-top:15px; color:#666; font-size:0.8rem; cursor:pointer;" onclick="handleAuth('login')">Login instead</div>
         </div>
     </div>
 
     <div id="settings-modal" class="modal-overlay">
         <div class="modal-box">
-            <div class="modal-title">Settings</div>
-            <div class="settings-row"><span class="settings-label">Email</span><span class="settings-val" id="set-email">--</span></div>
-            <div class="settings-row"><span class="settings-label">Password</span><span class="settings-val" id="set-pass">••••••••</span></div>
-            <div class="settings-row"><span class="settings-label">Plan</span><span class="settings-val" style="color:var(--accent);">UNLIMITED</span></div>
-            <button class="btn-new-session" style="border-color:var(--danger); color:var(--danger); margin-top:20px;" onclick="logout()">Log Out</button>
-            <button class="btn-new-session" style="border:none; color:#666;" onclick="closeModals()">Close</button>
+            <h2 style="color:white; margin-bottom:20px;">Settings</h2>
+            <div style="text-align:left; margin-bottom:20px;">
+                <div style="color:#666; font-size:0.8rem;">EMAIL</div>
+                <div style="color:white;" id="set-email">--</div>
+            </div>
+            <button class="btn-glow" style="background:transparent; border:1px solid #333; color:white; width:100%;" onclick="closeModals()">Close</button>
         </div>
     </div>
 
     <div id="video-modal" class="modal-overlay">
-        <div class="modal-box" style="width:800px; padding:0; overflow:hidden; background:black;">
+        <div class="modal-box" style="width:800px; padding:0; background:black;">
             <video id="main-player" controls style="width:100%; display:block;"></video>
-            <div style="padding:15px; text-align:right;"><button class="btn-glow" onclick="closeModals()">Close</button></div>
+            <button class="btn-glow" style="margin:10px;" onclick="closeModals()">Close</button>
         </div>
     </div>
 
@@ -153,98 +192,101 @@
                 <input type="text" id="clip-chat-input" class="modal-input" placeholder="Ask specific question...">
                 <button class="btn-glow" style="padding:10px 20px;" onclick="sendClipMessage()">Ask</button>
             </div>
-            <button class="btn-new-session" style="border:none; color:#666; margin-top:10px;" onclick="closeModals()">Close</button>
+            <button class="btn-glow" style="background:transparent; border:1px solid #333; width:100%; margin-top:10px;" onclick="closeModals()">Close</button>
         </div>
     </div>
 
 <script>
     let authToken = localStorage.getItem('sideline_token');
-    let currentUserEmail = localStorage.getItem('sideline_email') || ""; 
-    let currentUserPass = localStorage.getItem('sideline_pass') || "";
+    let currentUserEmail = localStorage.getItem('sideline_email');
     let currentSessionId = null;
-    let currentSessionType = 'team'; // 'team' or 'player'
+    let currentSessionType = 'team'; 
     let currentClipId = null;
     let libraryData = [];
 
-    async function apiFetch(url, options = {}) {
-        if (!options.headers) options.headers = {};
-        options.headers['Authorization'] = `Bearer ${authToken}`;
-        options.headers['Content-Type'] = 'application/json';
-        return fetch(url, options);
-    }
-
     window.onload = () => {
         updateNavButton();
-        if (authToken) { loadSessions(); loadLibrary(); } else { openModal('auth-modal'); }
+        if(authToken) {
+            loadSessions();
+            loadLibrary(); // Initial load might be empty until session selected
+        } else {
+            document.getElementById('auth-modal').style.display = 'flex';
+        }
     };
 
-    function updateNavButton() {
-        const btn = document.getElementById('nav-btn');
-        if (authToken) { btn.innerText = "Settings"; btn.style.background = "transparent"; btn.style.border = "1px solid var(--accent)"; btn.style.color = "var(--accent)"; }
-        else { btn.innerText = "Sign Up"; btn.style.background = "var(--accent)"; btn.style.color = "black"; }
+    function toggleSidebar(side) {
+        document.getElementById(`sidebar-${side}`).classList.toggle('closed');
     }
 
-    function handleNavClick() {
-        if (authToken) { document.getElementById('set-email').innerText = currentUserEmail; document.getElementById('set-pass').innerText = currentUserPass; openModal('settings-modal'); }
-        else { openModal('auth-modal'); }
-    }
+    document.getElementById('file-input').addEventListener('change', function() {
+        if(this.files[0]) {
+            document.getElementById('file-indicator').style.display = 'flex';
+            document.getElementById('file-name').innerText = `📎 ${this.files[0].name}`;
+        }
+    });
 
-    async function handleAuth(type) {
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-pass').value;
-        try {
-            const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
-            const data = await res.json();
-            if (data.success) {
-                authToken = data.token; currentUserEmail = email; currentUserPass = password;
-                localStorage.setItem('sideline_token', authToken); localStorage.setItem('sideline_email', email); localStorage.setItem('sideline_pass', password);
-                closeModals(); updateNavButton(); loadSessions();
-                document.getElementById('chat-feed').innerHTML = `<div class="msg model"><b>Welcome, Coach.</b><br>System Online.<br>Ready for analysis.</div>`;
-            } else { alert(data.error); }
-        } catch(e) { alert("Connection Error"); }
+    function removeFile() {
+        document.getElementById('file-input').value = '';
+        document.getElementById('file-indicator').style.display = 'none';
     }
-
-    function logout() { localStorage.removeItem('sideline_token'); localStorage.removeItem('sideline_email'); localStorage.removeItem('sideline_pass'); location.reload(); }
 
     document.getElementById('send-btn').addEventListener('click', sendMessage);
 
     async function sendMessage() {
-        if (!authToken) return openModal('auth-modal');
-        const input = document.getElementById('user-input');
-        const fileInput = document.getElementById('file-input');
-        const text = input.value;
-        const file = fileInput.files[0];
+        if(!authToken) return;
+        const text = document.getElementById('user-input').value;
+        const file = document.getElementById('file-input').files[0];
 
-        if (!text && !file) return;
-        if (!currentSessionId) await createNewChat('team');
+        if(!text && !file) return;
+        if(!currentSessionId) await createNewChat('team');
 
         const feed = document.getElementById('chat-feed');
         feed.innerHTML += `<div class="msg user">${text || "Analyzing Clip..."}</div>`;
-        input.value = '';
         feed.scrollTop = feed.scrollHeight;
+        document.getElementById('user-input').value = '';
+        
         document.getElementById('progress-bar').style.display = 'block';
+        removeFile(); 
 
         const payload = { message: text, sessionId: currentSessionId, sessionType: currentSessionType };
+        
         if (file) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = async () => {
                 payload.fileData = reader.result.split(',')[1];
                 payload.mimeType = file.type;
-                fileInput.value = ''; 
-                await sendPayload(payload);
+                await apiCall('/api/chat', payload);
             };
-        } else { await sendPayload(payload); }
+        } else {
+            await apiCall('/api/chat', payload);
+        }
     }
 
-    async function sendPayload(payload) {
+    async function apiCall(endpoint, body) {
         try {
-            const res = await apiFetch('/api/chat', { method: 'POST', body: JSON.stringify(payload) });
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
             const data = await res.json();
+            
             document.getElementById('progress-bar').style.display = 'none';
-            if (data.error) { document.getElementById('chat-feed').innerHTML += `<div class="msg model" style="color:var(--danger)">Error: ${data.error}</div>`; } 
-            else { renderResponse(data.reply, data.newClip?.id); if (data.newClip) loadLibrary(); }
-        } catch (e) { document.getElementById('progress-bar').style.display = 'none'; alert("Analysis failed."); }
+            
+            if(data.error) {
+                alert(data.error);
+            } else {
+                renderResponse(data.reply, data.newClip?.id);
+                if(data.newClip) loadLibrary();
+            }
+        } catch(e) {
+            document.getElementById('progress-bar').style.display = 'none';
+            alert("Error communicating with server.");
+        }
     }
 
     function renderResponse(text, clipId) {
@@ -254,23 +296,35 @@
             if (jsonStart > -1) {
                 const json = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
                 const report = json.scouting_report;
+                
                 const html = `
                     <div class="tactical-card">
                         <div class="card-header">${json.title}</div>
-                        <div class="trait-box"><div class="trait-title">FOCUS</div><div class="trait-content"><span class="highlight">${json.data.formation}</span> vs ${json.data.coverage}</div></div>
-                        <div class="trait-box"><div class="trait-title">ASSESSMENT</div><div class="trait-content">${report.summary}</div></div>
-                        <div class="trait-box"><div class="trait-title" style="color:var(--danger)">FLAWS/WEAKNESS</div><div class="trait-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div></div>
-                        <div class="trait-box"><div class="trait-title" style="color:var(--accent)">ACTION PLAN</div><div class="trait-content">${report.action_plan}</div></div>
+                        <div class="section-label">FOCUS</div>
+                        <div class="section-content" style="color:var(--accent);">${json.data.formation} vs ${json.data.coverage}</div>
+                        
+                        <div class="section-label">SUMMARY</div>
+                        <div class="section-content">${report.summary}</div>
+                        
+                        <div class="section-label" style="color:var(--danger)">WEAKNESS/MISTAKES</div>
+                        <div class="section-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div>
+
+                        <div class="section-label" style="color:var(--accent)">ACTION PLAN</div>
+                        <div class="section-content">${report.action_plan}</div>
+
                         <div class="card-actions">
-                            ${clipId ? `<button class="action-btn" onclick="playVideo('${clipId}')">Watch Clip</button>` : ''}
-                            ${clipId ? `<button class="action-btn" onclick="openClipChat('${clipId}')">War Room</button>` : ''}
-                            ${clipId ? `<button class="action-btn" onclick="deleteClip('${clipId}')" style="color:var(--danger); border-color:var(--danger);">Delete</button>` : ''}
-                            ${clipId ? `<button class="action-btn" onclick="changeSection('${clipId}')">Move</button>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="playVideo('${clipId}')">▶ Watch Clip</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">War Room</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="deleteClip('${clipId}')" style="color:var(--danger); border-color:var(--danger);">Delete</div>` : ''}
                         </div>
                     </div>`;
                 document.getElementById('chat-feed').innerHTML += html;
-            } else { document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`; }
-        } catch (e) { document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`; }
+            } else {
+                document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`;
+            }
+        } catch(e) {
+            document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`;
+        }
         document.getElementById('chat-feed').scrollTop = document.getElementById('chat-feed').scrollHeight;
     }
 
@@ -289,22 +343,34 @@
         document.getElementById('chat-feed').innerHTML = `<div class="msg model">${welcomeMsg}</div>`;
     }
 
+    async function renameCurrentSession() {
+        if(!currentSessionId) return;
+        const newName = prompt("Rename Session:", document.getElementById('session-name').innerText);
+        if(newName) {
+            await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: newName }) });
+            document.getElementById('session-name').innerText = newName;
+            loadSessions();
+        }
+    }
+
     async function loadSessions() {
-        const res = await apiFetch('/api/sessions');
+        const res = await fetch('/api/sessions', { headers: { 'Authorization': `Bearer ${authToken}` } });
         const list = await res.json();
         const container = document.getElementById('session-list');
         container.innerHTML = '';
         list.forEach(s => {
             const icon = s.type === 'player' ? '👤' : '🛡️';
-            container.innerHTML += `<div class="session-item" onclick="loadChat('${s.id}')"><span>${icon} ${s.title}</span></div>`;
+            container.innerHTML += `<div class="session-item" onclick="loadChat('${s.id}', '${s.title}')"><span>${icon} ${s.title}</span></div>`;
         });
     }
 
-    async function loadChat(id) {
-        const res = await apiFetch(`/api/session/${id}`);
+    async function loadChat(id, title) {
+        const res = await fetch(`/api/session/${id}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const data = await res.json();
         currentSessionId = id;
         currentSessionType = data.type;
+        document.getElementById('session-name').innerText = title;
+        
         const feed = document.getElementById('chat-feed');
         feed.innerHTML = '';
         data.history.forEach(h => {
@@ -315,21 +381,28 @@
     }
 
     async function loadLibrary() {
-        const res = await apiFetch(`/api/search?sessionId=${currentSessionId}`);
+        if(!currentSessionId) return;
+        const res = await fetch(`/api/search?sessionId=${currentSessionId}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const clips = await res.json();
+        document.getElementById('clip-count').innerText = clips.length;
         const feed = document.getElementById('library-feed');
         feed.innerHTML = '';
         const groups = {};
         clips.forEach(clip => { const sec = clip.section || "General"; if(!groups[sec]) groups[sec] = []; groups[sec].push(clip); });
         Object.keys(groups).forEach(section => {
-            feed.innerHTML += `<div class="section-header">${section}</div>`;
+            feed.innerHTML += `<div class="panel-header" style="font-size:0.7rem; padding:10px 0;">${section}</div>`;
             groups[section].forEach(clip => {
-                feed.innerHTML += `<div class="clip-item" onclick="playVideo('${clip.id}')"><div style="font-weight:700; font-size:0.9rem; color:white;">${clip.title}</div><div style="color:#666; font-size:0.7rem;">${clip.formation}</div></div>`;
+                feed.innerHTML += `
+                    <div class="clip-card" onclick="playVideo('${clip.id}')">
+                        <div class="clip-title">${clip.title}</div>
+                        <div class="clip-meta"><span>${clip.formation}</span><span>▶</span></div>
+                    </div>`;
             });
         });
     }
 
-    function openClipChat(id) { currentClipId = id; document.getElementById('clip-chat-history').innerHTML = ''; openModal('chat-modal'); }
+    function openClipChat(id) { currentClipId = id; document.getElementById('clip-chat-history').innerHTML = ''; document.getElementById('chat-modal').style.display = 'flex'; }
+    
     async function sendClipMessage() {
         const msg = document.getElementById('clip-chat-input').value;
         const clip = libraryData.find(c => c.id === currentClipId); 
@@ -339,11 +412,44 @@
         const data = await res.json();
         document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:left; margin:10px 0; color:var(--accent);">${data.reply}</div>`;
     }
+
     async function deleteClip(id) { if(!confirm("Delete?")) return; await apiFetch('/api/delete-clip', { method: 'POST', body: JSON.stringify({ id }) }); loadLibrary(); }
-    async function changeSection(id) { const sec = prompt("New Folder Name:"); if(sec) { await apiFetch('/api/update-clip', { method: 'POST', body: JSON.stringify({ id, section: sec }) }); loadLibrary(); } }
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    
+    function handleNavClick() {
+        if(authToken) { document.getElementById('set-email').innerText = currentUserEmail; document.getElementById('settings-modal').style.display = 'flex'; }
+        else { document.getElementById('auth-modal').style.display = 'flex'; }
+    }
+
+    function updateNavButton() {
+        const btn = document.getElementById('nav-btn');
+        if(authToken) { btn.innerText = "Settings"; btn.style.background = "transparent"; btn.style.border="1px solid var(--accent)"; btn.style.color="var(--accent)"; }
+        else { btn.innerText = "Sign Up"; btn.style.background = "var(--accent)"; btn.style.color = "black"; }
+    }
+
+    async function handleAuth(type) {
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-pass').value;
+        try {
+            const res = await fetch(`/api/${type}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
+            const data = await res.json();
+            if (data.success) {
+                authToken = data.token; currentUserEmail = email; localStorage.setItem('sideline_token', authToken); localStorage.setItem('sideline_email', email);
+                document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none'); updateNavButton(); loadSessions();
+                document.getElementById('chat-feed').innerHTML = `<div class="msg model"><b>Welcome, Coach.</b><br>System Online.<br>Ready for analysis.</div>`;
+            } else { alert(data.error); }
+        } catch(e) { alert("Connection Error"); }
+    }
+
+    function logout() { localStorage.removeItem('sideline_token'); localStorage.removeItem('sideline_email'); location.reload(); }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none'); document.getElementById('main-player').pause(); }
-    function playVideo(id) { document.getElementById('main-player').src = `/plays/${id}`; openModal('video-modal'); }
+    
+    // *** VIDEO FIX: Correct Path Logic ***
+    function playVideo(id) { 
+        const player = document.getElementById('main-player');
+        // Ensure path starts with /plays/
+        player.src = `/plays/${id}`; 
+        document.getElementById('video-modal').style.display = 'flex'; 
+    }
 </script>
 </body>
 </html>
