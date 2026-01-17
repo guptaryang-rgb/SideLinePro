@@ -34,7 +34,6 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
-// --- PROMPTS ---
 const TEAM_PROMPT = `
 You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
 CRITICAL: Output ONLY valid JSON.
@@ -109,14 +108,35 @@ app.post('/api/login', async (req, res) => {
     } else { res.json({ error: "Invalid password" }); }
 });
 
-// --- SESSION LIST ---
+// --- SESSION MANAGEMENT (THE FIX) ---
+
+// 1. Create Session (Server-Side)
+app.post('/api/create-session', authenticateToken, async (req, res) => {
+    const { title, type } = req.body;
+    const chats = await readJSON(CHATS_FILE);
+    
+    // Generate secure ID on server
+    const sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+    
+    chats[sessionId] = {
+        owner: req.user.email,
+        title: title || "New Session",
+        timestamp: Date.now(),
+        history: [],
+        type: type || 'team'
+    };
+    
+    await writeJSON(CHATS_FILE, chats);
+    res.json({ success: true, sessionId: sessionId, session: chats[sessionId] });
+});
+
+// 2. Get Sessions
 app.get('/api/sessions', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
     const userChats = Object.entries(chats)
         .filter(([id, chat]) => chat.owner === req.user.email)
-        // Ensure we sort by latest timestamp so new ones appear at top
         .map(([id, chat]) => ({ id, title: chat.title, date: chat.timestamp, type: chat.type || 'team' }))
-        .sort((a, b) => b.date - a.date);
+        .sort((a, b) => b.date - a.date); // Newest first
     res.json(userChats);
 });
 
@@ -125,28 +145,17 @@ app.get('/api/session/:id', authenticateToken, async (req, res) => {
     res.json({ history: chats[req.params.id]?.history || [], type: chats[req.params.id]?.type });
 });
 
-// --- SESSION CREATION & RENAMING ---
 app.post('/api/rename-session', authenticateToken, async (req, res) => {
-    const { sessionId, newTitle, type } = req.body;
+    const { sessionId, newTitle } = req.body;
     const chats = await readJSON(CHATS_FILE);
-    
-    // IF NEW: Create it immediately so it appears in sidebar list
-    if (!chats[sessionId]) {
-        chats[sessionId] = { 
-            owner: req.user.email, 
-            title: newTitle, 
-            timestamp: Date.now(), 
-            history: [],
-            type: type || 'team' 
-        };
-    } else if (chats[sessionId].owner === req.user.email) {
+    if (chats[sessionId] && chats[sessionId].owner === req.user.email) {
         chats[sessionId].title = newTitle;
-    }
-    
-    await writeJSON(CHATS_FILE, chats);
-    res.json({ success: true });
+        await writeJSON(CHATS_FILE, chats);
+        res.json({ success: true });
+    } else { res.json({ error: "Session not found" }); }
 });
 
+// --- AI CHAT ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
         const { message, sessionId, fileData, mimeType, sessionType } = req.body;
@@ -154,6 +163,7 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
         const chats = await readJSON(CHATS_FILE);
 
         if (!chats[sessionId]) {
+            // Fallback if ID is weird, but create-session should handle this
             chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [], type: sessionType || 'team' };
         }
 
@@ -226,21 +236,17 @@ app.post('/api/update-clip', authenticateToken, async (req, res) => {
     else { res.json({ error: "Clip not found" }); }
 });
 
-// *** UPDATED WAR ROOM (VISUAL FORMATTING) ***
+// *** ASK MORE QUESTIONS (MEMORY FIX) ***
 app.post('/api/clip-chat', authenticateToken, async (req, res) => {
     try {
         const { message, context } = req.body;
-        
-        // Instructing AI to be concise and use bullets for visuals
         const prompt = `
-        CONTEXT: Analyzing football play data: ${JSON.stringify(context)}.
+        CONTEXT: Analyzing a football play based on this DATA: ${JSON.stringify(context)}.
         USER QUESTION: "${message}"
         INSTRUCTIONS:
         1. Answer based ONLY on the data. Do NOT ask for video.
-        2. Use bullet points for steps.
-        3. Be direct and coaching-focused.
+        2. Use clean bullet points.
         `;
-        
         const result = await model.generateContent(prompt);
         res.json({ reply: result.response.text() });
     } catch(e) { res.status(500).json({ error: "Chat failed" }); }
