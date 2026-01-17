@@ -6,8 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-
-// *** FIX 1: Use the Port Render gives us (Critical for Cloud) ***
+// CRITICAL: Use the port Render assigns, or 3000 for local testing
 const port = process.env.PORT || 3000;
 
 // --- CONFIGURATION ---
@@ -30,19 +29,18 @@ app.use(cors());
 app.use(express.json({ limit: '200mb' }));
 app.use(express.urlencoded({ limit: '200mb', extended: true }));
 
-// *** FIX 2: SERVE THE WEBSITE (Critical for "Cannot GET /" error) ***
-// This serves index.html and any other files in this folder
+// --- SERVE WEBSITE FILES ---
 app.use(express.static(__dirname));
 app.use('/plays', express.static(UPLOAD_DIR));
 
-// Explicitly serve index.html for the home page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
+// USING FLASH MODEL (Most reliable for free tier)
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const ANALYST_PROMPT = `
 You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
@@ -118,6 +116,18 @@ app.get('/api/session/:id', (req, res) => {
     res.json(chats[req.params.id]?.history || []);
 });
 
+app.post('/api/rename-session', (req, res) => {
+    const { sessionId, newTitle, email } = req.body;
+    const chats = readJSON(CHATS_FILE);
+    if (chats[sessionId] && chats[sessionId].owner === email) {
+        chats[sessionId].title = newTitle;
+        writeJSON(CHATS_FILE, chats);
+        res.json({ success: true });
+    } else {
+        res.json({ error: "Session not found" });
+    }
+});
+
 app.post('/api/chat', async (req, res) => {
     try {
         const { message, sessionId, fileData, mimeType, email } = req.body;
@@ -170,7 +180,6 @@ app.post('/api/chat', async (req, res) => {
 
         let newClip = null;
         
-        // Smart JSON Parsing
         const firstBrace = reply.indexOf('{');
         const lastBrace = reply.lastIndexOf('}');
         
@@ -193,9 +202,7 @@ app.post('/api/chat', async (req, res) => {
                 const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
                 library.push(newClip);
                 fs.writeFileSync(DB_FILE, JSON.stringify(library));
-            } catch(e) { 
-                console.log("JSON Parse Failed, saving raw text only:", e); 
-            }
+            } catch(e) { console.log("JSON Parse Failed"); }
         }
 
         res.json({ reply, newClip, remainingCredits: users[email].credits });
@@ -220,41 +227,37 @@ app.post('/api/update-clip', (req, res) => {
 app.post('/api/delete-clip', (req, res) => {
     const { id, owner } = req.body;
     let library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
-    const initialLength = library.length;
+    const libraryLen = library.length;
     library = library.filter(p => !(p.id === id && p.owner === owner));
 
-    if (library.length < initialLength) {
+    if (library.length < libraryLen) {
         fs.writeFileSync(DB_FILE, JSON.stringify(library, null, 2));
         try {
             const filePath = path.join(UPLOAD_DIR, id);
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        } catch (e) { console.error("Error deleting file:", e); }
+        } catch (e) {}
         res.json({ success: true });
-    } else {
-        res.json({ error: "Clip not found" });
-    }
+    } else { res.json({ error: "Clip not found" }); }
 });
 
 app.get('/api/search', (req, res) => {
-    const { email, q } = req.query;
+    const { email, q, sessionId } = req.query;
     const term = q ? q.toLowerCase() : "";
     const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
     const results = library.filter(p => 
-        p.owner === email && (
-            !term || 
-            (p.title && p.title.toLowerCase().includes(term)) ||
-            (p.section && p.section.toLowerCase().includes(term)) ||
-            (p.formation && p.formation.toLowerCase().includes(term))
-        )
+        p.owner === email && 
+        (!sessionId || p.sessionId === sessionId) &&
+        (!term || (p.title && p.title.toLowerCase().includes(term)))
     );
     res.json(results);
 });
 
 app.get('/api/stats', (req, res) => {
-    const { email } = req.query;
+    const { email, sessionId } = req.query;
     const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
     const userPlays = library.filter(p => p.owner === email);
     if (userPlays.length === 0) return res.json({ empty: true });
+    
     const count = (field) => {
         const counts = {};
         userPlays.forEach(p => {
@@ -271,4 +274,4 @@ app.get('/api/stats', (req, res) => {
     });
 });
 
-app.listen(port, () => console.log(`Sideline Pro running at http://localhost:${port}`));
+app.listen(port, () => console.log(`Sideline Pro running on port ${port}`));
