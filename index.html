@@ -30,16 +30,24 @@
         .sidebar-right.closed { margin-right: calc(var(--sidebar-width) * -1); }
         .main-stage { flex: 1; display: flex; flex-direction: column; background: var(--bg-deep); position: relative; min-width: 0; }
 
-        .panel-header { padding: 20px; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+        .panel-header { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
         .session-list, #library-feed { flex: 1; overflow-y: auto; padding: 0 10px; }
         .session-item, .clip-card { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
-        .session-item { color: var(--text-muted); display: flex; align-items: center; gap: 10px; }
+        .session-item { color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
         .session-item:hover { background: #1a1e1a; color: white; }
         .session-item.active { background: var(--accent-dim); color: var(--accent); border-left: 3px solid var(--accent); }
-        .clip-card { background: #111; border-color: var(--border); }
+        
+        /* LIBRARY SEARCH */
+        .search-box { padding: 10px; border-bottom: 1px solid var(--border); }
+        .search-input { width: 100%; background: #111; border: 1px solid #333; padding: 8px; border-radius: 4px; color: white; font-size: 0.8rem; }
+
+        .clip-card { background: #111; border-color: var(--border); display: flex; flex-direction: column; gap: 8px; }
         .clip-card:hover { border-color: var(--accent); transform: translateX(-2px); }
-        .clip-title { font-weight: 700; font-size: 0.9rem; color: white; margin-bottom: 4px; }
+        .clip-title { font-weight: 700; font-size: 0.9rem; color: white; }
         .clip-meta { font-size: 0.75rem; color: #666; display: flex; justify-content: space-between; }
+        .library-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; }
+        .mini-btn { background: #222; border: 1px solid #333; color: #ccc; font-size: 0.7rem; padding: 4px; cursor: pointer; border-radius: 3px; }
+        .mini-btn:hover { border-color: var(--accent); color: white; }
 
         .chat-header { height: 50px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: center; background: rgba(5,5,5,0.8); backdrop-filter: blur(5px); position: absolute; top: 0; left: 0; right: 0; z-index: 10; }
         .editable-title { font-weight: 700; color: white; cursor: pointer; padding: 5px 10px; border-radius: 4px; transition: 0.2s; }
@@ -66,6 +74,9 @@
         .card-actions { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #222; }
         .action-chip { flex: 1; background: #222; border: 1px solid var(--border); color: #ccc; padding: 8px; border-radius: 6px; font-size: 0.8rem; text-align: center; cursor: pointer; }
         .action-chip:hover { color: var(--accent); border-color: var(--accent); }
+
+        /* EMBEDDED VIDEO PLAYER */
+        .embedded-video { width: 100%; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; }
 
         .progress-bar-container { width: 100%; height: 3px; display: none; position: absolute; top: 0; left: 0; }
         .progress-bar { height: 100%; background: var(--accent); width: 0%; animation: load 2s infinite ease-in-out; }
@@ -121,6 +132,7 @@
 
         <div class="sidebar-right" id="sidebar-right">
             <div class="panel-header"><span>Clip Library</span><span id="clip-count" style="color:var(--accent)">0</span></div>
+            <div class="search-box"><input type="text" id="lib-search" class="search-input" placeholder="Search clips..." oninput="filterLibrary()"></div>
             <div id="library-feed"></div>
         </div>
     </div>
@@ -198,7 +210,7 @@
 
     window.onload = () => {
         updateNavButton();
-        if(authToken) { loadSessions(); loadLibrary(); } else { document.getElementById('auth-modal').style.display = 'flex'; }
+        if(authToken) { loadSessions(); } else { document.getElementById('auth-modal').style.display = 'flex'; }
     };
 
     function toggleSidebar(side) { document.getElementById(`sidebar-${side}`).classList.toggle('closed'); }
@@ -249,13 +261,17 @@
                 const html = `
                     <div class="tactical-card">
                         <div class="card-header">${json.title}</div>
+                        
+                        ${clipId ? `<video class="embedded-video" controls preload="metadata"><source src="/plays/${clipId}" type="video/mp4"></video>` : ''}
+
                         <div class="section-label">FOCUS</div><div class="section-content" style="color:var(--accent);">${json.data.formation} vs ${json.data.coverage}</div>
                         <div class="section-label">SUMMARY</div><div class="section-content">${report.summary}</div>
                         <div class="section-label" style="color:var(--danger)">WEAKNESS/MISTAKES</div><div class="section-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div>
                         <div class="section-label" style="color:var(--accent)">ACTION PLAN</div><div class="section-content">${report.action_plan}</div>
+                        
                         <div class="card-actions">
-                            ${clipId ? `<div class="action-chip" onclick="playVideo('${clipId}')">▶ Watch Clip</div>` : ''}
-                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask More Questions</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="playVideo('${clipId}')">Watch</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask</div>` : ''}
                             ${clipId ? `<div class="action-chip" onclick="deleteClip('${clipId}')" style="color:var(--danger); border-color:var(--danger);">Delete</div>` : ''}
                             ${clipId ? `<div class="action-chip" onclick="changeSection('${clipId}')">Organize</div>` : ''}
                         </div>
@@ -272,9 +288,21 @@
         currentSessionId = Math.random().toString(36).substr(2, 9);
         currentSessionType = type;
         await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: name, type: type }) });
-        loadSessions();
-        const welcomeMsg = type === 'player' ? "This is meant for individual review to improve. State what position you play and upload film." : "Team Session Started. Upload clip.";
+        loadSessions(); // Updates sidebar immediately
+        const welcomeMsg = type === 'player' ? "This is meant for individual review. State your position and upload film." : "Team Session Started. Upload clip.";
         document.getElementById('chat-feed').innerHTML = `<div class="msg model">${welcomeMsg}</div>`;
+        document.getElementById('session-name').innerText = name;
+        loadLibrary(); // Clears library for new session
+    }
+
+    async function renameCurrentSession() {
+        if(!currentSessionId) return;
+        const newName = prompt("Rename:", document.getElementById('session-name').innerText);
+        if(newName) {
+            await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: newName }) });
+            document.getElementById('session-name').innerText = newName;
+            loadSessions();
+        }
     }
 
     async function loadSessions() {
@@ -284,7 +312,8 @@
         container.innerHTML = '';
         list.forEach(s => {
             const icon = s.type === 'player' ? '👤' : '🛡️';
-            container.innerHTML += `<div class="session-item" onclick="loadChat('${s.id}', '${s.title}')"><span>${icon} ${s.title}</span></div>`;
+            const isActive = s.id === currentSessionId ? 'active' : '';
+            container.innerHTML += `<div class="session-item ${isActive}" onclick="loadChat('${s.id}', '${s.title}')"><span>${icon} ${s.title}</span></div>`;
         });
     }
 
@@ -293,6 +322,10 @@
         const data = await res.json();
         currentSessionId = id; currentSessionType = data.type;
         document.getElementById('session-name').innerText = title;
+        
+        // Refresh sidebar highlighting
+        loadSessions();
+
         const feed = document.getElementById('chat-feed');
         feed.innerHTML = '';
         data.history.forEach(h => { if(h.role === 'model') renderResponse(h.text); else feed.innerHTML += `<div class="msg user">${h.text}</div>`; });
@@ -300,10 +333,18 @@
     }
 
     async function loadLibrary() {
-        if(!currentSessionId) return;
+        if(!currentSessionId) {
+            document.getElementById('library-feed').innerHTML = '';
+            document.getElementById('clip-count').innerText = 0;
+            return;
+        }
         const res = await fetch(`/api/search?sessionId=${currentSessionId}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const clips = await res.json();
-        libraryData = clips;
+        libraryData = clips; // Store for search
+        renderLibrary(clips);
+    }
+
+    function renderLibrary(clips) {
         document.getElementById('clip-count').innerText = clips.length;
         const feed = document.getElementById('library-feed');
         feed.innerHTML = '';
@@ -311,8 +352,26 @@
         clips.forEach(clip => { const sec = clip.section || "General"; if(!groups[sec]) groups[sec] = []; groups[sec].push(clip); });
         Object.keys(groups).forEach(section => {
             feed.innerHTML += `<div class="panel-header" style="font-size:0.7rem; padding:10px 0;">${section}</div>`;
-            groups[section].forEach(clip => { feed.innerHTML += `<div class="clip-card" onclick="playVideo('${clip.id}')"><div class="clip-title">${clip.title}</div><div class="clip-meta"><span>${clip.formation}</span><span>▶</span></div></div>`; });
+            groups[section].forEach(clip => {
+                feed.innerHTML += `
+                    <div class="clip-card">
+                        <div class="clip-title" onclick="playVideo('${clip.id}')">${clip.title}</div>
+                        <div class="clip-meta"><span>${clip.formation}</span></div>
+                        <div class="library-actions">
+                            <div class="mini-btn" onclick="playVideo('${clip.id}')">Watch</div>
+                            <div class="mini-btn" onclick="openClipChat('${clip.id}')">Ask</div>
+                            <div class="mini-btn" onclick="changeSection('${clip.id}')">Organize</div>
+                            <div class="mini-btn" onclick="deleteClip('${clip.id}')" style="color:var(--danger)">Delete</div>
+                        </div>
+                    </div>`;
+            });
         });
+    }
+
+    function filterLibrary() {
+        const term = document.getElementById('lib-search').value.toLowerCase();
+        const filtered = libraryData.filter(c => c.title.toLowerCase().includes(term) || c.formation.toLowerCase().includes(term));
+        renderLibrary(filtered);
     }
 
     function showReportOptions() { if(!currentSessionId) return alert("Select a session first."); openModal('report-select-modal'); }
@@ -327,13 +386,12 @@
         const clip = libraryData.find(c => c.id === currentClipId); 
         document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:right; margin:10px 0;">${msg}</div>`;
         document.getElementById('clip-chat-input').value = '';
-        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: clip }) });
+        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: {} }) });
         const data = await res.json();
         document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:left; margin:10px 0; color:var(--accent);">${data.reply}</div>`;
     }
     async function deleteClip(id) { if(!confirm("Delete?")) return; await apiFetch('/api/delete-clip', { method: 'POST', body: JSON.stringify({ id }) }); loadLibrary(); }
     async function changeSection(id) { const sec = prompt("New Folder Name:"); if(sec) { await apiFetch('/api/update-clip', { method: 'POST', body: JSON.stringify({ id, section: sec }) }); loadLibrary(); } }
-    async function renameCurrentSession() { if(!currentSessionId) return; const newName = prompt("Rename:", document.getElementById('session-name').innerText); if(newName) { await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: newName }) }); document.getElementById('session-name').innerText = newName; loadSessions(); } }
     
     function handleNavClick() { if(authToken) { document.getElementById('set-email').innerText = currentUserEmail; document.getElementById('settings-modal').style.display = 'flex'; } else { document.getElementById('auth-modal').style.display = 'flex'; } }
     function updateNavButton() { const btn = document.getElementById('nav-btn'); if(authToken) { btn.innerText = "Settings"; btn.style.background="transparent"; btn.style.border="1px solid var(--accent)"; btn.style.color="var(--accent)"; } else { btn.innerText = "Sign Up"; btn.style.background="var(--accent)"; btn.style.color="black"; } }
