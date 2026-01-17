@@ -32,7 +32,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
 const TEAM_PROMPT = `
 You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
@@ -85,6 +85,7 @@ const authenticateToken = (req, res, next) => {
     jwt.verify(token, JWT_SECRET, (err, user) => { if (err) return res.sendStatus(403); req.user = user; next(); });
 };
 
+// --- AUTH ---
 app.post('/api/signup', async (req, res) => {
     const { email, password } = req.body;
     const db = await readJSON(USER_DB_FILE);
@@ -107,21 +108,35 @@ app.post('/api/login', async (req, res) => {
     } else { res.json({ error: "Invalid password" }); }
 });
 
+// --- SESSION MANAGEMENT (THE FIX) ---
+
+// 1. Create Session (Server-Side)
 app.post('/api/create-session', authenticateToken, async (req, res) => {
     const { title, type } = req.body;
     const chats = await readJSON(CHATS_FILE);
+    
+    // Generate secure ID on server
     const sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
-    chats[sessionId] = { owner: req.user.email, title: title || "New Session", timestamp: Date.now(), history: [], type: type || 'team' };
+    
+    chats[sessionId] = {
+        owner: req.user.email,
+        title: title || "New Session",
+        timestamp: Date.now(),
+        history: [],
+        type: type || 'team'
+    };
+    
     await writeJSON(CHATS_FILE, chats);
-    res.json({ success: true, sessionId: sessionId });
+    res.json({ success: true, sessionId: sessionId, session: chats[sessionId] });
 });
 
+// 2. Get Sessions
 app.get('/api/sessions', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
     const userChats = Object.entries(chats)
         .filter(([id, chat]) => chat.owner === req.user.email)
         .map(([id, chat]) => ({ id, title: chat.title, date: chat.timestamp, type: chat.type || 'team' }))
-        .sort((a, b) => b.date - a.date);
+        .sort((a, b) => b.date - a.date); // Newest first
     res.json(userChats);
 });
 
@@ -140,13 +155,17 @@ app.post('/api/rename-session', authenticateToken, async (req, res) => {
     } else { res.json({ error: "Session not found" }); }
 });
 
+// --- AI CHAT ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
         const { message, sessionId, fileData, mimeType, sessionType } = req.body;
         const email = req.user.email;
         const chats = await readJSON(CHATS_FILE);
 
-        if (!chats[sessionId]) chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [], type: sessionType || 'team' };
+        if (!chats[sessionId]) {
+            // Fallback if ID is weird, but create-session should handle this
+            chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [], type: sessionType || 'team' };
+        }
 
         const historyForAI = chats[sessionId].history.map(msg => ({
             role: msg.role === 'user' ? 'user' : 'model',
@@ -198,7 +217,6 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
                     formation: parsed.data?.formation,
                     coverage: parsed.data?.coverage,
                     section: (chats[sessionId].type === 'player') ? "My Reps" : "Team Film",
-                    timestamp: Date.now(),
                     fullData: parsed 
                 };
                 const library = await readJSON(DB_FILE);
@@ -218,10 +236,17 @@ app.post('/api/update-clip', authenticateToken, async (req, res) => {
     else { res.json({ error: "Clip not found" }); }
 });
 
+// *** ASK MORE QUESTIONS (MEMORY FIX) ***
 app.post('/api/clip-chat', authenticateToken, async (req, res) => {
     try {
         const { message, context } = req.body;
-        const prompt = `CONTEXT: Analyzing football play data: ${JSON.stringify(context)}. USER QUESTION: "${message}". INSTRUCTION: Answer based ONLY on the data. Use bullet points.`;
+        const prompt = `
+        CONTEXT: Analyzing a football play based on this DATA: ${JSON.stringify(context)}.
+        USER QUESTION: "${message}"
+        INSTRUCTIONS:
+        1. Answer based ONLY on the data. Do NOT ask for video.
+        2. Use clean bullet points.
+        `;
         const result = await model.generateContent(prompt);
         res.json({ reply: result.response.text() });
     } catch(e) { res.status(500).json({ error: "Chat failed" }); }
@@ -232,9 +257,15 @@ app.post('/api/session-summary', authenticateToken, async (req, res) => {
     const library = await readJSON(DB_FILE);
     const clips = library.filter(p => p.owner === req.user.email && p.sessionId === sessionId);
     if (clips.length === 0) return res.json({ report: "No clips found in this session." });
-    const summaryPrompt = `Based on these ${clips.length} plays: ${JSON.stringify(clips)}. Write a "Tendency Report" for **${focus.toUpperCase()}**.`;
-    try { const result = await model.generateContent(summaryPrompt); res.json({ report: result.response.text() }); } 
-    catch(e) { res.json({ report: "Could not generate summary." }); }
+
+    const summaryPrompt = `
+    Based on the ${clips.length} plays in this session: ${JSON.stringify(clips)}
+    Write a "Tendency Report" for **${focus.toUpperCase()}**.
+    `;
+    try {
+        const result = await model.generateContent(summaryPrompt);
+        res.json({ report: result.response.text() });
+    } catch(e) { res.json({ report: "Could not generate summary." }); }
 });
 
 app.get('/api/search', authenticateToken, async (req, res) => {
