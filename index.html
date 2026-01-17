@@ -207,6 +207,14 @@
         if(authToken) { loadSessions(); } else { document.getElementById('auth-modal').style.display = 'flex'; }
     };
 
+    // --- FIX: VISUAL FORMATTER FOR "ASK" RESPONSES ---
+    function formatText(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Bold
+            .replace(/\* /g, '<br>• ') // Bullets
+            .replace(/\n/g, '<br>'); // Newlines
+    }
+
     function toggleSidebar(side) { document.getElementById(`sidebar-${side}`).classList.toggle('closed'); }
     function removeFile() { document.getElementById('file-input').value = ''; document.getElementById('file-indicator').style.display = 'none'; }
     document.getElementById('file-input').addEventListener('change', function() { if(this.files[0]) { document.getElementById('file-indicator').style.display = 'flex'; document.getElementById('file-name').innerText = `📎 ${this.files[0].name}`; }});
@@ -261,7 +269,8 @@
                         <div class="section-label" style="color:var(--danger)">WEAKNESS/MISTAKES</div><div class="section-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div>
                         <div class="section-label" style="color:var(--accent)">ACTION PLAN</div><div class="section-content">${report.action_plan}</div>
                         <div class="card-actions">
-                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask More Questions</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="playVideo('${clipId}')">Watch</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask</div>` : ''}
                             ${clipId ? `<div class="action-chip" onclick="deleteClip('${clipId}')" style="color:var(--danger); border-color:var(--danger);">Delete</div>` : ''}
                             ${clipId ? `<div class="action-chip" onclick="changeSection('${clipId}')">Organize</div>` : ''}
                         </div>
@@ -272,30 +281,23 @@
         document.getElementById('chat-feed').scrollTop = document.getElementById('chat-feed').scrollHeight;
     }
 
-    // --- FIX: VISUAL FORMATTER FOR "ASK" RESPONSES ---
-    function formatText(text) {
-        return text
-            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Bold
-            .replace(/\* /g, '<br>• ') // Bullets
-            .replace(/\n/g, '<br>'); // Newlines
-    }
-
+    // *** FIX: CREATE SESSION PROPERLY ***
     async function createNewChat(type) {
         const name = prompt("Session Name:", type === 'player' ? "Player Evaluation" : "Team Analysis");
         if(!name) return;
-        currentSessionId = Math.random().toString(36).substr(2, 9);
-        currentSessionType = type;
         
-        // FORCE SERVER SAVE BEFORE UPDATING UI
-        await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: name, type: type }) });
+        const res = await apiFetch('/api/create-session', { method: 'POST', body: JSON.stringify({ title: name, type: type }) });
+        const data = await res.json();
         
-        // NOW REFRESH SIDEBAR
-        await loadSessions(); 
-        
-        const welcomeMsg = type === 'player' ? "This is meant for individual review. State your position and upload film." : "Team Session Started. Upload clip.";
-        document.getElementById('chat-feed').innerHTML = `<div class="msg model">${welcomeMsg}</div>`;
-        document.getElementById('session-name').innerText = name;
-        loadLibrary(); 
+        if(data.success) {
+            currentSessionId = data.sessionId;
+            currentSessionType = type;
+            document.getElementById('session-name').innerText = name;
+            const welcomeMsg = type === 'player' ? "This is meant for individual review. State your position and upload film." : "Team Session Started. Upload clip.";
+            document.getElementById('chat-feed').innerHTML = `<div class="msg model">${welcomeMsg}</div>`;
+            document.getElementById('library-feed').innerHTML = '';
+            loadSessions(); // Updates sidebar now
+        }
     }
 
     async function renameCurrentSession() {
