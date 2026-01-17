@@ -4,148 +4,252 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sideline Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0a0a0a; --panel: #141414; --accent: #00e676; --text: #ffffff; --border: #333; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; height: 100vh; display: flex; }
+        :root { 
+            --bg: #050505; 
+            --panel: #111111; 
+            --border: #222222; 
+            --accent: #22c55e; /* Vibrant Green */
+            --text: #ffffff; 
+            --text-muted: #888888;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
         
         /* LAYOUT */
-        .sidebar { width: 260px; background: #000; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; }
-        .main { flex: 1; display: flex; flex-direction: column; position: relative; }
-        .library { width: 320px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar { width: 260px; background: #000; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; z-index: 2; }
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; background: var(--bg); }
+        .library { width: 320px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; z-index: 2; }
         
-        /* COMPONENTS */
-        .logo { color: var(--accent); font-weight: 900; font-size: 1.2rem; margin-bottom: 30px; letter-spacing: 1px; }
-        .btn { background: var(--accent); color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 4px; width: 100%; margin-bottom: 10px; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .session-item { padding: 10px; color: #888; cursor: pointer; border-radius: 4px; margin-bottom: 2px; font-size: 0.9rem; }
+        /* SIDEBAR ITEMS */
+        .logo { color: var(--accent); font-weight: 900; font-size: 1.4rem; margin-bottom: 30px; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+        .btn-new { background: var(--accent); color: #000; border: none; padding: 14px; font-weight: 800; cursor: pointer; border-radius: 6px; width: 100%; margin-bottom: 20px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; transition: 0.2s; }
+        .btn-new:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        .session-list { flex: 1; overflow-y: auto; }
+        .session-item { padding: 12px; color: var(--text-muted); cursor: pointer; border-radius: 6px; margin-bottom: 4px; font-size: 0.9rem; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .session-item:hover { background: #222; color: #fff; }
-        .session-item.active { background: #222; color: var(--accent); }
+        .session-item.active { background: #1a3320; color: var(--accent); border: 1px solid #1a3320; }
         
+        .user-panel { padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .logout-btn { background: none; border: 1px solid #333; color: #666; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; }
+        .logout-btn:hover { color: #fff; border-color: #666; }
+
         /* CHAT AREA */
-        #chat-feed { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 20px; }
-        .msg { padding: 15px; border-radius: 8px; max-width: 80%; line-height: 1.5; }
-        .msg.user { align-self: flex-end; background: #222; border: 1px solid #333; }
-        .msg.model { align-self: flex-start; background: transparent; }
+        #chat-feed { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         
-        .input-box { padding: 20px; background: var(--panel); border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center; }
-        input[type="text"] { flex: 1; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; outline: none; }
+        /* WELCOME SCREEN (Empty State) */
+        .welcome-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: #444; }
+        .welcome-icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; }
+        .welcome-title { color: #fff; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
+        .welcome-text { max-width: 400px; line-height: 1.5; font-size: 0.95rem; }
+
+        /* MESSAGES */
+        .msg { padding: 16px 20px; border-radius: 12px; max-width: 80%; line-height: 1.6; font-size: 0.95rem; animation: fadeIn 0.3s ease; }
+        .msg.user { align-self: flex-end; background: #222; border: 1px solid #333; color: #fff; }
+        .msg.model { align-self: flex-start; background: transparent; border-left: 2px solid var(--accent); padding-left: 20px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* INPUT AREA */
+        .input-box { padding: 25px; background: var(--panel); border-top: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
+        input[type="text"] { flex: 1; padding: 16px; background: #050505; border: 1px solid #333; color: #fff;PC border-radius: 8px; outline: none; font-family: 'Inter'; font-size: 0.95rem; transition: border 0.2s; }
+        input[type="text"]:focus { border-color: var(--accent); }
+        
+        .icon-btn { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: #222; border: 1px solid #333; color: #fff; border-radius: 8px; cursor: pointer; font-size: 1.2rem; transition: 0.2s; }
+        .icon-btn:hover { background: #333; }
+        .send-btn { background: var(--accent); color: #000; border: none; font-weight: bold; width: 100px; }
+        .send-btn:hover { opacity: 0.9; }
         
         /* LIBRARY CARDS */
-        .clip-card { background: #000; border: 1px solid #333; margin: 10px; padding: 15px; border-radius: 6px; }
-        .clip-title { font-weight: bold; color: var(--accent); font-size: 0.9rem; }
-        .clip-meta { font-size: 0.8rem; color: #888; margin-top: 5px; }
-        
+        .lib-title { padding: 25px; border-bottom: 1px solid var(--border); font-weight: 800; font-size: 0.9rem; letter-spacing: 1px; color: var(--muted); }
+        .clip-card { background: #080808; border: 1px solid #222; margin: 15px; padding: 15px; border-radius: 8px; transition: 0.2s; }
+        .clip-card:hover { border-color: #444; transform: translateY(-2px); }
+        .clip-title { font-weight: bold; color: var(--accent); font-size: 0.9rem; margin-bottom: 5px; }
+        .clip-meta { font-size: 0.8rem; color: #666; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .watch-link { display: block; text-align: center; background: #111; color: #fff; padding: 8px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; border: 1px solid #333; margin-top: 10px;}
+        .watch-link:hover { background: #222; }
+
         /* AUTH MODAL */
-        #auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; }
-        .auth-box { background: var(--panel); padding: 40px; border-radius: 8px; width: 350px; text-align: center; border: 1px solid var(--border); }
-        .auth-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: white; }
+        #auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; justify-content: center; align-items: center; }
+        .auth-box { background: #111; padding: 50px; border-radius: 12px; width: 400px; text-align: center; border: 1px solid #333; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .auth-input { width: 100%; padding: 15px; margin: 10px 0; background: #050505; border: 1px solid #333; color: white; border-radius: 6px; font-family: 'Inter'; }
+        
+        /* Helper for file upload */
+        .file-status { font-size: 0.8rem; color: var(--accent); margin-top: -5px; margin-bottom: 10px; display:none; }
     </style>
 </head>
 <body>
 
     <div id="auth-overlay">
         <div class="auth-box">
-            <div class="logo">SIDELINE PRO</div>
+            <div class="logo" style="justify-content:center; margin-bottom:40px;">SIDELINE PRO</div>
+            <h3 style="color:#fff; margin-bottom:20px;">Welcome Back</h3>
             <input id="email" class="auth-input" placeholder="Email" type="email">
             <input id="password" class="auth-input" placeholder="Password" type="password">
-            <button class="btn" onclick="handleAuth('login')">LOGIN</button>
-            <button class="btn" onclick="handleAuth('signup')" style="background:transparent; color:#888; border:1px solid #333;">CREATE ACCOUNT</button>
+            <button class="btn-new" onclick="handleAuth('login')">LOGIN</button>
+            <button class="btn-new" onclick="handleAuth('signup')" style="background:transparent; color:#888; border:1px solid #333;">CREATE ACCOUNT</button>
         </div>
     </div>
 
     <div class="sidebar">
-        <div class="logo">SIDELINE PRO</div>
-        <button class="btn" onclick="newSession()">+ NEW SESSION</button>
-        <div id="credits" style="color:#666; font-size:0.8rem; margin:10px 0; text-align:center;">Credits: --</div>
-        <div id="session-list" style="flex:1; overflow-y:auto; margin-top:20px;"></div>
+        <div class="logo">🏈 SIDELINE PRO</div>
+        <button class="btn-new" onclick="newSession()">+ NEW ANALYSIS</button>
+        
+        <div id="session-list" class="session-list"></div>
+        
+        <div class="user-panel">
+            <div id="credits">Credits: --</div>
+            <button class="logout-btn" onclick="logout()">LOGOUT</button>
+        </div>
     </div>
 
     <div class="main">
-        <div id="chat-feed"></div>
+        <div id="chat-feed">
+            <div class="welcome-screen">
+                <div class="welcome-icon">🎥</div>
+                <div class="welcome-title">Ready to Analyze</div>
+                <div class="welcome-text">Select a previous session from the left or upload a new clip to generate a professional scouting report.</div>
+            </div>
+        </div>
+        
+        <div id="file-indicator" style="position:absolute; bottom:100px; left:25px; background:#1a3320; color:var(--accent); padding:8px 15px; border-radius:20px; font-size:0.8rem; border:1px solid var(--accent); display:none;">
+            📎 Video Attached
+        </div>
+
         <div class="input-box">
             <input type="file" id="file-upload" hidden accept="video/*">
-            <button onclick="document.getElementById('file-upload').click()" style="width:auto; padding:0 15px;" class="btn">📎</button>
-            <input type="text" id="prompt" placeholder="Analyze this play...">
-            <button class="btn" onclick="sendMessage()" style="width:100px;">SEND</button>
+            <button onclick="document.getElementById('file-upload').click()" class="icon-btn" title="Upload Video">📎</button>
+            <input type="text" id="prompt" placeholder="Ask about this play or upload a clip..." autocomplete="off">
+            <button class="icon-btn send-btn" onclick="sendMessage()">SEND</button>
         </div>
     </div>
 
     <div class="library">
-        <div style="padding:20px; border-bottom:1px solid #333; font-weight:bold;">SESSION CLIPS</div>
-        <div id="library-feed" style="flex:1; overflow-y:auto;"></div>
+        <div class="lib-title">SESSION CLIPS</div>
+        <div id="library-feed" style="flex:1; overflow-y:auto; padding-bottom:20px;">
+            <div style="padding:20px; color:#444; text-align:center; font-size:0.9rem;">No clips in this session.</div>
+        </div>
     </div>
 
     <script>
         let user = localStorage.getItem('sideline_user');
         let currentSession = null;
 
-        // --- AUTH ---
-        if(user) {
-            document.getElementById('auth-overlay').style.display = 'none';
-            loadUserData();
-        }
+        window.onload = () => {
+            if(user) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                loadUserData();
+            }
+        };
 
+        // --- AUTH ---
         async function handleAuth(type) {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const res = await fetch('/api/auth', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ email, password, type })
-            });
-            const data = await res.json();
-            if(data.success) {
-                user = email;
-                localStorage.setItem('sideline_user', email);
-                document.getElementById('auth-overlay').style.display = 'none';
-                loadUserData();
-            } else {
-                alert(data.error);
-            }
+            if(!email || !password) return alert("Please enter email and password");
+
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, password, type })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    user = email;
+                    localStorage.setItem('sideline_user', email);
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    loadUserData();
+                } else {
+                    alert(data.error);
+                }
+            } catch(e) { alert("Connection error. Is server running?"); }
+        }
+
+        function logout() {
+            localStorage.removeItem('sideline_user');
+            location.reload();
         }
 
         // --- DATA LOADING ---
         async function loadUserData() {
-            const res = await fetch(`/api/user-data?email=${user}`);
-            const data = await res.json();
-            document.getElementById('credits').innerText = `Credits: ${data.credits}`;
-            
-            const list = document.getElementById('session-list');
-            list.innerHTML = '';
-            data.sessions.forEach(s => {
-                const div = document.createElement('div');
-                div.className = 'session-item';
-                div.innerText = s.title;
-                div.onclick = () => loadSession(s.id);
-                list.appendChild(div);
-            });
+            try {
+                const res = await fetch(`/api/user-data?email=${user}`);
+                const data = await res.json();
+                
+                // GHOST USER CHECK: If server says 0 credits/sessions but user just logged in
+                if(data.credits === 0 && data.sessions.length === 0) {
+                   // Optional: Could show a tip here
+                }
+
+                document.getElementById('credits').innerText = `🪙 Credits: ${data.credits}`;
+                
+                const list = document.getElementById('session-list');
+                list.innerHTML = '';
+                if(data.sessions.length === 0) {
+                    list.innerHTML = '<div style="padding:15px; color:#444; font-size:0.8rem;">No sessions yet.</div>';
+                }
+                data.sessions.forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = `session-item ${s.id === currentSession ? 'active' : ''}`;
+                    div.innerText = s.title || "Untitled Session";
+                    div.onclick = () => loadSession(s.id);
+                    list.appendChild(div);
+                });
+            } catch(e) { console.log("Load error"); }
         }
 
         function newSession() {
             currentSession = Math.random().toString(36).substr(2, 9);
-            document.getElementById('chat-feed').innerHTML = '<div class="msg model">New session started. Upload a clip.</div>';
-            document.getElementById('library-feed').innerHTML = '';
-            loadUserData(); // Refresh list
+            document.getElementById('chat-feed').innerHTML = '';
+            document.getElementById('library-feed').innerHTML = '<div style="padding:20px; color:#444; text-align:center; font-size:0.9rem;">No clips in this session.</div>';
+            
+            // Add initial bot message
+            const feed = document.getElementById('chat-feed');
+            feed.innerHTML = `
+                <div class="msg model">
+                    <b>New Session Started.</b><br>
+                    Upload a game film clip to generate a scouting report.
+                </div>
+            `;
+            loadUserData();
+            
+            // Highlight
+            document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
         }
 
         async function loadSession(id) {
             currentSession = id;
-            // Highlight active
-            document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.session-item').forEach(el => {
+                el.classList.remove('active');
+                if(el.innerText === id) el.classList.add('active'); // simplified check
+            });
             
-            // Load History
             const res = await fetch(`/api/history?sessionId=${id}`);
             const history = await res.json();
+            
             const feed = document.getElementById('chat-feed');
             feed.innerHTML = '';
-            history.forEach(h => {
-                const div = document.createElement('div');
-                div.className = `msg ${h.role}`;
-                div.innerText = h.parts[0].text;
-                feed.appendChild(div);
-            });
-
-            // Load Library
+            
+            if(history.length === 0) {
+                 feed.innerHTML = '<div class="welcome-screen"><div class="welcome-title">Empty Session</div></div>';
+            } else {
+                history.forEach(h => {
+                    const div = document.createElement('div');
+                    div.className = `msg ${h.role}`;
+                    // Handle JSON specifically
+                    if(h.parts[0].text.includes('"scouting_report"')) {
+                         div.innerHTML = "✅ <b>Analysis Generated.</b> See sidebar.";
+                    } else {
+                         div.innerText = h.parts[0].text;
+                    }
+                    feed.appendChild(div);
+                });
+            }
+            
+            // Re-highlight list correctly
+            loadUserData(); // refreshing list to set active class logic if needed
             loadLibrary();
         }
 
@@ -154,20 +258,33 @@
             const clips = await res.json();
             const feed = document.getElementById('library-feed');
             feed.innerHTML = '';
+            
+            if(clips.length === 0) {
+                 feed.innerHTML = '<div style="padding:20px; color:#444; text-align:center; font-size:0.9rem;">No clips in this session.</div>';
+                 return;
+            }
+
             clips.forEach(clip => {
                 const div = document.createElement('div');
                 div.className = 'clip-card';
                 div.innerHTML = `
                     <div class="clip-title">${clip.title}</div>
-                    <div class="clip-meta">${clip.formation} vs ${clip.coverage}</div>
-                    <div style="font-size:0.8rem; margin-top:5px;">${clip.summary}</div>
-                    <a href="/uploads/${clip.id}" target="_blank" style="color:#00e676; font-size:0.8rem; display:block; margin-top:5px;">Watch Clip</a>
+                    <div class="clip-meta"><span>${clip.formation}</span> <span>${clip.coverage}</span></div>
+                    <div style="font-size:0.85rem; color:#ccc; line-height:1.4; margin-bottom:10px;">${clip.summary}</div>
+                    <a href="/uploads/${clip.id}" target="_blank" class="watch-link">▶ WATCH CLIP</a>
                 `;
                 feed.appendChild(div);
             });
         }
 
-        // --- CHAT ---
+        // --- CHAT & UPLOAD ---
+        document.getElementById('file-upload').addEventListener('change', function() {
+            if(this.files.length > 0) {
+                document.getElementById('file-indicator').style.display = 'block';
+                document.getElementById('file-indicator').innerText = `📎 ${this.files[0].name}`;
+            }
+        });
+
         async function sendMessage() {
             if(!currentSession) newSession();
             
@@ -180,12 +297,21 @@
 
             // UI Update
             const feed = document.getElementById('chat-feed');
+            // Remove welcome screen if it exists
+            const welcome = document.querySelector('.welcome-screen');
+            if(welcome) welcome.remove();
+
             feed.innerHTML += `<div class="msg user">${text || "Analyzing video..."}</div>`;
             input.value = '';
+            document.getElementById('file-indicator').style.display = 'none';
 
             // Build Payload
             const payload = { email: user, message: text, sessionId: currentSession };
             
+            const btn = document.querySelector('.send-btn');
+            btn.innerText = '...';
+            btn.disabled = true;
+
             if(file) {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -200,28 +326,35 @@
         }
 
         async function executeSend(payload) {
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            
-            const feed = document.getElementById('chat-feed');
-            if(data.error) {
-                feed.innerHTML += `<div class="msg model" style="color:red">${data.error}</div>`;
-            } else {
-                // If it's a JSON response (analysis), format it nicely
-                if(data.analysis) {
-                    feed.innerHTML += `<div class="msg model">✅ <b>${data.analysis.title}</b><br>${data.analysis.summary}</div>`;
-                    loadLibrary(); // Update sidebar immediately
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                const feed = document.getElementById('chat-feed');
+                if(data.error) {
+                    feed.innerHTML += `<div class="msg model" style="color:#ff5555;CX border-color:#ff5555;">⚠️ ${data.error}</div>`;
                 } else {
-                    feed.innerHTML += `<div class="msg model">${data.reply}</div>`;
+                    if(data.analysis) {
+                        feed.innerHTML += `<div class="msg model">✅ <b>Analysis Complete.</b><br>Added "${data.analysis.title}" to your Session Clips.</div>`;
+                        loadLibrary(); 
+                    } else {
+                        feed.innerHTML += `<div class="msg model">${data.reply}</div>`;
+                    }
+                    loadUserData(); 
                 }
-                loadUserData(); // Update credits/titles
+                feed.scrollTop = feed.scrollHeight;
+                document.getElementById('file-upload').value = ''; 
+            } catch(e) {
+                alert("Error sending message.");
+            } finally {
+                const btn = document.querySelector('.send-btn');
+                btn.innerText = 'SEND';
+                btn.disabled = false;
             }
-            feed.scrollTop = feed.scrollHeight;
-            document.getElementById('file-upload').value = ''; // Reset file input
         }
     </script>
 </body>
