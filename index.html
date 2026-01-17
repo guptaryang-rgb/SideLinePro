@@ -157,9 +157,9 @@
     </div>
 
     <div id="chat-modal" class="modal-overlay">
-        <div class="modal-box" style="width:500px; text-align:left;">
+        <div class="modal-box" style="width:600px; text-align:left;">
             <div class="modal-title" style="font-size:1.2rem;">Ask More Questions</div>
-            <div id="clip-chat-history" style="height:300px; overflow-y:auto; background:#050505; padding:15px; border-radius:8px; margin-bottom:15px;"></div>
+            <div id="clip-chat-history" style="height:300px; overflow-y:auto; background:#050505; padding:15px; border-radius:8px; margin-bottom:15px; font-size:0.95rem; line-height:1.5;"></div>
             <div style="display:flex; gap:10px;">
                 <input type="text" id="clip-chat-input" class="modal-input" placeholder="Ask specific question...">
                 <button class="btn-glow" style="padding:10px 20px;" onclick="sendClipMessage()">Ask</button>
@@ -261,8 +261,7 @@
                         <div class="section-label" style="color:var(--danger)">WEAKNESS/MISTAKES</div><div class="section-content">${report.mistakes ? report.mistakes.join(', ') : report.weakness}</div>
                         <div class="section-label" style="color:var(--accent)">ACTION PLAN</div><div class="section-content">${report.action_plan}</div>
                         <div class="card-actions">
-                            ${clipId ? `<div class="action-chip" onclick="playVideo('${clipId}')">Watch</div>` : ''}
-                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask</div>` : ''}
+                            ${clipId ? `<div class="action-chip" onclick="openClipChat('${clipId}')">Ask More Questions</div>` : ''}
                             ${clipId ? `<div class="action-chip" onclick="deleteClip('${clipId}')" style="color:var(--danger); border-color:var(--danger);">Delete</div>` : ''}
                             ${clipId ? `<div class="action-chip" onclick="changeSection('${clipId}')">Organize</div>` : ''}
                         </div>
@@ -273,13 +272,26 @@
         document.getElementById('chat-feed').scrollTop = document.getElementById('chat-feed').scrollHeight;
     }
 
+    // --- FIX: VISUAL FORMATTER FOR "ASK" RESPONSES ---
+    function formatText(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Bold
+            .replace(/\* /g, '<br>• ') // Bullets
+            .replace(/\n/g, '<br>'); // Newlines
+    }
+
     async function createNewChat(type) {
         const name = prompt("Session Name:", type === 'player' ? "Player Evaluation" : "Team Analysis");
         if(!name) return;
         currentSessionId = Math.random().toString(36).substr(2, 9);
         currentSessionType = type;
+        
+        // FORCE SERVER SAVE BEFORE UPDATING UI
         await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId, newTitle: name, type: type }) });
-        loadSessions(); // This now updates the sidebar instantly
+        
+        // NOW REFRESH SIDEBAR
+        await loadSessions(); 
+        
         const welcomeMsg = type === 'player' ? "This is meant for individual review. State your position and upload film." : "Team Session Started. Upload clip.";
         document.getElementById('chat-feed').innerHTML = `<div class="msg model">${welcomeMsg}</div>`;
         document.getElementById('session-name').innerText = name;
@@ -325,10 +337,6 @@
         const res = await fetch(`/api/search?sessionId=${currentSessionId}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
         const clips = await res.json();
         libraryData = clips; 
-        renderLibrary(clips);
-    }
-
-    function renderLibrary(clips) {
         document.getElementById('clip-count').innerText = clips.length;
         const feed = document.getElementById('library-feed');
         feed.innerHTML = '';
@@ -359,15 +367,21 @@
     }
 
     function openClipChat(id) { currentClipId = id; document.getElementById('clip-chat-history').innerHTML = ''; openModal('chat-modal'); }
+    
     async function sendClipMessage() {
         const msg = document.getElementById('clip-chat-input').value;
         const clip = libraryData.find(c => c.id === currentClipId); 
         document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:right; margin:10px 0;">${msg}</div>`;
         document.getElementById('clip-chat-input').value = '';
+        
         const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: clip }) });
         const data = await res.json();
-        document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:left; margin:10px 0; color:var(--accent);">${data.reply}</div>`;
+        
+        // USE FORMATTER HERE
+        const formatted = formatText(data.reply);
+        document.getElementById('clip-chat-history').innerHTML += `<div style="text-align:left; margin:10px 0; color:var(--accent);">${formatted}</div>`;
     }
+
     async function deleteClip(id) { if(!confirm("Delete?")) return; await apiFetch('/api/delete-clip', { method: 'POST', body: JSON.stringify({ id }) }); loadLibrary(); }
     async function changeSection(id) { const sec = prompt("New Folder Name:"); if(sec) { await apiFetch('/api/update-clip', { method: 'POST', body: JSON.stringify({ id, section: sec }) }); loadLibrary(); } }
     
