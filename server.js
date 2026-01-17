@@ -13,13 +13,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret_football_key"; 
 
-// --- FILE SYSTEM CONFIG ---
 const UPLOAD_DIR = path.join(__dirname, 'saved_plays');
 const DB_FILE = path.join(__dirname, 'stats_db.json');
 const USER_DB_FILE = path.join(__dirname, 'users_db.json');
 const CHATS_FILE = path.join(__dirname, 'chats_db.json');
 
-// Initial Setup 
 if (!fsSync.existsSync(UPLOAD_DIR)) fsSync.mkdirSync(UPLOAD_DIR);
 const initJSON = (file) => { if (!fsSync.existsSync(file)) fsSync.writeFileSync(file, JSON.stringify(file.includes('db.json') ? [] : {})); };
 initJSON(DB_FILE); initJSON(USER_DB_FILE); initJSON(CHATS_FILE);
@@ -32,12 +30,13 @@ app.use(express.static(__dirname));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// --- AI CONFIGURATION ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
-const ANALYST_PROMPT = `
+// --- PROMPTS ---
+
+const TEAM_PROMPT = `
 You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
 CRITICAL: Output ONLY valid JSON.
 
@@ -55,7 +54,29 @@ JSON STRUCTURE:
 }
 `;
 
-// --- ASYNC DB HELPERS ---
+// *** NEW: PLAYER COACH PROMPT ***
+const PLAYER_PROMPT = `
+You are an elite Position Coach. The user is a player analyzing their own film.
+1. Identify the focus player based on context or the central figure.
+2. Critique their specific technique (footwork, hand placement, eyes, leverage).
+3. Prescribe specific drills to fix these issues.
+CRITICAL: Output ONLY valid JSON.
+
+JSON STRUCTURE:
+{
+  "title": "Player Grade & Technique",
+  "data": { "formation": "Alignment", "coverage": "Assignment", "play_type": "Technique Focus" },
+  "scouting_report": {
+    "summary": "Assessment of your individual performance on this rep.",
+    "mistakes": ["Specific technical flaws (e.g., 'False step at start', 'Hands too wide')"],
+    "weakness": "What opponents will exploit in your technique.",
+    "action_plan": "SPECIFIC DRILLS to fix this (e.g., 'Do 5 reps of T-Step Drill')."
+  },
+  "section": "Individual"
+}
+`;
+
+// --- HELPERS ---
 async function readJSON(file) {
     try {
         const data = await fs.readFile(file, 'utf8');
@@ -69,12 +90,10 @@ async function writeJSON(file, data) {
     await fs.rename(tempFile, file);
 }
 
-// --- MIDDLEWARE ---
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.sendStatus(401);
-
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.sendStatus(403);
         req.user = user;
@@ -82,78 +101,98 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// --- AUTH ROUTES ---
+// --- ROUTES ---
 
 app.post('/api/signup', async (req, res) => {
     const { email, password } = req.body;
     const db = await readJSON(USER_DB_FILE);
     if (db[email]) return res.json({ error: "User exists" });
-
     const hashedPassword = await bcrypt.hash(password, 10);
-    // REMOVED CREDITS
-    db[email] = { password: hashedPassword, userId: "user_" + Date.now() };
+    db[email] = { password: hashedPassword, credits: 999999, userId: "user_" + Date.now() };
     await writeJSON(USER_DB_FILE, db);
-    
     const token = jwt.sign({ email }, JWT_SECRET);
-    res.json({ success: true, token });
+    res.json({ success: true, credits: 999999, token });
 });
 
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     const db = await readJSON(USER_DB_FILE);
     const user = db[email];
-
     if (!user) return res.json({ error: "User not found" });
-
     if (await bcrypt.compare(password, user.password)) {
         const token = jwt.sign({ email }, JWT_SECRET);
-        res.json({ success: true, token });
+        res.json({ success: true, credits: user.credits, token });
     } else {
         res.json({ error: "Invalid password" });
     }
 });
 
-// --- DATA ROUTES ---
+app.get('/api/balance', authenticateToken, async (req, res) => {
+    const db = await readJSON(USER_DB_FILE);
+    res.json({ credits: db[req.user.email]?.credits || 0 });
+});
 
+app.post('/api/buy-credits', authenticateToken, async (req, res) => {
+    const db = await readJSON(USER_DB_FILE);
+    if(db[req.user.email]) { db[req.user.email].credits += 50; await writeJSON(USER_DB_FILE, db); }
+    res.json({ success: true });
+});
+
+// --- DATA ---
 app.get('/api/sessions', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
     const userChats = Object.entries(chats)
         .filter(([id, chat]) => chat.owner === req.user.email)
-        .map(([id, chat]) => ({ id, title: chat.title, date: chat.timestamp }));
+        .map(([id, chat]) => ({ id, title: chat.title, date: chat.timestamp, type: chat.type || 'team' })); // Return Type
     res.json(userChats.reverse());
 });
 
 app.get('/api/session/:id', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
-    res.json(chats[req.params.id]?.history || []);
+    res.json({ history: chats[req.params.id]?.history || [], type: chats[req.params.id]?.type });
 });
 
+// *** UPDATED: CREATE/RENAME SESSION WITH TYPE ***
 app.post('/api/rename-session', authenticateToken, async (req, res) => {
-    const { sessionId, newTitle } = req.body;
+    const { sessionId, newTitle, type } = req.body; // Accept type
     const chats = await readJSON(CHATS_FILE);
-    if (chats[sessionId] && chats[sessionId].owner === req.user.email) {
+    
+    // Create new if doesn't exist (for initial setup)
+    if (!chats[sessionId]) {
+        chats[sessionId] = { 
+            owner: req.user.email, 
+            title: newTitle, 
+            timestamp: Date.now(), 
+            history: [],
+            type: type || 'team' // Default to team
+        };
+    } else if (chats[sessionId].owner === req.user.email) {
         chats[sessionId].title = newTitle;
-        await writeJSON(CHATS_FILE, chats);
-        res.json({ success: true });
-    } else { res.json({ error: "Session not found" }); }
+    }
+    
+    await writeJSON(CHATS_FILE, chats);
+    res.json({ success: true });
 });
 
-// --- AI LOGIC (No Credit Check) ---
+// --- AI LOGIC ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
-        const { message, sessionId, fileData, mimeType } = req.body;
+        const { message, sessionId, fileData, mimeType, sessionType } = req.body; // Accept sessionType
         const email = req.user.email;
-        
         const chats = await readJSON(CHATS_FILE);
 
+        // Ensure session exists with correct type
         if (!chats[sessionId]) {
-            chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [] };
+            chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [], type: sessionType || 'team' };
         }
 
         chats[sessionId].history.push({ role: 'user', text: message });
 
         let promptContent = [{ text: message }];
         let savedFilename = null;
+
+        // *** SELECT PROMPT BASED ON SESSION TYPE ***
+        const SYSTEM_PROMPT = (chats[sessionId].type === 'player') ? PLAYER_PROMPT : TEAM_PROMPT;
 
         if (fileData) {
             const buffer = Buffer.from(fileData, 'base64');
@@ -164,19 +203,15 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
 
             const uploadResponse = await fileManager.uploadFile(filePath, { mimeType: mimeType, displayName: savedFilename });
 
-            // POLL FOR ACTIVE STATE
             let file = await fileManager.getFile(uploadResponse.file.name);
-            let attempts = 0;
             while (file.state === FileState.PROCESSING) {
-                if(attempts > 45) throw new Error("Video processing timed out."); 
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 file = await fileManager.getFile(uploadResponse.file.name);
-                attempts++;
             }
 
-            if (file.state === FileState.FAILED) throw new Error("Video processing failed by Google.");
+            if (file.state === FileState.FAILED) throw new Error("Video processing failed.");
 
-            promptContent = [{ fileData: { mimeType: uploadResponse.file.mimeType, fileUri: uploadResponse.file.uri } }, { text: ANALYST_PROMPT }];
+            promptContent = [{ fileData: { mimeType: uploadResponse.file.mimeType, fileUri: uploadResponse.file.uri } }, { text: SYSTEM_PROMPT }];
         }
 
         const chat = model.startChat(); 
@@ -189,7 +224,6 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
         }
         await writeJSON(CHATS_FILE, chats);
 
-        // Save Clip
         let newClip = null;
         const firstBrace = reply.indexOf('{');
         const lastBrace = reply.lastIndexOf('}');
@@ -203,10 +237,10 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
                     id: savedFilename,
                     owner: email,
                     sessionId: sessionId,
-                    title: parsed.title || "Analyzed Play",
-                    formation: parsed.data?.formation || "Unknown",
-                    coverage: parsed.data?.coverage || "Unknown",
-                    section: "General",
+                    title: parsed.title,
+                    formation: parsed.data?.formation,
+                    coverage: parsed.data?.coverage,
+                    section: (chats[sessionId].type === 'player') ? "Individual" : "General",
                     fullData: parsed 
                 };
                 
@@ -224,23 +258,18 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
     }
 });
 
-// --- LIBRARY MANAGEMENT ---
-
 app.post('/api/update-clip', authenticateToken, async (req, res) => {
     const { id, section } = req.body;
     let library = await readJSON(DB_FILE);
     const index = library.findIndex(p => p.id === id && p.owner === req.user.email);
-    if(index > -1) {
-        library[index].section = section;
-        await writeJSON(DB_FILE, library);
-        res.json({ success: true });
-    } else { res.json({ error: "Clip not found" }); }
+    if(index > -1) { library[index].section = section; await writeJSON(DB_FILE, library); res.json({ success: true }); } 
+    else { res.json({ error: "Clip not found" }); }
 });
 
 app.post('/api/clip-chat', authenticateToken, async (req, res) => {
     try {
         const { message, context } = req.body;
-        const prompt = `Context: Analyzing a football play. Data: ${JSON.stringify(context)}. User Question: ${message}`;
+        const prompt = `Context: Analyzing football play. Data: ${JSON.stringify(context)}. Question: ${message}`;
         const result = await model.generateContent(prompt);
         res.json({ reply: result.response.text() });
     } catch(e) { res.status(500).json({ error: "Chat failed" }); }
