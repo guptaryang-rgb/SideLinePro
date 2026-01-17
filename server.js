@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { GoogleAIFileManager } = require('@google/generative-ai/server'); // *** NEW IMPORT ***
+const { GoogleAIFileManager, FileState } = require('@google/generative-ai/server'); // Import FileState
 const fs = require('fs');
 const path = require('path');
 
@@ -34,7 +34,7 @@ initJSON(USER_DB_FILE, '{}');
 initJSON(CHATS_FILE, '{}');
 
 app.use(cors());
-// 500MB Limit for raw upload to server before sending to Google
+// 500MB Limit
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
@@ -47,10 +47,8 @@ app.get('/', (req, res) => {
 
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY); // *** FILE MANAGER ***
-
-// *** GEMINI 3 PRO PREVIEW ***
-const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
+const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" }); // KEPT GEMINI 3 PRO
 
 const ANALYST_PROMPT = `
 You are an expert Football Coordinator. Analyze this clip for a Scouting Report.
@@ -83,7 +81,6 @@ function writeJSON(file, data) {
 
 // --- API ROUTES ---
 
-// 1. Auth
 app.post('/api/signup', (req, res) => {
     const { email, password } = req.body;
     const db = readJSON(USER_DB_FILE);
@@ -105,7 +102,6 @@ app.post('/api/balance', (req, res) => {
     res.json({ credits: db[req.body.email]?.credits || 0 });
 });
 
-// 2. Stripe
 app.post('/api/buy-credits', async (req, res) => {
     const { email } = req.body;
     if (stripe) {
@@ -135,7 +131,6 @@ app.post('/api/buy-credits', async (req, res) => {
     res.json({ success: true, message: "Credits added (Demo Mode)" });
 });
 
-// 3. Chat & Analysis
 app.get('/api/sessions', (req, res) => {
     const { email } = req.query;
     const chats = readJSON(CHATS_FILE);
@@ -188,22 +183,32 @@ app.post('/api/chat', async (req, res) => {
         let savedFilename = null;
 
         if (fileData) {
-            // 1. Save locally first
             const buffer = Buffer.from(fileData, 'base64');
             const ext = mimeType.split('/')[1];
             savedFilename = `${sessionId}-${Date.now()}.${ext}`;
             const filePath = path.join(UPLOAD_DIR, savedFilename);
             fs.writeFileSync(filePath, buffer);
 
-            // 2. *** UPLOAD TO GOOGLE FILE MANAGER *** // This is the key fix for "File too large" errors
+            // 1. Upload
             const uploadResponse = await fileManager.uploadFile(filePath, {
                 mimeType: mimeType,
                 displayName: savedFilename,
             });
 
-            // 3. Wait for file to be active (usually instant for small files)
-            // In production, you might want to loop check getFile() state
-            
+            // 2. *** WAIT FOR ACTIVE STATE (THE FIX) ***
+            let file = await fileManager.getFile(uploadResponse.file.name);
+            while (file.state === FileState.PROCESSING) {
+                console.log(`Processing file...`);
+                // Wait 2 seconds before checking again
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                file = await fileManager.getFile(uploadResponse.file.name);
+            }
+
+            if (file.state === FileState.FAILED) {
+                throw new Error("Video processing failed by Google.");
+            }
+
+            // 3. Ready to use
             promptContent = [
                 {
                     fileData: {
@@ -254,11 +259,10 @@ app.post('/api/chat', async (req, res) => {
 
     } catch (e) {
         console.error("AI ERROR:", e);
-        res.status(500).json({ error: "Analysis failed. Please try again." });
+        res.status(500).json({ error: "Analysis failed. Error: " + e.message });
     }
 });
 
-// 4. Session Summary
 app.post('/api/session-summary', async (req, res) => {
     const { sessionId, email } = req.body;
     const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
@@ -272,7 +276,6 @@ app.post('/api/session-summary', async (req, res) => {
     } catch(e) { res.json({ report: "Could not generate summary." }); }
 });
 
-// 5. Library & Delete
 app.get('/api/search', (req, res) => {
     const { email, sessionId } = req.query; 
     const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
