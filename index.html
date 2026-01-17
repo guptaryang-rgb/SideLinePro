@@ -3,154 +3,328 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sideline Pro | Secure Elite Analytics</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <title>Sideline Pro | Elite Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050a05; --panel: #0a140a; --border: #142914; --accent: #009933; --accent-glow: #00cc44; --text: #e0e0e0; }
-        * { box-sizing: border-box; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #222; border-radius: 4px; }
-        
-        .app-container { display: flex; width: 100%; height: 100%; }
-        
-        .sidebar { width: 260px; background: #020502; border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
-        .sidebar-header { padding: 25px; font-family: 'JetBrains Mono'; color: var(--accent-glow); font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
-        .btn-new { background: var(--accent); color: #000; border: none; padding: 12px; margin: 0 15px 10px; border-radius: 6px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-size: 0.8rem; }
-        .session-list { flex: 1; overflow-y: auto; padding: 10px 15px; }
-        .session-item { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; color: #88a; font-size: 0.9rem; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
-        .session-item.active { background: #0f1f0f; color: var(--accent); border-left: 2px solid var(--accent); }
-        .edit-icon { opacity: 0; font-size: 0.8rem; cursor: pointer; }
-        .session-item:hover .edit-icon { opacity: 1; }
-        .credits-panel { padding: 20px; border-top: 1px solid var(--border); background: #020502; }
-        .buy-btn { width: 100%; background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 8px; font-weight: bold; }
+        :root {
+            /* THEME COLORS FROM IMAGE */
+            --bg-deep: #050505;
+            --bg-panel: #0a0c0a;
+            --bg-card: #111411;
+            --border: #1f261f;
+            --accent: #00e676; /* Neon Green */
+            --accent-dim: rgba(0, 230, 118, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #889988;
+            --danger: #ff4444;
+        }
 
-        .chat-section { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
-        .header-top { padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #0a140a; }
-        .session-title { font-weight: 800; font-size: 1.1rem; color: white; display: flex; align-items: center; gap: 10px;}
-        
-        #chat-window { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 25px; }
-        .message { padding: 20px; border-radius: 8px; font-size: 0.95rem; line-height: 1.6; max-width: 800px; animation: fadeIn 0.3s; }
-        .user-msg { align-self: flex-end; background: #1a2e1a; color: white; border-right: 3px solid var(--accent); }
-        .ai-msg { align-self: flex-start; color: #ccc; width: 100%; border-left: 3px solid #333; padding-left: 25px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body { background-color: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* SCOUT REPORT CARD STYLING */
-        .scout-card { background: #0e1c0e; border: 1px solid #1a331a; border-radius: 8px; padding: 25px; margin-top: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .scout-header { display: flex; justify-content: space-between; border-bottom: 1px solid #1a331a; padding-bottom: 15px; margin-bottom: 20px; }
-        .scout-title { font-weight: 800; color: var(--accent); font-size: 1.2rem; text-transform: uppercase; }
-        
-        .report-section { margin-bottom: 20px; }
-        .section-label { color: #668866; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-        .section-text { color: #e0e0e0; line-height: 1.5; }
-        
-        .mistake-list { list-style: none; padding: 0; }
-        .mistake-list li { color: #ff5555; margin-bottom: 5px; display: flex; gap: 10px; }
-        .mistake-list li::before { content: "✖"; font-weight: bold; }
-        
-        .action-list { color: var(--accent-glow); margin-top: 5px; }
-        
-        .action-row { display: flex; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #1a331a; }
-        .card-btn { flex: 1; background: #1a331a; border: 1px solid var(--accent); color: var(--accent); padding: 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; text-align: center; text-decoration: none; }
-        .card-btn:hover { background: var(--accent); color: black; }
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-        /* PROGRESS BAR */
-        .progress-bar { width: 100%; height: 4px; background: #111; margin-top: 10px; display: none; overflow: hidden; position: relative; }
-        .progress-fill { height: 100%; background: var(--accent); width: 50%; position: absolute; animation: load 2s infinite ease-in-out; }
-        @keyframes load { 0% { left: -50%; } 100% { left: 100%; } }
+        /* --- 1. TOP NAVIGATION --- */
+        .navbar {
+            height: 70px;
+            background: rgba(5, 5, 5, 0.95);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
 
-        .input-area { padding: 25px; display: flex; gap: 15px; align-items: center; background: #0a140a; border-top: 1px solid var(--border); }
-        input[type="text"] { background: #050a05; border: 1px solid #1a2e1a; color: white; padding: 15px; border-radius: 6px; flex: 1; outline: none; font-size: 1rem; }
-        .file-btn { background: #1a2e1a; color: #88a; width: 50px; height: 50px; border: 1px solid #1a331a; font-size: 1.2rem; cursor: pointer; border-radius: 6px; }
-        .send-btn { background: var(--accent); color: black; border: none; padding: 0 30px; font-weight: 800; height: 50px; cursor: pointer; border-radius: 6px; }
+        .logo {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            font-size: 1.4rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.5px;
+        }
+        .logo span { color: var(--accent); }
+
+        /* GLOWING BUTTON STYLE */
+        .btn-glow {
+            background: var(--accent);
+            color: black;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px; /* Pill shape */
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-glow:hover {
+            background: #33ff99;
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.6);
+            transform: translateY(-1px);
+        }
+
+        /* --- 2. MAIN LAYOUT --- */
+        .app-body { flex: 1; display: flex; overflow: hidden; }
+
+        /* SIDEBAR (SESSIONS) */
+        .sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; }
         
-        /* LIBRARY & MODALS */
-        .library-section { width: 350px; background: #0a140a; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-        .lib-header { padding: 20px; font-weight: 800; color: #668866; border-bottom: 1px solid var(--border); font-size: 0.8rem; letter-spacing: 1px; }
-        .section-title { font-size: 0.75rem; font-weight: 700; color: var(--accent); text-transform: uppercase; margin: 15px 15px 5px; letter-spacing: 0.5px; }
-        .play-card { background: #050a05; border: 1px solid #1a2e1a; padding: 15px; margin: 5px 15px 15px; border-radius: 6px; cursor: pointer; }
-        .play-card:hover { border-color: var(--accent); }
+        .sidebar-title { color: var(--text-muted); font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 15px; text-transform: uppercase; }
         
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; display: none; align-items: center; justify-content: center; }
-        .modal-box { background: #0a140a; padding: 30px; border: 1px solid #1a2e1a; border-radius: 12px; width: 600px; max-height: 90vh; overflow-y: auto; }
-        .auth-input { width: 100%; padding: 15px; margin-bottom: 10px; background:#000; border:1px solid #333; color:white; }
+        .btn-new-session {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--accent);
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 20px;
+            transition: 0.2s;
+        }
+        .btn-new-session:hover { border-color: var(--accent); background: var(--accent-dim); }
+
+        .session-list { flex: 1; overflow-y: auto; }
+        .session-item {
+            padding: 12px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            transition: 0.2s;
+            display: flex; justify-content: space-between;
+        }
+        .session-item:hover { background: #1a1e1a; color: white; }
+        .session-item.active { background: var(--accent-dim); color: var(--accent); border-left: 3px solid var(--accent); }
+
+        /* CENTER (CHAT & VIDEO) */
+        .main-stage { flex: 1; display: flex; flex-direction: column; background: var(--bg-deep); position: relative; }
+        
+        #chat-feed { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 30px; scroll-behavior: smooth; }
+
+        /* MESSAGE BUBBLES */
+        .msg { padding: 20px; border-radius: 12px; max-width: 85%; line-height: 1.6; font-size: 0.95rem; animation: fadeIn 0.3s; }
+        .msg.user { align-self: flex-end; background: #1a1a1a; color: white; border: 1px solid #333; }
+        .msg.model { align-self: flex-start; width: 100%; max-width: 900px; padding: 0; background: transparent; } /* AI uses cards */
+
+        /* INPUT AREA */
+        .input-wrapper {
+            padding: 25px;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .input-field {
+            flex: 1;
+            background: #050505;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 30px;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        .input-field:focus { border-color: var(--accent); }
+        
+        .icon-btn {
+            background: #1a1e1a;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* RIGHT PANEL (LIBRARY) */
+        .library-panel { width: 320px; background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; }
+        #library-feed { flex: 1; overflow-y: auto; }
+
+        /* --- 3. COMPONENTS --- */
+
+        /* TACTICAL CARD (Matches Image) */
+        .tactical-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .card-header {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        
+        .trait-box { margin-bottom: 15px; }
+        .trait-title { color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+        .trait-content { color: #ccc; font-size: 0.9rem; line-height: 1.5; }
+        .highlight { color: var(--accent); font-weight: 600; }
+        
+        .progress-section { margin-top: 20px; margin-bottom: 20px; }
+        .progress-track { background: #222; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 5px; }
+        .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 1s; }
+
+        .card-actions { display: flex; gap: 10px; }
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            background: #222;
+            border: 1px solid var(--border);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .action-btn.primary { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+        /* UPLOAD PROGRESS */
+        .upload-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 3px; display: none; }
+        .upload-bar { height: 100%; background: var(--accent); width: 0%; animation: load 2s infinite ease-in-out; }
+        @keyframes load { 0% { width: 0%; transform: translateX(-100%); } 100% { width: 100%; transform: translateX(100%); } }
+
+        /* MODALS */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-box { background: #111; border: 1px solid var(--border); width: 400px; padding: 40px; border-radius: 16px; text-align: center; box-shadow: 0 0 50px rgba(0,230,118,0.1); }
+        .modal-title { font-size: 1.5rem; font-weight: 800; color: white; margin-bottom: 30px; }
+        
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px; }
+        .modal-input { width: 100%; background: #050505; border: 1px solid #333; padding: 12px; border-radius: 8px; color: white; font-size: 1rem; }
+        
+        .settings-row { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 15px 0; font-size: 0.9rem; }
+        .settings-label { color: var(--text-muted); }
+        .settings-val { color: white; font-family: 'JetBrains Mono'; }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <div class="sidebar">
-        <div class="sidebar-header"><span>⚡</span> SIDELINE PRO</div>
-        <button class="btn-new" onclick="createNewChat()">+ New Session</button>
-        <div id="session-list" class="session-list"></div>
-        <div class="credits-panel">
-            <span id="credit-display" style="color:white; font-weight:bold;">--</span> Credits
-            <button class="buy-btn" onclick="buyCredits()">+ 50 Credits (Free)</button>
-            <div style="margin-top:10px; font-size:0.7rem; color:#444; cursor:pointer;" onclick="logout()">LOGOUT</div>
+    <div class="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#00E676" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Sideline<span>Pro</span>
         </div>
+        <button id="nav-btn" class="btn-glow" onclick="handleNavClick()">Sign Up</button>
     </div>
 
-    <div class="chat-section">
-        <div class="header-top">
-            <span id="current-chat-title" class="session-title">Select a Session <span onclick="renameCurrentSession()" style="cursor:pointer; font-size:0.8rem; margin-left:10px; opacity:0.5;">✏️</span></span>
-            <button onclick="generateSessionSummary()" style="background:#1a2e1a; border:1px solid #1a331a; color:var(--accent); padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.8rem;">📄 SESSION REPORT</button>
-        </div>
+    <div class="app-body">
         
-        <div id="chat-window">
-            <div class="message ai-msg">System Online. Ready for analysis.</div>
-        </div>
-        
-        <div id="progress-container" class="progress-bar">
-            <div class="progress-fill"></div>
+        <div class="sidebar">
+            <button class="btn-new-session" onclick="createNewChat()">+ New Session</button>
+            <div class="sidebar-title">Recent Sessions</div>
+            <div id="session-list" class="session-list"></div>
         </div>
 
-        <div class="input-area">
-            <input type="file" id="file-input" accept="video/*" style="display:none;">
-            <button class="file-btn" onclick="document.getElementById('file-input').click()">📎</button>
-            <input type="text" id="user-input" placeholder="Analyze this play..." autocomplete="off">
-            <button class="send-btn" id="send-btn">SEND</button>
+        <div class="main-stage">
+            <div class="upload-bar-container" id="progress-bar"><div class="upload-bar"></div></div>
+            
+            <div id="chat-feed">
+                <div class="msg model">
+                    <div style="font-size:1.5rem; font-weight:800; color:white; margin-bottom:10px;">Welcome to Sideline Pro.</div>
+                    <div style="color:var(--text-muted);">Upload game film to generate elite tactical breakdowns.</div>
+                </div>
+            </div>
+
+            <div class="input-wrapper">
+                <input type="file" id="file-input" accept="video/*" hidden>
+                <button class="icon-btn" onclick="document.getElementById('file-input').click()">📎</button>
+                <input type="text" id="user-input" class="input-field" placeholder="Analyze this play..." autocomplete="off">
+                <button class="btn-glow" id="send-btn" style="padding: 12px 30px;">SEND</button>
+            </div>
+        </div>
+
+        <div class="library-panel">
+            <div class="sidebar-title">Clip Library</div>
+            <div id="library-feed"></div>
         </div>
     </div>
 
-    <div class="library-section">
-        <div class="lib-header">SESSION CLIPS</div>
-        <div id="library-content" style="flex:1; overflow-y: auto;"></div>
+    <div id="auth-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">Get Started</div>
+            <div class="input-group">
+                <label class="input-label">Email Address</label>
+                <input type="email" id="auth-email" class="modal-input" placeholder="coach@team.com">
+            </div>
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" id="auth-pass" class="modal-input" placeholder="••••••••">
+            </div>
+            <button class="btn-glow" style="width:100%; margin-bottom:15px;" onclick="handleAuth('signup')">Create Account</button>
+            <div style="color:#666; font-size:0.8rem; cursor:pointer;" onclick="handleAuth('login')">Already have an account? <b>Login</b></div>
+        </div>
     </div>
-</div>
 
-<div id="auth-modal" class="modal" style="display:flex;">
-    <div class="modal-box" style="width:350px;">
-        <div style="font-size:1.5rem; font-weight:bold; color:var(--accent); margin-bottom:20px;">SIDELINE PRO</div>
-        <input type="email" id="auth-email" class="auth-input" placeholder="Email">
-        <input type="password" id="auth-pass" class="auth-input" placeholder="Password">
-        <button class="btn-new" style="width:100%; margin:0;" onclick="handleAuth('login')">LOGIN</button>
-        <button class="buy-btn" style="border:none; margin-top:10px;" onclick="handleAuth('signup')">Create Account (Unlimited Credits)</button>
-    </div>
-</div>
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">Account Settings</div>
+            
+            <div class="settings-row">
+                <span class="settings-label">Email</span>
+                <span class="settings-val" id="set-email">--</span>
+            </div>
+            <div class="settings-row">
+                <span class="settings-label">Password</span>
+                <span class="settings-val">••••••••</span>
+            </div>
+            <div class="settings-row">
+                <span class="settings-label">Credit Balance</span>
+                <span class="settings-val" style="color:var(--accent);" id="set-credits">--</span>
+            </div>
 
-<div id="video-modal" class="modal">
-    <div class="modal-box" style="width:800px; text-align:center;">
-        <video id="main-player" controls style="width:100%; border:2px solid var(--accent); border-radius:8px;"></video>
-        <button class="buy-btn" onclick="closeModals()" style="margin-top:20px;">CLOSE</button>
+            <button class="btn-new-session" style="margin-top:20px;" onclick="buyCredits()">Refill Credits (Free)</button>
+            <button class="btn-new-session" style="border-color:var(--danger); color:var(--danger);" onclick="logout()">Log Out</button>
+            <button class="btn-new-session" style="border:none; color:#666;" onclick="closeModals()">Close</button>
+        </div>
     </div>
-</div>
 
-<div id="chat-modal" class="modal">
-    <div class="modal-box">
-        <div style="font-weight:bold; color:var(--accent); margin-bottom:10px;">CLIP WAR ROOM</div>
-        <div id="clip-chat-history" style="height:300px; overflow-y:auto; background:#000; padding:10px; margin-bottom:10px; border-radius:4px;"></div>
-        <input type="text" id="clip-chat-input" placeholder="Ask specific question..." style="width:100%; background:#111; color:white; border:1px solid #333; padding:10px;">
-        <button class="btn-new" style="width:100%; margin-top:10px;" onclick="sendClipMessage()">ASK</button>
-        <button class="buy-btn" onclick="closeModals()">CLOSE</button>
+    <div id="video-modal" class="modal-overlay">
+        <div class="modal-box" style="width:800px; padding:0; overflow:hidden; background:black;">
+            <video id="main-player" controls style="width:100%; display:block;"></video>
+            <div style="padding:15px; text-align:right;">
+                <button class="btn-glow" onclick="closeModals()">Close</button>
+            </div>
+        </div>
     </div>
-</div>
 
 <script>
     let authToken = localStorage.getItem('sideline_token');
+    let currentUserEmail = localStorage.getItem('sideline_email') || ""; // Store email for settings
     let currentSessionId = null;
-    let currentClipId = null;
-    let libraryData = [];
 
-    // Helper for authenticated fetch
+    // Helper: Authenticated Fetch
     async function apiFetch(url, options = {}) {
         if (!options.headers) options.headers = {};
         options.headers['Authorization'] = `Bearer ${authToken}`;
@@ -159,237 +333,260 @@
     }
 
     window.onload = () => {
-        if (!authToken) document.getElementById('auth-modal').style.display = 'flex';
-        else { loadSessions(); loadLibrary(); refreshCredits(); }
+        updateNavButton();
+        if (authToken) {
+            loadSessions();
+            loadLibrary();
+        } else {
+            // Optional: Auto open login if you want
+            // openModal('auth-modal');
+        }
     };
+
+    // --- NAVIGATION LOGIC ---
+    function updateNavButton() {
+        const btn = document.getElementById('nav-btn');
+        if (authToken) {
+            btn.innerText = "Settings";
+            btn.style.background = "transparent";
+            btn.style.border = "1px solid var(--accent)";
+            btn.style.color = "var(--accent)";
+        } else {
+            btn.innerText = "Sign Up";
+            btn.style.background = "var(--accent)";
+            btn.style.color = "black";
+        }
+    }
+
+    function handleNavClick() {
+        if (authToken) {
+            // Open Settings
+            document.getElementById('set-email').innerText = currentUserEmail;
+            refreshCredits(); // Get latest credits
+            openModal('settings-modal');
+        } else {
+            // Open Signup
+            openModal('auth-modal');
+        }
+    }
 
     // --- AUTH ---
     async function handleAuth(type) {
         const email = document.getElementById('auth-email').value;
         const password = document.getElementById('auth-pass').value;
-        const res = await fetch(`/api/${type}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        if (data.success) {
-            authToken = data.token;
-            localStorage.setItem('sideline_token', authToken);
-            document.getElementById('auth-modal').style.display = 'none';
-            loadSessions(); loadLibrary(); refreshCredits();
-        } else alert(data.error);
+        
+        try {
+            const res = await fetch(`/api/${type}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                authToken = data.token;
+                currentUserEmail = email;
+                localStorage.setItem('sideline_token', authToken);
+                localStorage.setItem('sideline_email', email);
+                
+                closeModals();
+                updateNavButton();
+                loadSessions();
+                
+                // Show welcome in chat
+                document.getElementById('chat-feed').innerHTML = `
+                    <div class="msg model">
+                        <b>Welcome, Coach.</b><br>
+                        Account active. Credits: ${data.credits}<br>
+                        Ready for analysis.
+                    </div>`;
+            } else {
+                alert(data.error);
+            }
+        } catch(e) { alert("Connection Error"); }
     }
-    
-    function logout() { localStorage.removeItem('sideline_token'); location.reload(); }
-    
+
+    function logout() {
+        localStorage.removeItem('sideline_token');
+        localStorage.removeItem('sideline_email');
+        location.reload();
+    }
+
     async function refreshCredits() {
-        const res = await apiFetch('/api/balance', { method: 'GET' });
+        const res = await apiFetch('/api/balance');
         const data = await res.json();
-        document.getElementById('credit-display').textContent = data.credits;
+        document.getElementById('set-credits').innerText = data.credits;
     }
 
     async function buyCredits() {
-        const res = await apiFetch('/api/buy-credits', { method: 'POST', body: JSON.stringify({}) });
-        const data = await res.json();
-        if(data.success) { alert(data.message); refreshCredits(); }
+        await apiFetch('/api/buy-credits', { method: 'POST', body: '{}' });
+        refreshCredits();
+        alert("Credits added!");
     }
 
-    // --- SESSIONS ---
-    async function loadSessions() {
-        const res = await apiFetch('/api/sessions');
-        const sessions = await res.json();
-        const list = document.getElementById('session-list');
-        list.innerHTML = '';
-        sessions.forEach(s => {
-            const div = document.createElement('div');
-            div.className = `session-item ${s.id === currentSessionId ? 'active' : ''}`;
-            div.innerHTML = `<span onclick="loadChat('${s.id}', '${s.title}')" style="flex:1">${s.title}</span><span class="edit-icon" onclick="renameSession('${s.id}')">✏️</span>`;
-            list.appendChild(div);
-        });
-    }
+    // --- AI & CHAT ---
+    document.getElementById('send-btn').addEventListener('click', sendMessage);
 
-    async function createNewChat() {
-        currentSessionId = Math.random().toString(36).substr(2, 9);
-        document.getElementById('current-chat-title').textContent = "New Session";
-        document.getElementById('chat-window').innerHTML = '<div class="message ai-msg">System Online.</div>';
-        document.getElementById('library-content').innerHTML = '';
-        loadSessions();
-    }
+    async function sendMessage() {
+        if (!authToken) return openModal('auth-modal');
+        
+        const input = document.getElementById('user-input');
+        const fileInput = document.getElementById('file-input');
+        const text = input.value;
+        const file = fileInput.files[0];
 
-    async function loadChat(id, title) {
-        currentSessionId = id;
-        document.getElementById('current-chat-title').textContent = title;
-        loadSessions();
-        const res = await apiFetch(`/api/session/${id}`);
-        const history = await res.json();
-        const win = document.getElementById('chat-window');
-        win.innerHTML = '';
-        history.forEach(msg => addMessage(msg.text, msg.role));
-        loadLibrary();
-    }
+        if (!text && !file) return;
+        if (!currentSessionId) await createNewChat();
 
-    async function renameSession(id) {
-        const newName = prompt("Rename Session:");
-        if(newName) {
-            await apiFetch('/api/rename-session', { method: 'POST', body: JSON.stringify({ sessionId: id, newTitle: newName }) });
-            loadSessions();
-        }
-    }
-    
-    function renameCurrentSession() { if(currentSessionId) renameSession(currentSessionId); }
+        // UI Update
+        const feed = document.getElementById('chat-feed');
+        feed.innerHTML += `<div class="msg user">${text || "Analyzing Clip..."}</div>`;
+        input.value = '';
+        feed.scrollTop = feed.scrollHeight;
 
-    // --- CHAT & ANALYSIS ---
-    document.getElementById('send-btn').addEventListener('click', async () => {
-        const text = document.getElementById('user-input').value;
-        const file = document.getElementById('file-input').files[0];
-        if(!text && !file) return;
-        if(!currentSessionId) createNewChat();
-
-        addMessage(text || "Analyzing...", 'user');
-        document.getElementById('user-input').value = '';
-        document.getElementById('progress-container').style.display = 'block';
+        // Show Progress
+        document.getElementById('progress-bar').style.display = 'block';
 
         const payload = { message: text, sessionId: currentSessionId };
+        
         if (file) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = async () => {
                 payload.fileData = reader.result.split(',')[1];
                 payload.mimeType = file.type;
-                sendPayload(payload);
+                fileInput.value = ''; // Clear file
+                await sendPayload(payload);
             };
-        } else { sendPayload(payload); }
-    });
+        } else {
+            await sendPayload(payload);
+        }
+    }
 
     async function sendPayload(payload) {
         try {
             const res = await apiFetch('/api/chat', { method: 'POST', body: JSON.stringify(payload) });
             const data = await res.json();
-            document.getElementById('progress-container').style.display = 'none';
-            if(data.error) addMessage(data.error, 'model');
-            else {
-                addMessage(data.reply, 'model');
-                if(data.newClip) loadLibrary();
-                refreshCredits();
+            
+            document.getElementById('progress-bar').style.display = 'none';
+
+            if (data.error) {
+                document.getElementById('chat-feed').innerHTML += `<div class="msg model" style="color:var(--danger)">Error: ${data.error}</div>`;
+            } else {
+                // Render the tactical card
+                renderResponse(data.reply, data.newClip?.id);
+                if (data.newClip) loadLibrary();
             }
-        } catch(e) { 
-            document.getElementById('progress-container').style.display = 'none';
-            addMessage("Connection error", 'model'); 
+        } catch (e) {
+            document.getElementById('progress-bar').style.display = 'none';
+            alert("Analysis failed.");
         }
     }
 
-    function addMessage(text, role) {
-        const div = document.createElement('div');
-        div.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
-        if (role === 'model') {
-            try {
-                const firstBrace = text.indexOf('{');
-                const lastBrace = text.lastIndexOf('}');
-                if (firstBrace !== -1 && lastBrace !== -1) {
-                    const jsonString = text.substring(firstBrace, lastBrace + 1);
-                    const data = JSON.parse(jsonString);
-                    div.innerHTML = renderScoutCard(data);
-                } else { div.textContent = text; }
-            } catch(e) { div.textContent = text; }
-        } else { div.textContent = text; }
-        const win = document.getElementById('chat-window');
-        win.appendChild(div);
-        win.scrollTop = win.scrollHeight;
+    function renderResponse(text, clipId) {
+        // Try to parse JSON for the pretty card
+        try {
+            const jsonStart = text.indexOf('{');
+            const jsonEnd = text.lastIndexOf('}');
+            if (jsonStart > -1) {
+                const json = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
+                const report = json.scouting_report;
+                
+                const html = `
+                    <div class="tactical-card">
+                        <div class="card-header">${json.title}</div>
+                        
+                        <div class="trait-box">
+                            <div class="trait-title">ELITE TRAIT: FORMATION</div>
+                            <div class="trait-content">
+                                <span class="highlight">${json.data.formation}</span> vs ${json.data.coverage}
+                            </div>
+                        </div>
+
+                        <div class="trait-box">
+                            <div class="trait-title">TACTICAL SUMMARY</div>
+                            <div class="trait-content">${report.summary}</div>
+                        </div>
+
+                        <div class="trait-box">
+                            <div class="trait-title" style="color:var(--danger)">VULNERABILITIES</div>
+                            <div class="trait-content">${report.weakness}</div>
+                        </div>
+
+                        <div class="progress-section">
+                            <div class="trait-title">ACTION PLAN CONFIDENCE</div>
+                            <div class="progress-track"><div class="progress-bar" style="width: 85%"></div></div>
+                        </div>
+
+                        <div class="card-actions">
+                            ${clipId ? `<button class="action-btn" onclick="playVideo('${clipId}')">Watch Clip</button>` : ''}
+                            <button class="action-btn primary">Save to Gameplan</button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('chat-feed').innerHTML += html;
+            } else {
+                // Fallback text
+                document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`;
+            }
+        } catch (e) {
+            document.getElementById('chat-feed').innerHTML += `<div class="msg model">${text}</div>`;
+        }
+        document.getElementById('chat-feed').scrollTop = document.getElementById('chat-feed').scrollHeight;
     }
 
-    // --- SCOUT CARD & LIBRARY ---
-    function renderScoutCard(data) {
-        const r = data.scouting_report || {};
-        return `
-            <div class="scout-card">
-                <div class="scout-header">
-                    <div class="scout-title">${data.title}</div>
-                    <div style="color:#666; font-size:0.8rem;">${data.data?.formation} vs ${data.data?.coverage}</div>
-                </div>
-                <div class="report-section"><div class="section-label">SUMMARY</div><div class="section-text">${r.summary}</div></div>
-                <div class="report-section"><div class="section-label" style="color:#ff5555">MISTAKES</div><ul class="mistake-list">${(r.mistakes||[]).map(m=>`<li>${m}</li>`).join('')}</ul></div>
-                <div class="report-section"><div class="section-label" style="color:var(--accent-glow)">PLAN</div><div class="section-text action-list">${r.action_plan}</div></div>
-                <div class="action-row"><button onclick="playVideo('${data.id}')" class="card-btn">WATCH</button><div class="card-btn" onclick="openClipChat('${data.id}')">ASK</div></div>
-            </div>`;
+    // --- SESSION & LIBRARY ---
+    async function createNewChat() {
+        currentSessionId = Math.random().toString(36).substr(2, 9);
+        document.getElementById('chat-feed').innerHTML = '<div class="msg model">New Session Started.</div>';
+        loadSessions();
+    }
+
+    async function loadSessions() {
+        const res = await apiFetch('/api/sessions');
+        const list = await res.json();
+        const container = document.getElementById('session-list');
+        container.innerHTML = '';
+        list.forEach(s => {
+            container.innerHTML += `<div class="session-item" onclick="loadChat('${s.id}')">${s.title}</div>`;
+        });
+    }
+
+    async function loadChat(id) {
+        currentSessionId = id;
+        const res = await apiFetch(`/api/session/${id}`);
+        const history = await res.json();
+        const feed = document.getElementById('chat-feed');
+        feed.innerHTML = '';
+        history.forEach(h => {
+            if(h.role === 'model') renderResponse(h.text);
+            else feed.innerHTML += `<div class="msg user">${h.text}</div>`;
+        });
     }
 
     async function loadLibrary() {
-        const res = await apiFetch(`/api/search?sessionId=${currentSessionId}`, { method: 'GET' });
-        libraryData = await res.json();
-        const lib = document.getElementById('library-content');
-        lib.innerHTML = '';
-        
-        const groups = {};
-        libraryData.forEach(clip => {
-            const sec = clip.section || "General";
-            if(!groups[sec]) groups[sec] = [];
-            groups[sec].push(clip);
-        });
-
-        Object.keys(groups).forEach(section => {
-            lib.innerHTML += `<div class="section-title">${section}</div>`;
-            groups[section].forEach(clip => {
-                const div = document.createElement('div');
-                div.className = 'play-card';
-                div.innerHTML = `
-                    <div style="font-weight:bold; color:white;">${clip.title}</div>
-                    <div style="font-size:0.7rem; color:#666;">${clip.formation} vs ${clip.coverage}</div>
-                    <div style="display:flex; gap:5px; margin-top:8px;">
-                        <button class="buy-btn" style="padding:4px; font-size:0.6rem;" onclick="openClipChat('${clip.id}')">CHAT</button>
-                        <button class="buy-btn" style="padding:4px; font-size:0.6rem;" onclick="changeSection('${clip.id}')">MOVE</button>
-                        <button class="buy-btn" style="padding:4px; font-size:0.6rem; border-color:#ff5555; color:#ff5555;" onclick="deleteClip('${clip.id}')">DEL</button>
-                    </div>
-                `;
-                lib.appendChild(div);
-            });
+        const res = await apiFetch(`/api/search`);
+        const clips = await res.json();
+        const feed = document.getElementById('library-feed');
+        feed.innerHTML = '';
+        clips.forEach(c => {
+            feed.innerHTML += `
+                <div class="session-item" onclick="playVideo('${c.id}')">
+                    <span>${c.title}</span>
+                    <span style="font-size:0.7rem; color:#666">▶</span>
+                </div>`;
         });
     }
 
+    // --- MODAL UTILS ---
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModals() { 
+        document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
+        document.getElementById('main-player').pause();
+    }
     function playVideo(id) {
         document.getElementById('main-player').src = `/plays/${id}`;
-        document.getElementById('video-modal').style.display = 'flex';
-    }
-
-    function openClipChat(id) {
-        currentClipId = id;
-        document.getElementById('clip-chat-history').innerHTML = '';
-        document.getElementById('chat-modal').style.display = 'flex';
-    }
-
-    async function sendClipMessage() {
-        const msg = document.getElementById('clip-chat-input').value;
-        const clip = libraryData.find(c => c.id === currentClipId);
-        document.getElementById('clip-chat-history').innerHTML += `<div style="color:white; margin:5px;">User: ${msg}</div>`;
-        document.getElementById('clip-chat-input').value = '';
-        const res = await apiFetch('/api/clip-chat', { method: 'POST', body: JSON.stringify({ message: msg, context: clip }) });
-        const data = await res.json();
-        document.getElementById('clip-chat-history').innerHTML += `<div style="color:var(--accent); margin:5px;">AI: ${data.reply}</div>`;
-    }
-
-    async function deleteClip(id) {
-        if(!confirm("Delete?")) return;
-        await apiFetch('/api/delete-clip', { method: 'POST', body: JSON.stringify({ id }) });
-        loadLibrary();
-    }
-
-    async function changeSection(id) {
-        const sec = prompt("Folder Name:");
-        if(sec) {
-            await apiFetch('/api/update-clip', { method: 'POST', body: JSON.stringify({ id, section: sec }) });
-            loadLibrary();
-        }
-    }
-
-    async function generateSessionSummary() {
-        const res = await apiFetch('/api/session-summary', { method: 'POST', body: JSON.stringify({ sessionId: currentSessionId }) });
-        const data = await res.json();
-        addMessage(data.report, 'model');
-    }
-
-    function closeModals() {
-        document.querySelectorAll('.modal').forEach(el => { if(el.id !== 'auth-modal') el.style.display = 'none'; });
-        document.getElementById('main-player').pause();
+        openModal('video-modal');
     }
 </script>
 </body>
