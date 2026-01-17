@@ -3,20 +3,15 @@ const express = require('express');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { GoogleAIFileManager, FileState } = require('@google/generative-ai/server');
-const fs = require('fs').promises; // Use Promises for Async
-const fsSync = require('fs'); // Keep sync for initial setup only
+const fs = require('fs').promises; 
+const fsSync = require('fs'); 
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// --- STRIPE SETUP ---
-let stripe;
-try { stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); } 
-catch (e) { console.log("Stripe key missing - Demo Mode Active"); }
-
 const app = express();
 const port = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || "super_secret_football_key"; // Use env in prod
+const JWT_SECRET = process.env.JWT_SECRET || "super_secret_football_key"; 
 
 // --- FILE SYSTEM CONFIG ---
 const UPLOAD_DIR = path.join(__dirname, 'saved_plays');
@@ -24,7 +19,7 @@ const DB_FILE = path.join(__dirname, 'stats_db.json');
 const USER_DB_FILE = path.join(__dirname, 'users_db.json');
 const CHATS_FILE = path.join(__dirname, 'chats_db.json');
 
-// Initial Setup (Sync is fine here, happens once at startup)
+// Initial Setup 
 if (!fsSync.existsSync(UPLOAD_DIR)) fsSync.mkdirSync(UPLOAD_DIR);
 const initJSON = (file) => { if (!fsSync.existsSync(file)) fsSync.writeFileSync(file, JSON.stringify(file.includes('db.json') ? [] : {})); };
 initJSON(DB_FILE); initJSON(USER_DB_FILE); initJSON(CHATS_FILE);
@@ -69,13 +64,12 @@ async function readJSON(file) {
 }
 
 async function writeJSON(file, data) {
-    // Write atomically to prevent corruption
     const tempFile = `${file}.tmp`;
     await fs.writeFile(tempFile, JSON.stringify(data, null, 2));
     await fs.rename(tempFile, file);
 }
 
-// --- MIDDLEWARE: PROTECT ROUTES ---
+// --- MIDDLEWARE ---
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -90,25 +84,19 @@ const authenticateToken = (req, res, next) => {
 
 // --- AUTH ROUTES ---
 
-// 1. Secure Signup
 app.post('/api/signup', async (req, res) => {
     const { email, password } = req.body;
     const db = await readJSON(USER_DB_FILE);
-    
     if (db[email]) return res.json({ error: "User exists" });
 
-    // HASH PASSWORD
     const hashedPassword = await bcrypt.hash(password, 10);
-    
     db[email] = { password: hashedPassword, credits: 3, userId: "user_" + Date.now() };
     await writeJSON(USER_DB_FILE, db);
     
-    // Auto-login
     const token = jwt.sign({ email }, JWT_SECRET);
     res.json({ success: true, credits: 3, token });
 });
 
-// 2. Secure Login
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     const db = await readJSON(USER_DB_FILE);
@@ -116,7 +104,6 @@ app.post('/api/login', async (req, res) => {
 
     if (!user) return res.json({ error: "User not found" });
 
-    // COMPARE HASH
     if (await bcrypt.compare(password, user.password)) {
         const token = jwt.sign({ email }, JWT_SECRET);
         res.json({ success: true, credits: user.credits, token });
@@ -125,34 +112,24 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// 3. Get Balance (Protected)
 app.get('/api/balance', authenticateToken, async (req, res) => {
     const db = await readJSON(USER_DB_FILE);
     res.json({ credits: db[req.user.email]?.credits || 0 });
 });
 
-// 4. Buy Credits (Protected)
+// *** MODIFIED: FREE CREDIT REFILL ***
 app.post('/api/buy-credits', authenticateToken, async (req, res) => {
     const email = req.user.email;
-    if (stripe) {
-        try {
-            const session = await stripe.checkout.sessions.create({
-                payment_method_types: ['card'],
-                line_items: [{ price_data: { currency: 'usd', product_data: { name: '50 Scouting Credits' }, unit_amount: 1500 }, quantity: 1 }],
-                mode: 'payment',
-                success_url: `https://your-site.com/success`, 
-                cancel_url: 'https://your-site.com/cancel',
-            });
-            return res.json({ success: true, url: session.url });
-        } catch (e) { console.log("Stripe Error:", e.message); }
-    }
-    // DEMO MODE
     const db = await readJSON(USER_DB_FILE);
-    if(db[email]) { db[email].credits += 50; await writeJSON(USER_DB_FILE, db); }
-    res.json({ success: true, message: "Credits added (Demo Mode)" });
+    
+    if(db[email]) { 
+        db[email].credits += 50; 
+        await writeJSON(USER_DB_FILE, db); 
+    }
+    res.json({ success: true, message: "50 Credits Added (Free Mode)" });
 });
 
-// --- DATA ROUTES (Protected) ---
+// --- DATA ROUTES ---
 
 app.get('/api/sessions', authenticateToken, async (req, res) => {
     const chats = await readJSON(CHATS_FILE);
@@ -177,7 +154,7 @@ app.post('/api/rename-session', authenticateToken, async (req, res) => {
     } else { res.json({ error: "Session not found" }); }
 });
 
-// --- CORE AI LOGIC (Protected & Enhanced Error Handling) ---
+// --- AI LOGIC ---
 app.post('/api/chat', authenticateToken, async (req, res) => {
     try {
         const { message, sessionId, fileData, mimeType } = req.body;
@@ -215,7 +192,7 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
             let file = await fileManager.getFile(uploadResponse.file.name);
             let attempts = 0;
             while (file.state === FileState.PROCESSING) {
-                if(attempts > 30) throw new Error("Video processing timed out."); // 60s timeout
+                if(attempts > 45) throw new Error("Video processing timed out."); 
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 file = await fileManager.getFile(uploadResponse.file.name);
                 attempts++;
@@ -259,7 +236,7 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
                 
                 const library = await readJSON(DB_FILE);
                 library.push(newClip);
-                await writeJSON(DB_FILE, library); // Atomic write
+                await writeJSON(DB_FILE, library); 
             } catch(e) { console.log("JSON Parse Failed"); }
         }
 
@@ -271,7 +248,7 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
     }
 });
 
-// --- LIBRARY MANAGEMENT (Protected) ---
+// --- LIBRARY MANAGEMENT ---
 
 app.post('/api/update-clip', authenticateToken, async (req, res) => {
     const { id, section } = req.body;
