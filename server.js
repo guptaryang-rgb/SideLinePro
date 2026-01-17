@@ -4,8 +4,14 @@ const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
-// Initialize Stripe with your secret key from .env
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); 
+
+// Initialize Stripe (Try/Catch in case key is missing)
+let stripe;
+try {
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+} catch (e) {
+    console.log("Stripe key missing - Payments will be in Demo Mode");
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -27,19 +33,20 @@ initJSON(USER_DB_FILE, '{}');
 initJSON(CHATS_FILE, '{}');
 
 app.use(cors());
-app.use(express.json({ limit: '200mb' }));
-app.use(express.urlencoded({ limit: '200mb', extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/plays', express.static(UPLOAD_DIR));
 app.use(express.static(__dirname)); // Serve frontend
 
-// Serve index.html
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// Using 1.5 Pro for best reasoning. 
+
+// *** CRITICAL FIX: USING THE HIGHEST TIER AVAILABLE MODEL ***
+// "gemini-3" causes a crash. 1.5 Pro is the current SOTA Pro model.
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 const ANALYST_PROMPT = `
@@ -73,7 +80,7 @@ function writeJSON(file, data) {
 
 // --- API ROUTES ---
 
-// 1. Auth & User
+// 1. Auth
 app.post('/api/signup', (req, res) => {
     const { email, password } = req.body;
     const db = readJSON(USER_DB_FILE);
@@ -98,43 +105,32 @@ app.post('/api/balance', (req, res) => {
 // 2. Stripe Payments
 app.post('/api/buy-credits', async (req, res) => {
     const { email } = req.body;
-    
-    // In a real app, you would use a webhook to confirm payment. 
-    // For this demo, we will generate a payment link.
-    try {
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [{
-                price_data: {
-                    currency: 'usd',
-                    product_data: { name: '50 Scouting Credits' },
-                    unit_amount: 1500, // $15.00
-                },
-                quantity: 1,
-            }],
-            mode: 'payment',
-            success_url: `https://your-site-url.com/success?email=${email}`, // You'd handle credit adding here
-            cancel_url: 'https://your-site-url.com/cancel',
-        });
-        
-        // SIMULATION FOR DEMO ONLY: Instantly add credits without paying
-        // Remove this block in production and use Webhooks!
-        const db = readJSON(USER_DB_FILE);
-        if(db[email]) {
-            db[email].credits += 50;
-            writeJSON(USER_DB_FILE, db);
-        }
-        
-        res.json({ success: true, url: session.url, message: "Credits added (Demo Mode)" });
-    } catch (e) {
-        // Fallback for demo if Stripe keys aren't set
-        const db = readJSON(USER_DB_FILE);
-        if(db[email]) {
-            db[email].credits += 50;
-            writeJSON(USER_DB_FILE, db);
-        }
-        res.json({ success: true, message: "Credits added (Demo Mode - No Stripe Key)" });
+    if (stripe) {
+        try {
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                line_items: [{
+                    price_data: {
+                        currency: 'usd',
+                        product_data: { name: '50 Scouting Credits' },
+                        unit_amount: 1500, // $15.00
+                    },
+                    quantity: 1,
+                }],
+                mode: 'payment',
+                success_url: `https://your-site.com/success`, 
+                cancel_url: 'https://your-site.com/cancel',
+            });
+            return res.json({ success: true, url: session.url });
+        } catch (e) { console.log("Stripe Error:", e.message); }
     }
+    // DEMO MODE
+    const db = readJSON(USER_DB_FILE);
+    if(db[email]) {
+        db[email].credits += 50;
+        writeJSON(USER_DB_FILE, db);
+    }
+    res.json({ success: true, message: "Credits added (Demo Mode)" });
 });
 
 // 3. Chat & Analysis
@@ -186,7 +182,6 @@ app.post('/api/chat', async (req, res) => {
 
         chats[sessionId].history.push({ role: 'user', text: message });
         
-        // AI Logic
         const historyForAI = chats[sessionId].history.map(msg => ({
             role: msg.role === 'user' ? 'user' : 'model',
             parts: [{ text: msg.text }]
@@ -217,7 +212,6 @@ app.post('/api/chat', async (req, res) => {
         
         writeJSON(CHATS_FILE, chats);
 
-        // Save Clip Metadata
         let newClip = null;
         const firstBrace = reply.indexOf('{');
         const lastBrace = reply.lastIndexOf('}');
@@ -230,7 +224,7 @@ app.post('/api/chat', async (req, res) => {
                 newClip = {
                     id: savedFilename,
                     owner: email,
-                    sessionId: sessionId, // Organize by session
+                    sessionId: sessionId,
                     title: parsed.title || "Analyzed Play",
                     formation: parsed.data?.formation || "Unknown",
                     coverage: parsed.data?.coverage || "Unknown",
@@ -246,19 +240,18 @@ app.post('/api/chat', async (req, res) => {
         res.json({ reply, newClip, remainingCredits: users[email].credits });
 
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: "AI Error" });
+        console.error("AI CRASH REPORT:", e);
+        res.status(500).json({ error: "Analysis failed. Please try a shorter video." });
     }
 });
 
-// 4. Session Summary Report
+// 4. Session Summary
 app.post('/api/session-summary', async (req, res) => {
     const { sessionId, email } = req.body;
     const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
-    // Organize clips by this specific session
     const clips = library.filter(p => p.owner === email && p.sessionId === sessionId);
     
-    if (clips.length === 0) return res.json({ report: "No clips found in this session to summarize." });
+    if (clips.length === 0) return res.json({ report: "No clips found in this session." });
 
     const summaryPrompt = `
     Create a "Coordinator's Session Report" based on these plays: ${JSON.stringify(clips)}.
@@ -272,9 +265,9 @@ app.post('/api/session-summary', async (req, res) => {
     } catch(e) { res.json({ report: "Could not generate summary." }); }
 });
 
-// 5. Library Management
+// 5. Library
 app.get('/api/search', (req, res) => {
-    const { email, sessionId } = req.query; // Filter by session
+    const { email, sessionId } = req.query; 
     const library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
     const results = library.filter(p => 
         p.owner === email && 
