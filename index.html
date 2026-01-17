@@ -123,7 +123,7 @@
         </div>
         
         <div id="chat-window">
-            <div class="message ai-msg">Ready to analyze. Upload a clip to begin.</div>
+            <div class="message ai-msg">System Online. Ready for analysis.</div>
         </div>
         
         <div class="input-area">
@@ -223,7 +223,7 @@
     async function createNewChat() {
         currentSessionId = Math.random().toString(36).substr(2, 9);
         document.getElementById('current-chat-title').textContent = "New Session";
-        document.getElementById('chat-window').innerHTML = '<div class="message ai-msg">Session started.</div>';
+        document.getElementById('chat-window').innerHTML = '<div class="message ai-msg">System Online. Ready for analysis.</div>';
         document.getElementById('library-content').innerHTML = '';
         loadSessions();
     }
@@ -354,8 +354,7 @@
                 </div>
 
                 <div class="action-row">
-                    <a href="#" class="action-btn">WATCH CLIP</a>
-                    <div class="action-btn">EXTEND REPORT</div>
+                    <a href="/plays/${data.id}" target="_blank" class="action-btn">WATCH CLIP</a>
                 </div>
             </div>
         `;
