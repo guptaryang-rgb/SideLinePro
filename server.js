@@ -47,7 +47,8 @@ app.get('/', (req, res) => {
 // --- AI SETUP ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
-// *** KEEPING GEMINI 3 PRO AS REQUESTED ***
+
+// *** STRICTLY GEMINI 3 PRO ***
 const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
 const ANALYST_PROMPT = `
@@ -64,11 +65,10 @@ JSON STRUCTURE:
   },
   "scouting_report": {
     "summary": "Concise technical summary.",
-    "mistakes": ["List specific player errors"],
+    "mistakes": ["List specific player errors (e.g. 'CB1 bad leverage')"],
     "weakness": "Structural weakness exposed.",
     "action_plan": "Step-by-step plan to exploit this."
-  },
-  "section": "General" 
+  }
 }
 `;
 
@@ -160,7 +160,12 @@ app.post('/api/chat', async (req, res) => {
         }
 
         if (!chats[sessionId]) {
-            chats[sessionId] = { owner: email, title: "New Analysis", timestamp: Date.now(), history: [] };
+            chats[sessionId] = { 
+                owner: email, 
+                title: "New Analysis", 
+                timestamp: Date.now(), 
+                history: [] 
+            };
         }
 
         chats[sessionId].history.push({ role: 'user', text: message });
@@ -175,8 +180,12 @@ app.post('/api/chat', async (req, res) => {
             const filePath = path.join(UPLOAD_DIR, savedFilename);
             fs.writeFileSync(filePath, buffer);
 
-            const uploadResponse = await fileManager.uploadFile(filePath, { mimeType: mimeType, displayName: savedFilename });
+            const uploadResponse = await fileManager.uploadFile(filePath, {
+                mimeType: mimeType,
+                displayName: savedFilename,
+            });
 
+            // Wait for processing
             let file = await fileManager.getFile(uploadResponse.file.name);
             while (file.state === FileState.PROCESSING) {
                 await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -185,7 +194,10 @@ app.post('/api/chat', async (req, res) => {
 
             if (file.state === FileState.FAILED) throw new Error("Video processing failed.");
 
-            promptContent = [{ fileData: { mimeType: uploadResponse.file.mimeType, fileUri: uploadResponse.file.uri } }, { text: ANALYST_PROMPT }];
+            promptContent = [
+                { fileData: { mimeType: uploadResponse.file.mimeType, fileUri: uploadResponse.file.uri } },
+                { text: ANALYST_PROMPT }
+            ];
         }
 
         const chat = model.startChat(); 
@@ -214,7 +226,7 @@ app.post('/api/chat', async (req, res) => {
                     title: parsed.title || "Analyzed Play",
                     formation: parsed.data?.formation || "Unknown",
                     coverage: parsed.data?.coverage || "Unknown",
-                    section: "General", // Default Section
+                    section: "General",
                     fullData: parsed 
                 };
                 
@@ -232,18 +244,17 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
-// *** NEW: CLIP CHAT (Ask Questions) ***
+// CLIP CHAT (Ask Questions)
 app.post('/api/clip-chat', async (req, res) => {
     try {
         const { message, context } = req.body;
-        // Simple one-off chat for now, or you could store history
         const prompt = `Context: Analyzing a football play. Data: ${JSON.stringify(context)}. User Question: ${message}`;
         const result = await model.generateContent(prompt);
         res.json({ reply: result.response.text() });
     } catch(e) { res.status(500).json({ error: "Chat failed" }); }
 });
 
-// *** NEW: UPDATE CLIP (Move Section) ***
+// UPDATE CLIP (Move Section)
 app.post('/api/update-clip', (req, res) => {
     const { id, section, owner } = req.body;
     let library = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '[]');
@@ -281,8 +292,6 @@ app.post('/api/delete-clip', (req, res) => {
     library = library.filter(p => !(p.id === id && p.owner === owner));
     if (library.length < initialLength) {
         fs.writeFileSync(DB_FILE, JSON.stringify(library, null, 2));
-        // Optional: Delete actual file
-        try { fs.unlinkSync(path.join(UPLOAD_DIR, id)); } catch(e){}
         res.json({ success: true });
     } else { res.json({ error: "Clip not found" }); }
 });
