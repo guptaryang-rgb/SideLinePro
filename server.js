@@ -84,17 +84,19 @@ const authenticateToken = (req, res, next) => {
 
 // --- AUTH ROUTES ---
 
+// *** UPDATED: UNLIMITED CREDITS ON SIGNUP ***
 app.post('/api/signup', async (req, res) => {
     const { email, password } = req.body;
     const db = await readJSON(USER_DB_FILE);
     if (db[email]) return res.json({ error: "User exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    db[email] = { password: hashedPassword, credits: 3, userId: "user_" + Date.now() };
+    // Granting effectively unlimited credits (999,999)
+    db[email] = { password: hashedPassword, credits: 999999, userId: "user_" + Date.now() };
     await writeJSON(USER_DB_FILE, db);
     
     const token = jwt.sign({ email }, JWT_SECRET);
-    res.json({ success: true, credits: 3, token });
+    res.json({ success: true, credits: 999999, token });
 });
 
 app.post('/api/login', async (req, res) => {
@@ -117,7 +119,6 @@ app.get('/api/balance', authenticateToken, async (req, res) => {
     res.json({ credits: db[req.user.email]?.credits || 0 });
 });
 
-// *** MODIFIED: FREE CREDIT REFILL ***
 app.post('/api/buy-credits', authenticateToken, async (req, res) => {
     const email = req.user.email;
     const db = await readJSON(USER_DB_FILE);
