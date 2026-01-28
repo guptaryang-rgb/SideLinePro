@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vantage Vision | Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <script crossorigin="anonymous" data-clerk-publishable-key="pk_test_YXNzdXJlZC1iYWJvb24tNTkuY2xlcmsuYWNjb3VudHMuZGV2JA" src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+
+    <style>
+        :root { --bg-deep:#09090b; --bg-panel:#18181b; --bg-card:#27272a; --border:#3f3f46; --text:#e4e4e7; --accent:#38bdf8; --danger:#ef4444; --success:#22c55e; --warning:#f59e0b; }
+        body { background:var(--bg-deep); color:var(--text); font-family:'Inter',sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; margin:0; }
+        
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .navbar { height:70px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 40px; background:rgba(10,10,10,0.95); flex-shrink: 0; z-index: 10; }
+        .logo { font-weight:900; font-size:1.6rem; letter-spacing:-1px; } .logo span { color:var(--accent); }
+        
+        .nav-tabs { display:flex; gap:30px; background:#1a1a1a; padding:5px; border-radius:30px; border:1px solid var(--border); }
+        .nav-tab { padding:8px 25px; border-radius:20px; font-weight:600; font-size:0.9rem; cursor:pointer; transition:0.3s; color:#888; }
+        .nav-tab:hover { color: white; }
+        .nav-tab.active { background:var(--accent); color:black; box-shadow:0 0 15px rgba(56,189,248,0.3); }
+
+        .view-container { flex:1; position:relative; overflow:hidden; }
+        .view { position:absolute; inset:0; display:none; flex-direction:column; }
+        .view.active-view { display:flex; }
+        
+        #landing-view { background:radial-gradient(circle at 50% 20%, #1a202c 0%, #000 70%); align-items:center; text-align:center; overflow-y:auto; }
+        .hero-section { padding:80px 20px; max-width:1000px; }
+        .mission-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); padding:40px; border-radius:20px; margin-top:40px; text-align:left; display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+        .cta-btn { background:var(--accent); color:black; padding:15px 40px; border-radius:50px; border:none; font-weight:800; cursor:pointer; font-size:1.1rem; margin-top:20px; box-shadow: 0 0 20px rgba(56,189,248,0.4); transition: transform 0.2s; }
+        .cta-btn:hover { transform: scale(1.05); }
+        .legal-links { margin-top: 30px; font-size: 0.8rem; color: #666; }
+        .legal-links a { color: #888; text-decoration: none; margin: 0 10px; transition: color 0.2s; }
+        .legal-links a:hover { color: var(--accent); }
+
+        .app-body { flex:1; display:flex; overflow:hidden; width: 100vw; }
+        
+        /* SIDEBARS */
+        .sidebar, .lib-panel { 
+            width:280px; background:var(--bg-panel); border-right:1px solid var(--border); display:flex; flex-direction:column; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink: 0; 
+        }
+        .lib-panel { border-right:none; border-left:1px solid var(--border); width: 320px; }
+        .sidebar.collapsed, .lib-panel.collapsed { width: 0; border: none; opacity: 0; }
+
+        .main { flex:1; display:flex; flex-direction:column; background:radial-gradient(circle at 50% 30%, #1c1c1f 0%, #09090b 80%); min-width: 0; }
+        .chat-feed { flex:1; overflow-y:auto; padding:40px; display:flex; flex-direction:column; gap:30px; scroll-behavior: smooth; }
+        
+        .tools-bar { padding: 10px 20px; background: var(--bg-panel); border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+        .tool-btn { background: #27272a; border: 1px solid #3f3f46; color: #ccc; font-size: 0.8rem; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .tool-btn:hover { background: #3f3f46; color: white; border-color: var(--accent); }
+
+        .input-bar { padding:20px; background:var(--bg-panel); display:flex; gap:10px; align-items:center; border-top: 1px solid #27272a; }
+        .input-box { flex:1; background:#000; border:1px solid var(--border); color:white; padding:12px 20px; border-radius:30px; outline:none; transition: border-color 0.2s; }
+        .input-box:focus { border-color: var(--accent); }
+        .pos-select { background:#27272a; color:white; border:1px solid var(--border); padding:10px; border-radius:20px; font-weight:600; cursor:pointer; }
+        .btn { padding:0 25px; background:var(--accent); color:black; border:none; border-radius:30px; font-weight:800; cursor:pointer; transition: opacity 0.2s; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .session-item { padding:12px 15px; margin-bottom:5px; cursor:pointer; border-radius:8px; color:#a1a1aa; font-size:0.9rem; display:flex; justify-content:space-between; align-items:center; white-space: nowrap; overflow: hidden; transition: background 0.2s; }
+        .session-item:hover { background:#3f3f46; color:white; }
+        .session-item.active { background:#27272a; color:var(--accent); border-left:3px solid var(--accent); padding-left: 12px; }
+
+        #progress-container { display:none; position:absolute; top:0; width:100%; height:3px; background:#333; z-index:100; }
+        #progress-bar { height:100%; width:0%; background:var(--accent); transition:width 0.3s; box-shadow: 0 0 10px var(--accent); }
+
+        /* --- ELITE SCOUT CARD STYLES --- */
+        .scout-card { 
+            background: #18181b; 
+            border: 1px solid var(--border); 
+            border-radius: 16px; 
+            overflow: hidden; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+        .scout-header { 
+            background: linear-gradient(90deg, rgba(56,189,248,0.1) 0%, rgba(24,24,27,0) 100%); 
+            padding: 20px 25px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .play-meta { display: flex; flex-direction: column; gap: 4px; }
+        .play-title { font-weight: 900; font-size: 1.3rem; color: white; letter-spacing: -0.5px; }
+        .formation-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent); background: rgba(56,189,248,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block; width: fit-content; border: 1px solid rgba(56,189,248,0.2); }
+        
+        .overall-badge { 
+            text-align: center; 
+            background: #000; 
+            border: 2px solid var(--border); 
+            border-radius: 12px; 
+            padding: 10px 20px;
+            min-width: 80px;
+        }
+        .badge-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        .badge-score { font-size: 2rem; font-weight: 900; color: white; line-height: 1; }
+        .badge-score.A { color: var(--success); text-shadow: 0 0 15px rgba(34,197,94,0.3); }
+        .badge-score.B { color: #fbbf24; }
+        .badge-score.C { color: #f97316; }
+        .badge-score.D { color: var(--danger); }
+
+        .scout-body { padding: 30px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        
+        /* Summary Box */
+        .summary-box { 
+            grid-column: 1 / -1; 
+            background: rgba(255,255,255,0.03); 
+            border-left: 4px solid var(--accent); 
+            padding: 20px; 
+            border-radius: 0 8px 8px 0; 
+            color: #d4d4d8; 
+            line-height: 1.6; 
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        /* Grade Grid */
+        .grade-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; grid-column: 1 / -1; }
+        .metric-card { background: #27272a; border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: center; transition: transform 0.2s; }
+        .metric-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .metric-label { font-size: 0.75rem; color: #a1a1aa; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
+        .metric-val { font-size: 1.4rem; font-weight: 800; color: white; font-family: 'JetBrains Mono', monospace; }
+
+        /* Timeline */
+        .timeline-section { grid-column: 1 / 2; }
+        .section-title { font-size: 0.85rem; color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+        .timeline-event { display: flex; gap: 15px; margin-bottom: 20px; position: relative; }
+        .timeline-event::before { content:''; position:absolute; left: 24px; top: 25px; bottom: -25px; width: 2px; background: #333; }
+        .timeline-event:last-child::before { display: none; }
+        .t-time { background: #27272a; border: 1px solid #444; color: #ccc; font-family: 'JetBrains Mono'; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; height: fit-content; z-index: 2; min-width: 50px; text-align: center; }
+        .t-content { flex: 1; }
+        .t-type { color: white; font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
+        .t-desc { color: #a1a1aa; font-size: 0.85rem; line-height: 1.5; }
+
+        /* Rx Box */
+        .rx-panel { grid-column: 2 / 3; display: flex; flex-direction: column; gap: 15px; }
+        .rx-card { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); padding: 20px; border-radius: 12px; }
+        .rx-header { color: var(--danger); font-weight: 900; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .rx-item { margin-bottom: 12px; font-size: 0.85rem; color: #e4e4e7; line-height: 1.5; }
+        .rx-label { color: var(--danger); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; display: block; margin-bottom: 2px; }
+
+        /* Detected Players */
+        .players-section { grid-column: 1 / -1; margin-top: 10px; }
+        .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .player-mini-card { background: #27272a; border: 1px solid var(--border); border-radius: 8px; padding: 15px; transition: 0.2s; }
+        .player-mini-card:hover { border-color: var(--accent); background: #333; }
+        .pm-header { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #444; padding-bottom: 8px; }
+        .pm-name { color: white; font-weight: 800; font-size: 0.85rem; }
+        .pm-grade { font-family: 'JetBrains Mono'; font-weight: 700; color: var(--accent); }
+        .pm-note { font-size: 0.8rem; color: #a1a1aa; line-height: 1.4; }
+
+        /* --- MODALS & UTILS --- */
+        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; display:none; justify-content:center; align-items:center; }
+        .modal-content { background:#18181b; border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+        .modal-content.wide { width:85vw; max-width:900px; max-height:80vh; overflow-y:auto; padding:25px; }
+        
+        #video-overlay-modal { position:fixed; inset:0; background:rgba(0,0,0,0.98); z-index:3000; display:none; justify-content:center; align-items:center; flex-direction:column; }
+        #telestrator-container { position:relative; border:1px solid #333; max-width:90vw; max-height:80vh; }
+        #main-video { display:block; max-width:100%; max-height:80vh; }
+        #draw-canvas { position:absolute; top:0; left:0; pointer-events:none; }
+        .tele-controls { margin-top:15px; display:flex; gap:15px; background:#1a1a1a; padding:10px 20px; border-radius:30px; border:1px solid #333; }
+        .tele-btn { background:#333; color:white; border:none; padding:8px 16px; border-radius:20px; cursor:pointer; font-weight:700; }
+        .tele-btn.active { background:var(--accent); color:black; }
+        
+        /* Library Grid */
+        .clip-card { background:var(--bg-card); border:1px solid var(--border); margin-bottom:10px; border-radius:10px; cursor:pointer; position:relative; transition:0.2s; }
+        .clip-card:hover { transform: translateX(5px); border-color: #666; }
+        .clip-thumb { height:100px; background:#000; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#333; border-radius: 10px 10px 0 0; }
+        .clip-info { padding:10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .clip-title { font-weight:700; font-size:0.85rem; }
+        .clip-menu-btn { position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border:none; width:24px; height:24px; border-radius:50%; cursor:pointer; display:none; }
+        .clip-card:hover .clip-menu-btn { display:block; }
+
+        .msg { max-width: 70%; padding: 12px 18px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; }
+        .msg.user { align-self:flex-end; background:var(--accent); color:black; font-weight:700; }
+        .msg.model { align-self: flex-start; background: transparent; padding: 0; max-width: 100%; width: 100%; }
+        
+        #coach-chat-modal { position:fixed; bottom:20px; right:340px; width:350px; height:500px; background:#18181b; border:1px solid #333; z-index:2000; border-radius:12px; display:none; flex-direction:column; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        .coach-msg { padding:8px 12px; border-radius:8px; font-size:0.85rem; max-width:85%; white-space:pre-wrap; margin-bottom:8px; }
+        .coach-msg.user { align-self:flex-end; background:var(--accent); color:black; }
+        .coach-msg.model { align-self:flex-start; background:#27272a; color:#ddd; border:1px solid #3f3f46; }
+        
+        .menu-opt { padding:12px 20px; border-bottom:1px solid #27272a; cursor:pointer; text-align:left; color:#d4d4d8; transition:0.2s; }
+        .menu-opt:hover { color:var(--accent); background:#27272a; padding-left: 25px; }
+        
+        /* TENDENCY REPORT */
+        .tendency-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
+        .tendency-col h4 { color: #a1a1aa; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; font-size: 0.8rem; letter-spacing: 1px; }
+        .tendency-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #27272a; border-radius: 8px; margin-bottom: 8px; border: 1px solid #3f3f46; transition: 0.2s; }
+        .tendency-row:hover { border-color: var(--accent); transform: translateX(5px); }
+        .t-grade { font-weight: 900; font-size: 1rem; width: 30px; text-align: right; }
+        .t-grade.A { color: var(--success); } .t-grade.B { color: var(--warning); }
+        .t-grade.C, .t-grade.D, .t-grade.F { color: var(--danger); }
+        
+        @media (max-width: 1200px) {
+            .scout-body { grid-template-columns: 1fr; }
+            .rx-panel { grid-column: 1 / -1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="logo">Vantage<span>Vision</span></div>
+        <div class="nav-tabs">
+            <div class="nav-tab active" onclick="switchTab('about')">The Vision</div>
+            <div class="nav-tab" onclick="switchTab('self')">Self Analysis</div>
+            <div class="nav-tab" onclick="switchTab('team')">Team Analysis</div>
+        </div>
+        <div id="user-button"></div>
+    </div>
+
+    <div class="view-container">
+        <div id="landing-view" class="view active-view">
+            <div class="hero-section">
+                <h1 class="hero-title">ELITE COACHING.<br>DEMOCRATIZED.</h1>
+                <p class="hero-subtitle">The gap between amateur and pro isn't just physical—it's mental.</p>
+                <button class="cta-btn" onclick="switchTab('self')">ENTER WAR ROOM</button>
+                <div class="mission-card">
+                    <div><div style="font-size:0.9rem; color:#888; font-weight:700; margin-bottom:10px;">The Problem</div><div class="mission-stat" style="font-size:2rem; font-weight:900; color:white;">$5,000/yr</div><p style="color:#aaa;">Private coaching is a luxury tax on talent.</p></div>
+                    <div><div style="font-size:0.9rem; color:#888; font-weight:700; margin-bottom:10px;">The Solution</div><div class="mission-val" style="font-size:2rem; font-weight:900; color:var(--accent);">Access for All</div><p style="color:#aaa;">AI-driven diagnostics for every athlete.</p></div>
+                </div>
+                <div class="legal-links">
+                    <a href="/privacy.html" target="_blank">Privacy Policy</a> | 
+                    <a href="/terms.html" target="_blank">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="war-room-view" class="view">
+            <div id="progress-container"><div id="progress-bar"></div></div>
+            
+            <div class="app-body">
+                
+                <div class="sidebar" id="left-panel">
+                    <div style="padding:20px; border-bottom:1px solid var(--border); font-weight:800; font-size:0.8rem; color:#a1a1aa; display:flex; justify-content:space-between; white-space:nowrap;">
+                        <span id="session-header">SESSIONS</span> 
+                        <button onclick="newSession()" style="background:none; border:none; color:white; cursor:pointer; font-size:1.2rem;">+</button>
+                    </div>
+                    <div id="session-list"></div>
+                </div>
+
+                <div class="main">
+                    <div id="chat-feed" class="chat-feed"></div>
+                    
+                    <div class="tools-bar">
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="toggleSidebar()" title="Toggle Sessions Panel">◂ Sessions</button>
+                            <button id="btn-roster" class="tool-btn" onclick="openRoster()">👥 Roster</button>
+                            <button id="btn-tendency" class="tool-btn" onclick="openTendencies()">📊 Tendency</button>
+                        </div>
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="toggleLibrary()" title="Toggle Film Library">Library ▸</button>
+                        </div>
+                    </div>
+
+                    <div class="input-bar">
+                        <select id="pos-select" class="pos-select">
+                            <option value="general">Select Focus...</option>
+                            <option value="qb">Quarterback (QB)</option>
+                            <option value="rb">Running Back (RB)</option>
+                            <option value="wr">Wide Receiver (WR)</option>
+                            <option value="te">Tight End (TE)</option>
+                            <option value="ol">Offensive Line (OL)</option>
+                            <option value="dl">Defensive Line (DL)</option>
+                            <option value="lb">Linebacker (LB)</option>
+                            <option value="cb">Cornerback (CB)</option>
+                            <option value="s">Safety (S)</option>
+                            <option value="kp">Kicker/Punter (K/P)</option>
+                        </select>
+                        <input type="file" id="file-input" hidden onchange="handleFileSelect(this)">
+                        <button id="file-btn" class="btn" style="width:45px; border-radius:50%; display:flex; align-items:center; justify-content:center;" onclick="document.getElementById('file-input').click()">📎</button>
+                        <span id="file-name-display" style="color:#a1a1aa; font-size:0.8rem; margin-left:10px;"></span>
+                        <input type="text" id="user-input" class="input-box" placeholder="Ask the coach or upload film...">
+                        <button id="send-btn" class="btn">SEND</button>
+                    </div>
+                </div>
+
+                <div class="lib-panel" id="right-panel">
+                    <div style="padding:20px; border-bottom:1px solid var(--border); font-weight:800; font-size:0.8rem; color:#a1a1aa; white-space:nowrap;">FILM LIBRARY</div>
+                    <div id="lib-grid" style="padding:10px; overflow-y:auto; flex:1;"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="video-overlay-modal">
+        <div id="telestrator-container">
+            <video id="main-video" crossorigin="anonymous"></video>
+            <canvas id="draw-canvas"></canvas>
+        </div>
+        <div class="tele-controls">
+            <button class="tele-btn" onclick="togglePlay()">⏯ Play/Pause</button>
+            <button id="draw-toggle" class="tele-btn" onclick="toggleDrawMode()">✏️ Draw: OFF</button>
+            <button class="tele-btn" onclick="clearCanvas()" style="color:#ef4444;">Clear</button>
+            <button class="tele-btn" onclick="saveSnapshot()" style="color:var(--success);">📸 Save Snapshot</button>
+            <button class="tele-btn" onclick="closeVideoPlayer()">✕ Close</button>
+        </div>
+    </div>
+
+    <div id="clip-modal" class="modal" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-content" style="width:350px;">
+            <div style="display:flex; flex-direction:column;">
+                <div onclick="organizeClip()" class="menu-opt">📂 Organize</div>
+                <div onclick="openCoachChat()" class="menu-opt">💬 Ask Coach</div>
+                <div onclick="viewNotes()" class="menu-opt">📝 Scout Report</div>
+                <div onclick="deleteClip()" class="menu-opt" style="color:var(--danger);">🗑 Delete</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notes-popup" class="modal" onclick="if(event.target === this) this.style.display='none'"><div class="modal-content wide" style="width:85vw; padding:25px;"><div id="notes-text"></div></div></div>
+    <div id="roster-modal" class="modal" onclick="if(event.target === this) this.style.display='none'"><div class="modal-content wide" style="width:85vw; padding:25px;"><h3 style="color:white;">Session Roster</h3><div id="roster-grid" style="display:grid; gap:15px; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));"></div></div></div>
+    
+    <div id="tendency-modal" class="modal" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-content wide" style="width:85vw; padding:30px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:15px; margin-bottom:20px;">
+                <h3 style="color:white; margin:0;">Efficiency Report</h3>
+                <button onclick="document.getElementById('tendency-modal').style.display='none'" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+            </div>
+            <div id="tendency-insights"></div>
+            <div id="tendency-content" class="tendency-grid"></div>
+        </div>
+    </div>
+    
+    <div id="coach-chat-modal">
+        <div style="padding:15px; border-bottom:1px solid #333; display:flex; justify-content:space-between; color:white;"><span>Coach</span><button onclick="document.getElementById('coach-chat-modal').style.display='none'" style="background:none; border:none; color:white;">✕</button></div>
+        <div id="coach-feed" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px;"></div>
+        <div style="padding:10px; border-top:1px solid #333; display:flex;"><input id="coach-input" class="input-box" style="font-size:0.8rem;"><button onclick="sendCoachMessage()" class="btn">></button></div>
+    </div>
+    <div id="auth-modal" class="modal" style="display:flex;"><div id="sign-in" style="background:white; padding:20px; border-radius:10px;"></div></div>
+
+    <script>
+        let currentSession = null, currentClip = null, activeSport = 'football', isDrawing = false, scratchCtx = null;
+        let sessionClips = [];
+        let currentType = 'self';
+
+        function initApp() {
+            if (window.Clerk) {
+                Clerk.load().then(() => {
+                    if (Clerk.user) {
+                        document.getElementById('auth-modal').style.display = 'none';
+                        Clerk.mountUserButton(document.getElementById('user-button'));
+                        
+                        // Ensure SEND button is live
+                        document.getElementById('send-btn').addEventListener('click', sendMessage);
+                        
+                        // Auto-load Self sessions to start
+                        switchTab('self');
+                    } else { Clerk.mountSignIn(document.getElementById('sign-in')); }
+                });
+            } else { setTimeout(initApp, 500); }
+        }
+        window.onload = initApp;
+
+        // *** SLIDERS ***
+        function toggleSidebar() { document.getElementById('left-panel').classList.toggle('collapsed'); }
+        function toggleLibrary() { document.getElementById('right-panel').classList.toggle('collapsed'); }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
+            if(tabName === 'about') {
+                document.querySelector('.nav-tab:nth-child(1)').classList.add('active');
+                document.getElementById('landing-view').classList.add('active-view');
+            } else {
+                currentType = tabName; 
+                const index = tabName === 'self' ? 2 : 3;
+                document.querySelector(`.nav-tab:nth-child(${index})`).classList.add('active');
+                document.getElementById('war-room-view').classList.add('active-view');
+                document.getElementById('session-header').innerText = tabName === 'self' ? "SELF SESSIONS" : "TEAM SESSIONS";
+                document.getElementById('chat-feed').innerHTML = '';
+                document.getElementById('lib-grid').innerHTML = '';
+                
+                document.getElementById('pos-select').style.display = tabName === 'team' ? 'none' : 'block';
+                const teamTools = tabName === 'team' ? 'flex' : 'none';
+                document.getElementById('btn-roster').style.display = teamTools;
+                document.getElementById('btn-tendency').style.display = teamTools;
+                
+                currentSession = null;
+                loadSessions();
+            }
+        }
+
+        function handleFileSelect(input) {
+            const btn = document.getElementById('file-btn');
+            const display = document.getElementById('file-name-display');
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (file.size > 50 * 1024 * 1024) {
+                    alert("⚠️ File too large! Maximum size is 50MB.");
+                    input.value = ""; return;
+                }
+                btn.innerHTML = '✅'; btn.style.background = 'var(--success)'; btn.style.color = 'black';
+                display.textContent = file.name;
+            } else {
+                btn.innerHTML = '📎'; btn.style.background = ''; btn.style.color = ''; display.textContent = '';
+            }
+        }
+
+        async function apiFetch(url, body) {
+            if (!Clerk.session) return null;
+            const token = await Clerk.session.getToken();
+            return fetch(url, {
+                method: body ? 'POST' : 'GET',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: body ? JSON.stringify(body) : null
+            }).then(r => r.json());
+        }
+
+        async function loadSessions() {
+            const sessions = await apiFetch(`/api/sessions?type=${currentType}`);
+            const list = document.getElementById('session-list');
+            list.innerHTML = sessions.map(s => 
+                `<div class="session-item" id="sess-${s.id}" onclick="selectSession('${s.id}')"><span>${s.title}</span><span style="float:right;" onclick="event.stopPropagation(); deleteSession('${s.id}')">🗑</span></div>`
+            ).join('');
+            
+            if(sessions.length > 0 && !currentSession) {
+                selectSession(sessions[0].id);
+            }
+        }
+        
+        function selectSession(id) {
+            document.querySelectorAll('.session-item').forEach(i => i.classList.remove('active'));
+            const el = document.getElementById(`sess-${id}`);
+            if(el) el.classList.add('active');
+            loadChat(id);
+        }
+
+        async function newSession() {
+            const title = prompt("Session Name:");
+            if (!title) return;
+            const session = await apiFetch('/api/create-session', { title, type: currentType });
+            loadSessions(); 
+        }
+
+        async function deleteSession(id) {
+            if(confirm("Delete session?")) await apiFetch('/api/delete-session', { sessionId: id });
+            currentSession = null;
+            loadSessions();
+        }
+
+        async function loadChat(id) {
+            currentSession = id;
+            loadLibrary();
+            const data = await apiFetch(`/api/session/${id}`);
+            const feed = document.getElementById('chat-feed');
+            feed.innerHTML = '';
+            data.history.forEach(m => renderMessage(m.role, m.text));
+        }
+
+        async function loadLibrary() {
+            if (!currentSession) return;
+            const clips = await apiFetch(`/api/search?sessionId=${currentSession}`);
+            sessionClips = clips;
+            const grid = document.getElementById('lib-grid');
+            grid.innerHTML = '';
+            const folders = {};
+            clips.forEach(c => {
+                const sec = c.section || 'Inbox';
+                if (!folders[sec]) folders[sec] = [];
+                folders[sec].push(c);
+            });
+            for(const [name, list] of Object.entries(folders)) {
+                grid.innerHTML += `<div class="folder-header" style="color:var(--accent); font-size:0.8rem; font-weight:800; margin:15px 0 5px; text-transform:uppercase;">${name}</div>`;
+                list.forEach(c => {
+                    grid.innerHTML += `
+                        <div class="clip-card">
+                            <button class="clip-menu-btn" onclick='openOptions(${JSON.stringify(c).replace(/'/g, "&apos;")})'>⋮</button>
+                            <div class="clip-thumb" onclick="openVideoPlayer('${c.videoUrl}', '${c._id}')">▶</div>
+                            <div class="clip-info"><div class="clip-title">${c.title}</div></div>
+                        </div>`;
+                });
+            }
+        }
+
+        function openOptions(clip) { currentClip = clip; document.getElementById('clip-modal').style.display = 'flex'; }
+
+        function openVideoPlayer(url, id) {
+            if(id) currentClip = {_id: id, videoUrl: url};
+            const modal = document.getElementById('video-overlay-modal');
+            const video = document.getElementById('main-video');
+            const canvas = document.getElementById('draw-canvas');
+            video.src = url;
+            modal.style.display = 'flex';
+            video.onloadedmetadata = () => {
+                canvas.width = video.offsetWidth;
+                canvas.height = video.offsetHeight;
+                scratchCtx = canvas.getContext('2d');
+                scratchCtx.strokeStyle = "#38bdf8"; scratchCtx.lineWidth = 4;
+            };
+            let d = false;
+            canvas.onmousedown = (e) => { if(isDrawing) { d=true; scratchCtx.beginPath(); scratchCtx.moveTo(e.offsetX, e.offsetY); } };
+            canvas.onmouseup = () => d=false;
+            canvas.onmousemove = (e) => { if(d && isDrawing) { scratchCtx.lineTo(e.offsetX, e.offsetY); scratchCtx.stroke(); } };
+        }
+        function togglePlay() { const v = document.getElementById('main-video'); v.paused ? v.play() : v.pause(); }
+        function toggleDrawMode() {
+            isDrawing = !isDrawing;
+            const btn = document.getElementById('draw-toggle');
+            const canvas = document.getElementById('draw-canvas');
+            if (isDrawing) {
+                btn.innerHTML = "✏️ Draw: ON"; btn.classList.add('active'); canvas.style.pointerEvents = "auto"; document.getElementById('main-video').pause();
+            } else {
+                btn.innerHTML = "✏️ Draw: OFF"; btn.classList.remove('active'); canvas.style.pointerEvents = "none";
+            }
+        }
+        function clearCanvas() { scratchCtx.clearRect(0, 0, document.getElementById('draw-canvas').width, document.getElementById('draw-canvas').height); }
+        async function saveSnapshot() {
+            const v = document.getElementById('main-video');
+            const c = document.getElementById('draw-canvas');
+            const t = document.createElement('canvas'); t.width = v.videoWidth; t.height = v.videoHeight;
+            const ctx = t.getContext('2d');
+            ctx.drawImage(v, 0, 0, t.width, t.height);
+            ctx.drawImage(c, 0, 0, t.width, t.height);
+            await apiFetch('/api/save-snapshot', { clipId: currentClip._id, imageData: t.toDataURL('image/jpeg') });
+            alert("Snapshot Saved!");
+        }
+        function closeVideoPlayer() {
+            document.getElementById('video-overlay-modal').style.display='none';
+            document.getElementById('main-video').pause();
+            clearCanvas(); isDrawing = false;
+        }
+
+        async function openRoster() {
+            if(!currentSession) return alert("Select Session");
+            const data = await apiFetch(`/api/session/${currentSession}`);
+            const grid = document.getElementById('roster-grid');
+            grid.innerHTML = '';
+            if(data.roster) {
+                data.roster.forEach(p => {
+                    const weaknesses = p.weaknesses.map(w => `<span class="tag bad" style="color:#ef4444; border:1px solid #ef4444; font-size:0.7rem; padding:2px 5px; border-radius:4px;">${w}</span>`).join(' ');
+                    const recentNotes = p.notes.slice(-5).map(n => `<li>${n}</li>`).join('');
+                    grid.innerHTML += `<div class="player-card"><div class="player-header"><div class="player-id">${p.identifier}</div><div class="player-grade">${p.grade}</div></div><div class="player-tags" style="margin-bottom:5px;">${weaknesses}</div><ul class="player-notes" style="font-size:0.8rem; color:#888; padding-left:15px;">${recentNotes}</ul></div>`;
+                });
+            }
+            document.getElementById('roster-modal').style.display = 'flex';
+        }
+
+        function openTendencies() {
+            if(!sessionClips.length) return alert("No clips analyzed yet.");
+            
+            const stats = {};
+            const gradePoints = { "A+":4.3, "A":4.0, "A-":3.7, "B+":3.3, "B":3.0, "B-":2.7, "C+":2.3, "C":2.0, "C-":1.7, "D":1.0, "F":0 };
+
+            sessionClips.forEach(c => {
+                const o = c.o_formation || "Unknown", d = c.d_formation || "Unknown";
+                const gradeStr = c.fullData?.scouting_report?.report_card?.overall || "C";
+                const points = gradePoints[gradeStr] || 2.0;
+
+                if(!stats[o]) stats[o] = { type:'O', count:0, totalPoints:0 };
+                stats[o].count++; stats[o].totalPoints += points;
+
+                if(!stats[d]) stats[d] = { type:'D', count:0, totalPoints:0 };
+                stats[d].count++; stats[d].totalPoints += points;
+            });
+
+            let oHTML = '<div class="tendency-col"><h4>OFFENSIVE LOOKS</h4>', dHTML = '<div class="tendency-col"><h4>DEFENSIVE LOOKS</h4>';
+            let bestO = {name:'None', gpa:-1}, worstO = {name:'None', gpa:5};
+
+            Object.entries(stats).forEach(([name, data]) => {
+                const gpa = (data.totalPoints / data.count).toFixed(1);
+                const letter = gpa >= 4 ? 'A' : (gpa >= 3 ? 'B' : (gpa >= 2 ? 'C' : 'D'));
+                if(data.type === 'O') {
+                    if(gpa > bestO.gpa) bestO = {name, gpa};
+                    if(gpa < worstO.gpa) worstO = {name, gpa};
+                }
+                const html = `
+                    <div class="tendency-row">
+                        <div class="t-name">${name}</div>
+                        <div class="t-stats">
+                            <div class="t-count">${data.count} plays</div>
+                            <div class="t-grade ${letter}">${letter}</div>
+                        </div>
+                    </div>`;
+                if(data.type === 'O') oHTML += html; else dHTML += html;
+            });
+
+            oHTML += '</div>'; dHTML += '</div>';
+            const insights = `
+                <div class="insight-box">
+                    <div>
+                        <div class="insight-label">💎 Best Performance</div>
+                        <div class="insight-val">${bestO.name}</div>
+                    </div>
+                    <div>
+                        <div class="insight-label" style="color:var(--danger);">⚠️ Worst Performance</div>
+                        <div class="insight-val">${worstO.name}</div>
+                    </div>
+                </div>`;
+
+            document.getElementById('tendency-insights').innerHTML = insights;
+            document.getElementById('tendency-content').innerHTML = oHTML + dHTML;
+            document.getElementById('tendency-modal').style.display = 'flex';
+        }
+
+        // *** SUPERCHARGED RENDER FUNCTION ***
+        function renderScoutCard(data) {
+            const r = data.scouting_report || {};
+            const grades = r.report_card || {};
+            const overallGrade = grades.overall || '-';
+            const gradeColor = overallGrade.startsWith('A') ? 'A' : (overallGrade.startsWith('B') ? 'B' : (overallGrade.startsWith('C') ? 'C' : 'D'));
+
+            const timelineHTML = r.timeline ? r.timeline.map(t => `
+                <div class="timeline-event">
+                    <div class="t-time">${t.time}</div>
+                    <div class="t-content">
+                        <div class="t-type">${t.type}</div>
+                        <div class="t-desc">${t.text}</div>
+                    </div>
+                </div>`).join('') : '';
+
+            const rx = r.coaching_prescription || {};
+            const rxHTML = `
+                <div class="rx-panel">
+                    <div class="rx-card" style="border-color:var(--danger); background:rgba(239,68,68,0.05);">
+                        <div class="rx-header">⚡ COACHING FIX</div>
+                        <div class="rx-item">${rx.fix || 'No immediate fix.'}</div>
+                    </div>
+                    <div class="rx-card" style="border-color:var(--accent); background:rgba(56,189,248,0.05);">
+                        <div class="rx-header" style="color:var(--accent);">🏋️ DRILL ASSIGNMENT</div>
+                        <div class="rx-item">${rx.drill || 'No drill assigned.'}</div>
+                    </div>
+                    <div class="rx-card" style="border-color:#f59e0b; background:rgba(245,158,11,0.05);">
+                        <div class="rx-header" style="color:#f59e0b;">🧠 PRO TIP</div>
+                        <div class="rx-item">${rx.pro_tip || 'No tip available.'}</div>
+                    </div>
+                </div>`;
+
+            const playersHTML = data.players_detected ? `
+                <div class="players-section">
+                    <div class="section-title">ROSTER DETECTED</div>
+                    <div class="players-grid">
+                        ${data.players_detected.map(p => `
+                            <div class="player-mini-card">
+                                <div class="pm-header">
+                                    <span class="pm-name">${p.identifier} (${p.position})</span>
+                                    <span class="pm-grade">${p.grade}</span>
+                                </div>
+                                <div class="pm-note">${p.observation}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>` : '';
+
+            return `
+                <div class="scout-card">
+                    <div class="scout-header">
+                        <div class="play-meta">
+                            <div class="play-title">${data.title || 'Untitled Play'}</div>
+                            <div class="formation-tag">${data.data.o_formation} vs ${data.data.d_formation}</div>
+                        </div>
+                        <div class="overall-badge">
+                            <div class="badge-label">OVR</div>
+                            <div class="badge-score ${gradeColor}">${overallGrade}</div>
+                        </div>
+                    </div>
+                    <div class="scout-body">
+                        <div class="summary-box">${r.summary}</div>
+                        <div class="grade-grid">
+                            <div class="metric-card"><div class="metric-label">Football IQ</div><div class="metric-val">${grades.football_iq}</div></div>
+                            <div class="metric-card"><div class="metric-label">Technique</div><div class="metric-val">${grades.technique}</div></div>
+                            <div class="metric-card"><div class="metric-label">Effort</div><div class="metric-val">${grades.effort}</div></div>
+                        </div>
+                        <div class="timeline-section">
+                            <div class="section-title">PLAY BREAKDOWN</div>
+                            ${timelineHTML}
+                        </div>
+                        ${rxHTML}
+                        ${playersHTML}
+                    </div>
+                </div>`;
+        }
+
+        function renderMessage(role, text) {
+            const feed = document.getElementById('chat-feed');
+            
+            if (!text) return;
+
+            let content = text;
+            // Check if it's JSON intended for the card
+            if(role === 'model' && text.includes('{')) {
+                try {
+                    const j = JSON.parse(text);
+                    content = renderScoutCard(j);
+                } catch(e) {
+                    console.warn("JSON Parse Failed for UI, falling back to text.");
+                }
+            }
+            feed.innerHTML += `<div class="msg ${role}">${content}</div>`;
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const txt = document.getElementById('user-input').value;
+            const file = document.getElementById('file-input').files[0];
+            const sendBtn = document.getElementById('send-btn');
+            
+            const pos = currentType === 'team' ? 'team' : document.getElementById('pos-select').value;
+            
+            if(!txt && !file) return;
+            if(!currentSession) return alert("Select Session");
+
+            // VISUAL FEEDBACK START
+            sendBtn.innerHTML = "⏳ Processing...";
+            sendBtn.disabled = true;
+            document.getElementById('progress-container').style.display = 'block';
+            document.getElementById('progress-bar').style.width = '30%';
+
+            renderMessage('user', txt || "Analyzing...");
+            document.getElementById('user-input').value = '';
+
+            const payload = { message: txt, sessionId: currentSession, sport: 'football', position: pos };
+            
+            const handleResponse = async (res) => {
+                document.getElementById('progress-bar').style.width = '100%';
+                
+                if (res.error) {
+                    renderMessage('model', "⚠️ Error: " + res.error);
+                } else if (res.reply) {
+                    if(res.newClip) loadLibrary();
+                    renderMessage('model', res.reply);
+                } else {
+                    renderMessage('model', "⚠️ Unknown error occurred.");
+                }
+                
+                setTimeout(() => document.getElementById('progress-container').style.display='none', 500);
+                sendBtn.innerHTML = "SEND";
+                sendBtn.disabled = false;
+            };
+
+            const handleError = (e) => {
+                console.error(e);
+                alert("Upload Failed. Please try a smaller file or check your connection.");
+                sendBtn.innerHTML = "SEND";
+                sendBtn.disabled = false;
+                document.getElementById('progress-container').style.display='none';
+            };
+
+            if(file) {
+                const r = new FileReader();
+                r.onload = async () => {
+                    try {
+                        payload.fileData = r.result.split(',')[1]; payload.mimeType = file.type;
+                        const res = await apiFetch('/api/chat', payload);
+                        handleResponse(res);
+                    } catch(e) { handleError(e); }
+                };
+                r.onerror = handleError;
+                r.readAsDataURL(file);
+                
+                document.getElementById('file-input').value = '';
+                document.getElementById('file-btn').innerHTML = '📎'; 
+            } else {
+                try {
+                    const res = await apiFetch('/api/chat', payload);
+                    handleResponse(res);
+                } catch(e) { handleError(e); }
+            }
+        }
+        
+        async function openCoachChat() {
+            document.getElementById('coach-chat-modal').style.display = 'flex';
+            document.getElementById('coach-feed').innerHTML = '';
+            if(currentClip) {
+               const data = await apiFetch(`/api/clip/${currentClip._id}`);
+               if(data.chatHistory) data.chatHistory.forEach(m => {
+                   document.getElementById('coach-feed').innerHTML += `<div class="coach-msg ${m.role}">${m.text}</div>`;
+               });
+            }
+        }
+        
+        async function sendCoachMessage() {
+            const msg = document.getElementById('coach-input').value;
+            if(!msg) return;
+            document.getElementById('coach-feed').innerHTML += `<div class="coach-msg user">${msg}</div>`;
+            document.getElementById('coach-input').value = '';
+            const res = await apiFetch('/api/clip-chat', { message: msg, clipId: currentClip._id });
+            document.getElementById('coach-feed').innerHTML += `<div class="coach-msg model">${res.reply}</div>`;
+        }
+        
+        async function deleteClip() {
+            if(confirm("Delete?")) await apiFetch('/api/delete-clip', { id: currentClip._id });
+            loadLibrary();
+            document.querySelectorAll('.modal').forEach(m=>m.style.display='none');
+        }
+        
+        function viewNotes() {
+            const d = currentClip.fullData;
+            document.getElementById('notes-text').innerHTML = renderScoutCard(d);
+            document.getElementById('notes-popup').style.display = 'flex';
+        }
+        
+        async function organizeClip() {
+            const folder = prompt("New Folder Name:");
+            if (folder) await apiFetch('/api/update-clip', { id: currentClip._id, section: folder });
+            closeModal(); loadLibrary();
+        }
+    </script>
+</body>
+</html>
