@@ -1,0 +1,19 @@
+{
+  "name": "vantage-vision",
+  "version": "1.1.0",
+  "description": "Elite sports video analysis with Gemini 1.5 Pro",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@clerk/clerk-sdk-node": "^4.13.23",
+    "@google/generative-ai": "^0.24.1",
+    "cloudinary": "^2.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.4"
+  }
+}
