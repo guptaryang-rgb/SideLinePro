@@ -36,14 +36,13 @@ cloudinary.config({
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
-// *** GEMINI 2.5 "TANK" STRATEGY ***
-// Prioritizes the latest 2.5 Pro model, falls back to 2.5 Flash, then legacy 1.5.
+// *** TANK STRATEGY: Try all reliable models ***
 const MODEL_FALLBACK_LIST = [
-    "gemini-2.5-pro",         // TARGET: Latest stable reasoning model
-    "gemini-2.5-flash",       // Fallback 1: Latest fast model
-    "gemini-1.5-pro",         // Fallback 2: Legacy Pro
-    "gemini-1.5-flash",       // Fallback 3: Legacy Flash
-    "gemini-1.5-flash-001"    // Fallback 4: Hard-pinned legacy
+    "gemini-2.5-pro",         // Best reasoning (least hallucinations)
+    "gemini-1.5-pro",         // Good fallback
+    "gemini-1.5-pro-002",     // Stable snapshot
+    "gemini-1.5-flash",       // Fast fallback
+    "gemini-1.5-flash-001"    // Universal fallback
 ];
 
 async function generateWithFallback(promptParts) {
@@ -51,12 +50,16 @@ async function generateWithFallback(promptParts) {
 
     for (const modelName of MODEL_FALLBACK_LIST) {
         try {
-            console.log(`🤖 Coach thinking with: ${modelName}...`);
+            console.log(`🤖 Anti-Hallucination Mode: Analyzing with ${modelName}...`);
             
             const model = genAI.getGenerativeModel({ 
                 model: modelName,
+                // *** FIX 1: ZERO TEMPERATURE ***
+                // This forces the AI to be deterministic. No randomness allowed.
                 generationConfig: { 
-                    temperature: 0.4,
+                    temperature: 0.0,
+                    topP: 0.95,
+                    topK: 40,
                     responseMimeType: "application/json" 
                 }
             });
@@ -65,22 +68,20 @@ async function generateWithFallback(promptParts) {
                 contents: [{ role: "user", parts: promptParts }]
             });
             
-            console.log(`✅ SUCCESS! Connected to: ${modelName}`);
+            console.log(`✅ Success! Verified by: ${modelName}`);
             return result; 
 
         } catch (error) {
             console.warn(`⚠️ ${modelName} failed. Reason: ${error.message}. Switching...`);
             lastError = error;
             
-            // If it's a "Not Found" (404) or "Invalid Argument" (400), keep trying.
             if (!error.message.includes("404") && !error.message.includes("not found")) {
-               // Optional: Uncomment to stop on non-404 errors (like billing limits)
-               // throw error; 
+               // Optional: Stop on non-connection errors
             }
         }
     }
 
-    console.error("❌ CRITICAL: All Gemini 2.5 and 1.5 models failed.");
+    console.error("❌ CRITICAL: All models failed.");
     throw new Error(`Analysis failed. Last error: ${lastError.message}`);
 }
 
@@ -202,12 +203,12 @@ app.post("/api/clip-chat", requireAuth, async (req, res) => {
     const historyText = chatHistory.map(h => `${h.role.toUpperCase()}: ${h.text}`).join("\n");
 
     const prompt = `
-    ROLE: Elite Private Mechanics Coach (Cost: $250/hr).
-    CONTEXT: Reviewing a specific clip.
+    ROLE: Elite Private Mechanics Coach.
+    TASK: Answer user question about the clip.
     DATA: ${JSON.stringify(clip.fullData)}
     HISTORY: ${historyText}
-    PLAYER ASKS: "${req.body.message}"
-    TASK: Answer with hyper-specific advice.
+    USER QUESTION: "${req.body.message}"
+    INSTRUCTION: Be extremely specific. Quote the video data if possible.
     `;
     
     const result = await generateWithFallback([{ text: prompt }]);
@@ -271,25 +272,34 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const rosterContext = session.roster.map(p => `${p.identifier}: ${p.weaknesses.join(', ')}`).join('\n');
     const specificFocus = RUBRICS[position] || RUBRICS["team"];
 
+    // *** FIX 2: CHAIN-OF-THOUGHT PROMPTING ***
+    // This prompt forces the AI to "Show its work" visually before deciding the result.
+    // This drastically reduces hallucinations because it must ground the result in pixels.
     let systemInstruction = `
         ROLE: ${position === 'team' ? "NFL Coordinator" : "Elite Private Coach"}.
-        TASK: Analyze this video clip using Gemini 2.5 Pro's advanced reasoning.
-        CHECKLIST: 
+        TASK: Analyze this video clip frame-by-frame.
+        
+        FOCUS: 
         ${specificFocus}
 
         ROSTER CONTEXT:
         ${rosterContext}
 
-        CRITICAL INSTRUCTIONS:
-        1. DIAGNOSE THE FAILURE/SUCCESS using biomechanical physics.
-        2. OUTPUT PURE JSON. NO MARKDOWN.
-        3. STRUCTURE:
+        *** CRITICAL: ANTI-HALLUCINATION PROTOCOL ***
+        Step 1: Identify the BALL. Where does it start? Where does it go?
+        Step 2: Identify the END RESULT. Did the ball hit the ground? Was it intercepted? Was it a TD?
+        Step 3: If the video is too blurry or cuts off, output "UNCLEAR" for that specific field. DO NOT GUESS.
+
+        OUTPUT JSON ONLY:
         { 
-            "title": "Play Title", 
+            "title": "Play Title (e.g. 'Completed Slant' or 'Interception')", 
             "data": { "o_formation": "Offensive Set", "d_formation": "Defensive Front" }, 
             "scouting_report": { 
-                "summary": "Summary", 
-                "timeline": [{ "time": "0:00", "type": "Type", "text": "Observation" }],
+                "summary": "Step-by-step diagnostic of exactly what happened physically.", 
+                "timeline": [
+                    { "time": "0:00", "type": "Snap", "text": "Ball snapped." },
+                    { "time": "0:02", "type": "Visual Evidence", "text": "Describe the moment of catch/interception clearly." }
+                ],
                 "coaching_prescription": { "fix": "", "drill": "", "pro_tip": "" },
                 "report_card": { "football_iq": "B", "technique": "C", "effort": "A", "overall": "B" }
             },
@@ -298,7 +308,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
 
     const prompt = [ { fileData: { mimeType, fileUri: file.uri } }, { text: systemInstruction } ];
     
-    // *** USE THE TANK FUNCTION HERE ***
+    // *** USE THE TANK FUNCTION ***
     const result = await generateWithFallback(prompt);
     let text = result.response.text();
     
