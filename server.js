@@ -54,8 +54,7 @@ async function generateWithFallback(promptParts) {
             
             const model = genAI.getGenerativeModel({ 
                 model: modelName,
-                // *** FIX 1: ZERO TEMPERATURE ***
-                // This forces the AI to be deterministic. No randomness allowed.
+                // *** ZERO TEMPERATURE = DETERMINISTIC RESULTS ***
                 generationConfig: { 
                     temperature: 0.0,
                     topP: 0.95,
@@ -87,7 +86,7 @@ async function generateWithFallback(promptParts) {
 
 /* ---------------- RUBRICS ---------------- */
 const RUBRICS = {
-    "team": "COORDINATOR LEVEL CHECKLIST (22-MAN VIEW):\n1. Offensive Concept: Identify the scheme.\n2. Defensive Shell: Identify Front and Coverage.\n3. Structural Failure: Where did the scheme break down?\n4. Leverage & Numbers: Box count vs perimeter.",
+    "team": "COORDINATOR LEVEL CHECKLIST (22-MAN VIEW):\n1. Offensive Concept: Identify the scheme (e.g., Mesh, Dagger, Duo).\n2. Defensive Shell: Identify Front and Coverage (MOFO/MOFC).\n3. Structural Failure: Where did the scheme break down?\n4. Leverage & Numbers: Box count vs perimeter.",
     "qb": "BIOMECHANICS CHECKLIST:\n1. Base Width: Is it too wide or narrow?\n2. Hip Sequencing: Do hips lead the throw?\n3. Eye Discipline: Is he reading the safety rotation?",
     "rb": "BIOMECHANICS CHECKLIST:\n1. Pad Level at contact.\n2. Vision/Cuts (Plant foot efficiency).\n3. Pass Pro scanning.",
     "wr": "BIOMECHANICS CHECKLIST:\n1. Release vs Press.\n2. Stem & Stack technique.\n3. Break point efficiency (sink hips).",
@@ -272,38 +271,47 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const rosterContext = session.roster.map(p => `${p.identifier}: ${p.weaknesses.join(', ')}`).join('\n');
     const specificFocus = RUBRICS[position] || RUBRICS["team"];
 
-    // *** FIX 2: CHAIN-OF-THOUGHT PROMPTING ***
-    // This prompt forces the AI to "Show its work" visually before deciding the result.
-    // This drastically reduces hallucinations because it must ground the result in pixels.
+    // *** ELITE SCOUT PROMPT UPGRADE ***
+    // This prompt forces the AI to look at the Defense and Pre-Snap alignment.
     let systemInstruction = `
         ROLE: ${position === 'team' ? "NFL Coordinator" : "Elite Private Coach"}.
-        TASK: Analyze this video clip frame-by-frame.
+        TASK: Analyze this video clip frame-by-frame. Output a professional scouting report.
         
-        FOCUS: 
+        FOCUS RUBRIC: 
         ${specificFocus}
 
         ROSTER CONTEXT:
         ${rosterContext}
 
-        *** CRITICAL: ANTI-HALLUCINATION PROTOCOL ***
-        Step 1: Identify the BALL. Where does it start? Where does it go?
-        Step 2: Identify the END RESULT. Did the ball hit the ground? Was it intercepted? Was it a TD?
-        Step 3: If the video is too blurry or cuts off, output "UNCLEAR" for that specific field. DO NOT GUESS.
+        *** CRITICAL: ELITE SCOUTING PROTOCOL ***
+        1. PROVE IT (Anti-Hallucination):
+           - Identify the ball flight (spiral? wobble?).
+           - Confirm catch vs. drop vs. interception. If blurry, say "UNCLEAR".
+        
+        2. TACTICAL CONTEXT (The "Why"):
+           - PRE-SNAP: Identify the Formation (e.g., 3x1, Bunch) and Defensive Shell (e.g., Cover 1, 2-High).
+           - DEFENSIVE FAILURE: Did the DB lose leverage? Bad hips? Blown coverage?
+           - RATING: You MUST grade the defender who got beat.
 
-        OUTPUT JSON ONLY:
+        3. OUTPUT PURE JSON (No Markdown):
         { 
-            "title": "Play Title (e.g. 'Completed Slant' or 'Interception')", 
-            "data": { "o_formation": "Offensive Set", "d_formation": "Defensive Front" }, 
+            "title": "Play Title (e.g. 'Deep Post vs Cover 1')", 
+            "data": { "o_formation": "Specific Set", "d_formation": "Specific Shell" }, 
             "scouting_report": { 
-                "summary": "Step-by-step diagnostic of exactly what happened physically.", 
+                "summary": "Tactical summary explaining WHY the play worked/failed based on leverage and coverage.", 
                 "timeline": [
-                    { "time": "0:00", "type": "Snap", "text": "Ball snapped." },
-                    { "time": "0:02", "type": "Visual Evidence", "text": "Describe the moment of catch/interception clearly." }
+                    { "time": "0:00", "type": "Pre-Snap", "text": "Formation and defensive alignment." },
+                    { "time": "0:02", "type": "The Snap", "text": "QB drop mechanics and WR release." },
+                    { "time": "0:04", "type": "Separation", "text": "Moment receiver wins/loses leverage." },
+                    { "time": "0:06", "type": "Catch Point", "text": "Detailed mechanics of the catch/play." }
                 ],
                 "coaching_prescription": { "fix": "", "drill": "", "pro_tip": "" },
                 "report_card": { "football_iq": "B", "technique": "C", "effort": "A", "overall": "B" }
             },
-            "players_detected": [ { "identifier": "Name", "position": "Pos", "grade": "B", "observation": "Note", "weakness": "Weakness" } ]
+            "players_detected": [ 
+                { "identifier": "Name/Number", "position": "Pos", "grade": "B", "observation": "Note", "weakness": "Weakness" },
+                { "identifier": "Defender (Jersey Color/No)", "position": "DB/LB", "grade": "C-", "observation": "How they lost the rep (leverage/hips).", "weakness": "Man Coverage" }
+            ]
         }`;
 
     const prompt = [ { fileData: { mimeType, fileUri: file.uri } }, { text: systemInstruction } ];
