@@ -51,9 +51,22 @@
         .main { flex:1; display:flex; flex-direction:column; background:radial-gradient(circle at 50% 30%, #1c1c1f 0%, #09090b 80%); min-width: 0; }
         .chat-feed { flex:1; overflow-y:auto; padding:40px; display:flex; flex-direction:column; gap:30px; scroll-behavior: smooth; }
         
-        .tools-bar { padding: 10px 20px; background: var(--bg-panel); border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center; justify-content: space-between; }
-        .tool-btn { background: #27272a; border: 1px solid #3f3f46; color: #ccc; font-size: 0.8rem; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-        .tool-btn:hover { background: #3f3f46; color: white; border-color: var(--accent); }
+        /* --- UPDATED TOOLS BAR (GRID LAYOUT) --- */
+        .tools-bar { 
+            display: grid; 
+            grid-template-columns: 1fr auto 1fr; /* Left, Auto-Center, Right */
+            align-items: center; 
+            padding: 12px 25px; 
+            background: var(--bg-panel); 
+            border-top: 1px solid var(--border); 
+            height: 50px; 
+        }
+        .tools-left { justify-self: start; }
+        .tools-center { justify-self: center; display: flex; gap: 15px; }
+        .tools-right { justify-self: end; }
+        
+        .tool-btn { background: #27272a; border: 1px solid #3f3f46; color: #ccc; font-size: 0.85rem; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; transition:0.2s; display:flex; align-items:center; gap:8px; white-space: nowrap; }
+        .tool-btn:hover { border-color:var(--accent); color:white; background:#333; }
 
         .input-bar { padding:20px; background:var(--bg-panel); display:flex; gap:10px; align-items:center; border-top: 1px solid #27272a; }
         .input-box { flex:1; background:#000; border:1px solid var(--border); color:white; padding:12px 20px; border-radius:30px; outline:none; transition: border-color 0.2s; }
@@ -121,7 +134,7 @@
             margin-bottom: 10px;
         }
 
-        /* --- TEAM ANALYSIS GRID (NEW) --- */
+        /* --- TEAM ANALYSIS GRID --- */
         .tactical-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; grid-column: 1 / -1; }
         .tac-card { background: #27272a; border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: left; transition: transform 0.2s; }
         .tac-card:hover { transform: translateY(-3px); border-color: var(--accent); }
@@ -129,14 +142,12 @@
         .tac-val { font-size: 1rem; font-weight: 800; color: white; font-family: 'JetBrains Mono', monospace; line-height: 1.2; }
         .tac-card.highlight { border-color: var(--accent); background: rgba(56,189,248,0.05); }
 
-        /* Individual Grades */
         .grade-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; grid-column: 1 / -1; }
         .metric-card { background: #27272a; border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: center; transition: transform 0.2s; }
         .metric-card:hover { transform: translateY(-3px); border-color: var(--accent); }
         .metric-label { font-size: 0.75rem; color: #a1a1aa; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
         .metric-val { font-size: 1.4rem; font-weight: 800; color: white; font-family: 'JetBrains Mono', monospace; }
 
-        /* Timeline */
         .timeline-section { grid-column: 1 / 2; }
         .section-title { font-size: 0.85rem; color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; }
         .timeline-event { display: flex; gap: 15px; margin-bottom: 20px; position: relative; }
@@ -147,14 +158,12 @@
         .t-type { color: white; font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
         .t-desc { color: #a1a1aa; font-size: 0.85rem; line-height: 1.5; }
 
-        /* Rx Box */
         .rx-panel { grid-column: 2 / 3; display: flex; flex-direction: column; gap: 15px; }
         .rx-card { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); padding: 20px; border-radius: 12px; }
         .rx-header { color: var(--danger); font-weight: 900; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
         .rx-item { margin-bottom: 12px; font-size: 0.85rem; color: #e4e4e7; line-height: 1.5; }
         .rx-label { color: var(--danger); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; display: block; margin-bottom: 2px; }
 
-        /* Detected Players */
         .players-section { grid-column: 1 / -1; margin-top: 10px; }
         .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
         .player-mini-card { background: #27272a; border: 1px solid var(--border); border-radius: 8px; padding: 15px; transition: 0.2s; }
@@ -164,7 +173,7 @@
         .pm-grade { font-family: 'JetBrains Mono'; font-weight: 700; color: var(--accent); }
         .pm-note { font-size: 0.8rem; color: #a1a1aa; line-height: 1.4; }
 
-        /* --- MODALS & UTILS --- */
+        /* --- MODALS --- */
         .modal { position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; display:none; justify-content:center; align-items:center; }
         .modal-content { background:#18181b; border:1px solid var(--border); border-radius:16px; overflow:hidden; }
         .modal-content.wide { width:85vw; max-width:900px; max-height:80vh; overflow-y:auto; padding:25px; }
@@ -177,7 +186,6 @@
         .tele-btn { background:#333; color:white; border:none; padding:8px 16px; border-radius:20px; cursor:pointer; font-weight:700; }
         .tele-btn.active { background:var(--accent); color:black; }
         
-        /* Library Grid */
         .clip-card { background:var(--bg-card); border:1px solid var(--border); margin-bottom:10px; border-radius:10px; cursor:pointer; position:relative; transition:0.2s; }
         .clip-card:hover { transform: translateX(5px); border-color: #666; }
         .clip-thumb { height:100px; background:#000; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#333; border-radius: 10px 10px 0 0; }
@@ -197,7 +205,6 @@
         .menu-opt { padding:12px 20px; border-bottom:1px solid #27272a; cursor:pointer; text-align:left; color:#d4d4d8; transition:0.2s; }
         .menu-opt:hover { color:var(--accent); background:#27272a; padding-left: 25px; }
         
-        /* TENDENCY REPORT */
         .tendency-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
         .tendency-col h4 { color: #a1a1aa; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; font-size: 0.8rem; letter-spacing: 1px; }
         .tendency-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #27272a; border-radius: 8px; margin-bottom: 8px; border: 1px solid #3f3f46; transition: 0.2s; }
@@ -258,13 +265,17 @@
                     <div id="chat-feed" class="chat-feed"></div>
                     
                     <div class="tools-bar">
-                        <div class="tool-group">
-                            <button class="tool-btn" onclick="toggleSidebar()" title="Toggle Sessions Panel">◂ Sessions</button>
-                            <button id="btn-roster" class="tool-btn" onclick="openRoster()">👥 Roster</button>
-                            <button id="btn-tendency" class="tool-btn" onclick="openTendencies()">📊 Tendency</button>
+                        <div class="tools-left">
+                            <button class="tool-btn" onclick="toggleSidebar()">◂ Sessions</button>
                         </div>
-                        <div class="tool-group">
-                            <button class="tool-btn" onclick="toggleLibrary()" title="Toggle Film Library">Library ▸</button>
+
+                        <div class="tools-center" id="team-tools-panel" style="display:none;">
+                            <button class="tool-btn" onclick="openRoster()">👥 Roster</button>
+                            <button class="tool-btn" onclick="openTendencies()">📊 Tendency</button>
+                        </div>
+
+                        <div class="tools-right">
+                            <button class="tool-btn" onclick="toggleLibrary()">Library ▸</button>
                         </div>
                     </div>
 
@@ -325,7 +336,6 @@
     </div>
     
     <div id="notes-popup" class="modal" onclick="if(event.target === this) this.style.display='none'"><div class="modal-content wide" style="width:85vw; padding:25px;"><div id="notes-text"></div></div></div>
-    <div id="roster-modal" class="modal" onclick="if(event.target === this) this.style.display='none'"><div class="modal-content wide" style="width:85vw; padding:25px;"><h3 style="color:white;">Session Roster</h3><div id="roster-grid" style="display:grid; gap:15px; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));"></div></div></div>
     
     <div id="tendency-modal" class="modal" onclick="if(event.target === this) this.style.display='none'">
         <div class="modal-content wide" style="width:85vw; padding:30px;">
@@ -335,6 +345,13 @@
             </div>
             <div id="tendency-insights"></div>
             <div id="tendency-content" class="tendency-grid"></div>
+        </div>
+    </div>
+
+    <div id="roster-modal" class="modal" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-content wide" style="width:85vw; padding:25px;">
+            <h3 style="color:white;">Session Roster</h3>
+            <div id="roster-grid" style="display:grid; gap:15px; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));"></div>
         </div>
     </div>
     
@@ -356,7 +373,11 @@
                     if (Clerk.user) {
                         document.getElementById('auth-modal').style.display = 'none';
                         Clerk.mountUserButton(document.getElementById('user-button'));
+                        
+                        // Ensure SEND button is live
                         document.getElementById('send-btn').addEventListener('click', sendMessage);
+                        
+                        // Auto-load Self sessions to start
                         switchTab('self');
                     } else { Clerk.mountSignIn(document.getElementById('sign-in')); }
                 });
@@ -379,14 +400,12 @@
                 const index = tabName === 'self' ? 2 : 3;
                 document.querySelector(`.nav-tab:nth-child(${index})`).classList.add('active');
                 document.getElementById('war-room-view').classList.add('active-view');
-                document.getElementById('session-header').innerText = tabName === 'self' ? "SELF SESSIONS" : "TEAM SESSIONS";
                 document.getElementById('chat-feed').innerHTML = '';
                 document.getElementById('lib-grid').innerHTML = '';
                 
                 document.getElementById('pos-select').style.display = tabName === 'team' ? 'none' : 'block';
                 const teamTools = tabName === 'team' ? 'flex' : 'none';
-                document.getElementById('btn-roster').style.display = teamTools;
-                document.getElementById('btn-tendency').style.display = teamTools;
+                document.getElementById('team-tools-panel').style.display = teamTools;
                 
                 currentSession = null;
                 loadSessions();
@@ -540,9 +559,7 @@
             grid.innerHTML = '';
             if(data.roster) {
                 data.roster.forEach(p => {
-                    const weaknesses = p.weaknesses.map(w => `<span class="tag bad" style="color:#ef4444; border:1px solid #ef4444; font-size:0.7rem; padding:2px 5px; border-radius:4px;">${w}</span>`).join(' ');
-                    const recentNotes = p.notes.slice(-5).map(n => `<li>${n}</li>`).join('');
-                    grid.innerHTML += `<div class="player-card"><div class="player-header"><div class="player-id">${p.identifier}</div><div class="player-grade">${p.grade}</div></div><div class="player-tags" style="margin-bottom:5px;">${weaknesses}</div><ul class="player-notes" style="font-size:0.8rem; color:#888; padding-left:15px;">${recentNotes}</ul></div>`;
+                    grid.innerHTML += `<div class="tac-card"><div class="tac-label">${p.position}</div><div class="tac-val">${p.identifier}</div><div style="font-size:0.8rem; color:#888;">${p.notes[0]}</div></div>`;
                 });
             }
             document.getElementById('roster-modal').style.display = 'flex';
