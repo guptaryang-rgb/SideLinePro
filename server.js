@@ -13,8 +13,9 @@ const cloudinary = require("cloudinary").v2;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Increased limit for Full Game Footage
 app.use(cors());
-app.use(express.json({ limit: "500mb" }));
+app.use(express.json({ limit: "500mb" })); 
 app.use(ClerkExpressWithAuth());
 app.use(express.static(__dirname));
 
@@ -34,6 +35,7 @@ cloudinary.config({
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
+// *** TANK STRATEGY ***
 const MODEL_FALLBACK_LIST = [
     "gemini-2.5-pro", "gemini-1.5-pro", "gemini-1.5-pro-002", "gemini-1.5-flash"
 ];
@@ -51,9 +53,9 @@ async function generateWithFallback(promptParts) {
             console.log(`✅ Success with ${modelName}`);
             return result; 
         } catch (error) {
-            console.warn(`⚠️ ${modelName} failed: ${error.message}`);
+            console.warn(`⚠️ ${modelName} failed. Switching...`);
             lastError = error;
-            if (!error.message.includes("404") && !error.message.includes("not found")) {} // Continue
+            if (!error.message.includes("404") && !error.message.includes("not found")) {}
         }
     }
     throw new Error(`Analysis failed. Last error: ${lastError.message}`);
@@ -61,16 +63,13 @@ async function generateWithFallback(promptParts) {
 
 /* ---------------- UPDATED RUBRICS ---------------- */
 const RUBRICS = {
-    // *** NEW: COORDINATOR LEVEL RUBRIC ***
     "team": `
     ELITE COORDINATOR DIAGNOSTICS:
-    1. SITUATION: Down, Distance, Field Position, Personnel (11, 12, 21, Empty).
-    2. PRE-SNAP: Formation Width, Motion, Defensive Front (Over/Under/Tite), Safety Shell (MOFO/MOFC).
-    3. SCHEME: Identify Concept (Mesh, Dagger, Duo, Inside Zone) vs Coverage (Cover 1, 3, 4, 6).
-    4. THE 'WHY': Point of Attack win/loss? Conflict player decision? Blown assignment?
-    5. EFFICIENCY: Success Rate (4+ yds on 1st, Conversion on 3rd).`,
+    1. SITUATION: Down, Distance, Field Position, Personnel.
+    2. SCHEME: Identify Concept (Mesh, Dagger, Duo, Inside Zone) vs Coverage.
+    3. THE 'WHY': Point of Attack win/loss? Conflict player decision?
+    4. TENDENCY: Does this align with previous plays? (Pass heavy in 11 personnel?)`,
     
-    // *** PLAYER RUBRICS ***
     "qb": "BIOMECHANICS: Base Width, Hip Sequencing, Eye Discipline.",
     "rb": "BIOMECHANICS: Pad Level, Vision/Cuts, Pass Pro scanning.",
     "wr": "BIOMECHANICS: Release vs Press, Stem & Stack, Break point efficiency.",
@@ -84,6 +83,7 @@ const RUBRICS = {
     "general": "GENERAL MECHANICS: Stance, Effort, Execution."
 };
 
+/* ---------------- MODELS ---------------- */
 const PlayerProfileSchema = new mongoose.Schema({
     identifier: String, position: String, grade: String, notes: [String], weaknesses: [String], last_updated: { type: Date, default: Date.now }
 });
@@ -107,6 +107,7 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
+/* ---------------- ROUTES ---------------- */
 app.get("/", (_, res) => { res.sendFile(path.join(__dirname, "index.html")); });
 app.get("/privacy.html", (_, res) => { res.sendFile(path.join(__dirname, "privacy.html")); });
 app.get("/terms.html", (_, res) => { res.sendFile(path.join(__dirname, "terms.html")); });
@@ -175,21 +176,36 @@ app.post("/api/save-snapshot", requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: "Save failed" }); }
 });
 
+// *** UPDATED CHAT ROUTE FOR ROSTER/TENDENCY AWARENESS ***
 app.post("/api/clip-chat", requireAuth, async (req, res) => {
   try {
     const clip = await Clip.findOne({ _id: req.body.clipId, owner: req.auth.userId });
     if (!clip || !clip.fullData) return res.json({ reply: "Analysis needed first." });
 
+    // 1. Fetch the Session to get the FULL Roster (All clips in this game)
+    const session = await Session.findOne({ sessionId: clip.sessionId, owner: req.auth.userId });
+    const rosterContext = session ? JSON.stringify(session.roster) : "[]";
+
     const chatHistory = clip.chatHistory || [];
     const historyText = chatHistory.map(h => `${h.role.toUpperCase()}: ${h.text}`).join("\n");
 
+    // 2. Inject Roster Data into Prompt
     const prompt = `
-    ROLE: Elite Coach.
-    CONTEXT: Reviewing a clip.
-    DATA: ${JSON.stringify(clip.fullData)}
-    HISTORY: ${historyText}
-    QUESTION: "${req.body.message}"
-    TASK: Answer specifically using the data provided.
+    ROLE: Elite Football Coordinator / Scout.
+    CONTEXT: The user is asking about a specific clip, but you have access to the FULL TEAM ROSTER data from the entire game/session.
+    
+    CURRENT CLIP DATA: ${JSON.stringify(clip.fullData)}
+    
+    FULL TEAM ROSTER / TENDENCY DATA: ${rosterContext}
+    
+    CHAT HISTORY: ${historyText}
+    
+    USER QUESTION: "${req.body.message}"
+    
+    INSTRUCTION: 
+    1. Answer elegantly and specifically. 
+    2. If the user asks about a player, check the ROSTER DATA to see if this player has shown similar weaknesses in other clips (Tendency Analysis).
+    3. Use bolding (**text**) for key stats or player names.
     `;
     
     const result = await generateWithFallback([{ text: prompt }]);
@@ -247,43 +263,42 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     let systemInstruction;
     
     if (position === 'team') {
-        // --- COORDINATOR MODE ---
         systemInstruction = `
         ROLE: NFL Offensive/Defensive Coordinator.
-        TASK: Perform a high-level schematic self-scout of this play.
+        TASK: Perform a high-level schematic self-scout of this play (or full game sequence).
         
         ANALYSIS CHECKLIST:
         ${specificFocus}
+
+        ROSTER CONTEXT (Historical Weaknesses):
+        ${rosterContext}
 
         CRITICAL OUTPUT FORMAT (JSON):
         { 
             "title": "Play Title (e.g. 'Power Read vs 4-3 Over')", 
             "data": { "o_formation": "Specific Set", "d_formation": "Front & Coverage" }, 
             "tactical_breakdown": {
-                "concept": "Name of Scheme (e.g. Duo, Mesh)",
-                "box_count": "Light / Neutral / Loaded (count)",
-                "coverage_shell": "Pre-Snap (MOFO/MOFC) -> Post-Snap (Rotation)",
-                "pressure": "Blitz? Stunt? Base?",
-                "key_matchup": "The specific 1v1 that decided the play"
+                "concept": "Scheme Name",
+                "box_count": "Light / Neutral / Loaded",
+                "coverage_shell": "Cover X",
+                "pressure": "Blitz Type",
+                "key_matchup": "Key 1v1"
             },
             "scouting_report": { 
-                "summary": "Schematic narrative of the play.", 
+                "summary": "Schematic narrative.", 
                 "timeline": [
-                    { "time": "0:00", "type": "Pre-Snap", "text": "Formations, Motion, Leverage." },
-                    { "time": "0:02", "type": "Snap/Read", "text": "The Conflict: Who was put in a bind?" },
-                    { "time": "0:04", "type": "Execution", "text": "Point of Attack result." }
+                    { "time": "0:00", "type": "Pre-Snap", "text": "Alignment." },
+                    { "time": "0:04", "type": "Execution", "text": "Result." }
                 ],
-                "coaching_prescription": { "fix": "Schematic fix", "drill": "Group install drill", "pro_tip": "Coordination tip" },
-                "report_card": { "scheme_soundness": "A/B/C", "execution": "A/B/C", "success_rate": "Efficiency Grade", "overall": "A-" }
+                "coaching_prescription": { "fix": "Schematic fix", "drill": "Group drill", "pro_tip": "Tip" },
+                "report_card": { "scheme_soundness": "Grade", "execution": "Grade", "success_rate": "Efficiency", "overall": "A-" }
             },
-            "players_detected": [] 
+            "players_detected": [ { "identifier": "Name", "position": "Pos", "grade": "B", "observation": "Note", "weakness": "Weak" } ] 
         }`;
     } else {
-        // --- PLAYER MODE ---
         systemInstruction = `
         ROLE: Elite Private Position Coach.
-        TASK: Biomechanical analysis of specific player.
-        
+        TASK: Biomechanical analysis.
         FOCUS: ${specificFocus}
         ROSTER: ${rosterContext}
 
@@ -294,7 +309,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
             "scouting_report": { 
                 "summary": "Technical breakdown.", 
                 "timeline": [{ "time": "0:00", "type": "Action", "text": "Obs" }],
-                "coaching_prescription": { "fix": "Tech fix", "drill": "Drill", "pro_tip": "Tip" },
+                "coaching_prescription": { "fix": "Fix", "drill": "Drill", "pro_tip": "Tip" },
                 "report_card": { "football_iq": "B", "technique": "C", "effort": "A", "overall": "B" }
             },
             "players_detected": [ { "identifier": "Name", "position": "Pos", "grade": "B", "observation": "Note", "weakness": "Weak" } ]
