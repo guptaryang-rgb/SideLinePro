@@ -69,7 +69,7 @@
         #progress-container { display:none; position:absolute; top:0; width:100%; height:3px; background:#333; z-index:100; }
         #progress-bar { height:100%; width:0%; background:var(--accent); transition:width 0.3s; box-shadow: 0 0 10px var(--accent); }
 
-        /* --- ELITE SCOUT CARD STYLES --- */
+        /* --- SCOUT CARD STYLES --- */
         .scout-card { 
             background: #18181b; 
             border: 1px solid var(--border); 
@@ -109,7 +109,6 @@
 
         .scout-body { padding: 30px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
         
-        /* Summary Box */
         .summary-box { 
             grid-column: 1 / -1; 
             background: rgba(255,255,255,0.03); 
@@ -122,7 +121,15 @@
             margin-bottom: 10px;
         }
 
-        /* Grade Grid */
+        /* --- TEAM ANALYSIS GRID (NEW) --- */
+        .tactical-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; grid-column: 1 / -1; }
+        .tac-card { background: #27272a; border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: left; transition: transform 0.2s; }
+        .tac-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .tac-label { font-size: 0.7rem; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .tac-val { font-size: 1rem; font-weight: 800; color: white; font-family: 'JetBrains Mono', monospace; line-height: 1.2; }
+        .tac-card.highlight { border-color: var(--accent); background: rgba(56,189,248,0.05); }
+
+        /* Individual Grades */
         .grade-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; grid-column: 1 / -1; }
         .metric-card { background: #27272a; border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: center; transition: transform 0.2s; }
         .metric-card:hover { transform: translateY(-3px); border-color: var(--accent); }
@@ -349,11 +356,7 @@
                     if (Clerk.user) {
                         document.getElementById('auth-modal').style.display = 'none';
                         Clerk.mountUserButton(document.getElementById('user-button'));
-                        
-                        // Ensure SEND button is live
                         document.getElementById('send-btn').addEventListener('click', sendMessage);
-                        
-                        // Auto-load Self sessions to start
                         switchTab('self');
                     } else { Clerk.mountSignIn(document.getElementById('sign-in')); }
                 });
@@ -680,17 +683,69 @@
                 </div>`;
         }
 
+        // *** NEW: COORDINATOR DASHBOARD RENDERER ***
+        function renderTeamCard(data) {
+            const t = data.tactical_breakdown || {};
+            const r = data.scouting_report || {};
+            const rx = r.coaching_prescription || {};
+            const timelineHTML = r.timeline ? r.timeline.map(item => `
+                <div class="timeline-event">
+                    <div class="t-time">${item.time}</div>
+                    <div class="t-content"><div class="t-type">${item.type}</div><div class="t-desc">${item.text}</div></div>
+                </div>`).join('') : '';
+
+            return `
+                <div class="scout-card" style="border-color:#f59e0b;">
+                    <div class="scout-header" style="background:rgba(245,158,11,0.1);">
+                        <div class="play-meta">
+                            <div class="play-title">${data.title}</div>
+                            <div class="formation-tag" style="color:#f59e0b; background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3);">${data.data.o_formation} vs ${data.data.d_formation}</div>
+                        </div>
+                        <div class="overall-badge" style="border-color:#f59e0b;">
+                            <div class="badge-label" style="color:#f59e0b;">TEAM</div>
+                            <div class="badge-score" style="color:#f59e0b; font-size:1.5rem;">XO</div>
+                        </div>
+                    </div>
+                    <div class="scout-body">
+                        <div class="tactical-grid">
+                            <div class="tac-card highlight"><div class="tac-label">CONCEPT</div><div class="tac-val">${t.concept}</div></div>
+                            <div class="tac-card"><div class="tac-label">BOX COUNT</div><div class="tac-val">${t.box_count}</div></div>
+                            <div class="tac-card"><div class="tac-label">COVERAGE</div><div class="tac-val">${t.coverage_shell}</div></div>
+                            <div class="tac-card highlight"><div class="tac-label">KEY MATCHUP</div><div class="tac-val" style="font-size:0.8rem;">${t.key_matchup}</div></div>
+                        </div>
+                        
+                        <div class="summary-box" style="border-left-color:#f59e0b;">${r.summary}</div>
+                        
+                        <div class="timeline-section">
+                            <div class="section-title" style="color:#f59e0b;">SCHEMATIC TIMELINE</div>
+                            ${timelineHTML}
+                        </div>
+
+                        <div class="rx-panel">
+                            <div class="rx-card" style="border-color:#f59e0b; background:rgba(245,158,11,0.05);">
+                                <div class="rx-header" style="color:#f59e0b;">📋 COORDINATOR NOTE</div>
+                                <div class="rx-item">${rx.fix}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
         function renderMessage(role, text) {
             const feed = document.getElementById('chat-feed');
             
             if (!text) return;
 
             let content = text;
-            // Check if it's JSON intended for the card
             if(role === 'model' && text.includes('{')) {
                 try {
                     const j = JSON.parse(text);
-                    content = renderScoutCard(j);
+                    // *** LOGIC FORK: TEAM vs PLAYER ***
+                    if (j.tactical_breakdown) {
+                        content = renderTeamCard(j);
+                    } else {
+                        content = renderScoutCard(j);
+                    }
                 } catch(e) {
                     console.warn("JSON Parse Failed for UI, falling back to text.");
                 }
@@ -795,7 +850,7 @@
         
         function viewNotes() {
             const d = currentClip.fullData;
-            document.getElementById('notes-text').innerHTML = renderScoutCard(d);
+            document.getElementById('notes-text').innerHTML = d.tactical_breakdown ? renderTeamCard(d) : renderScoutCard(d);
             document.getElementById('notes-popup').style.display = 'flex';
         }
         
