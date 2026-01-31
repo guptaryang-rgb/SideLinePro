@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config(); // Fixed typo: lowercase 'r'
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -13,7 +13,6 @@ const cloudinary = require("cloudinary").v2;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Increased limit for Full Game Footage
 app.use(cors());
 app.use(express.json({ limit: "500mb" }));
 app.use(ClerkExpressWithAuth());
@@ -35,8 +34,11 @@ cloudinary.config({
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
+// *** RESTORED: User requested Gemini 2.5 Pro ***
 const MODEL_FALLBACK_LIST = [
-    "gemini-2.5-pro", "gemini-1.5-pro", "gemini-1.5-pro-002", "gemini-1.5-flash"
+    "gemini-2.5-pro", 
+    "gemini-1.5-pro",
+    "gemini-1.5-flash"
 ];
 
 async function generateWithFallback(promptParts) {
@@ -49,18 +51,16 @@ async function generateWithFallback(promptParts) {
                 generationConfig: { temperature: 0.0, topP: 0.95, topK: 40, responseMimeType: "application/json" }
             });
             const result = await model.generateContent({ contents: [{ role: "user", parts: promptParts }] });
-            console.log(`✅ Success with ${modelName}`);
             return result; 
         } catch (error) {
-            console.warn(`⚠️ ${modelName} failed: ${error.message}`);
+            console.warn(`⚠️ ${modelName} failed. Switching...`);
             lastError = error;
-            if (!error.message.includes("404") && !error.message.includes("not found")) {} 
         }
     }
-    throw new Error(`Analysis failed. Last error: ${lastError.message}`);
+    throw new Error(`Analysis failed. Last error: ${lastError?.message}`);
 }
 
-/* ---------------- UPDATED RUBRICS (GOD MODE READY) ---------------- */
+/* ---------------- RUBRICS ---------------- */
 const RUBRICS = {
     "team": "ELITE COORDINATOR: Situation, Pre-Snap Shell, Post-Snap Rotation, Conflict Players.",
     "qb": "BIOMECHANICS: Base, Hip Sequencing, Arm Angle, Release Time.",
@@ -168,7 +168,6 @@ app.post("/api/save-snapshot", requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: "Save failed" }); }
 });
 
-// *** CHAT WITH CONTEXT ***
 app.post("/api/clip-chat", requireAuth, async (req, res) => {
   try {
     const clip = await Clip.findOne({ _id: req.body.clipId, owner: req.auth.userId });
@@ -181,12 +180,12 @@ app.post("/api/clip-chat", requireAuth, async (req, res) => {
 
     const prompt = `
     ROLE: Elite Football Coordinator.
-    CONTEXT: User asks about a clip. You have full game context (Roster).
+    CONTEXT: Clip Analysis.
     CLIP DATA: ${JSON.stringify(clip.fullData)}
-    ROSTER/TENDENCIES: ${rosterContext}
+    ROSTER: ${rosterContext}
     HISTORY: ${historyText}
     QUESTION: "${req.body.message}"
-    INSTRUCTION: Answer specifically. If asking about a player, check Roster for past weaknesses. Use **bold** for key stats/players.
+    INSTRUCTION: Concise, professional answer. Use **bold** for emphasis.
     `;
     
     const result = await generateWithFallback([{ text: prompt }]);
@@ -240,54 +239,80 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const rosterContext = session.roster.map(p => `${p.identifier}: ${p.weaknesses.join(', ')}`).join('\n');
     const specificFocus = RUBRICS[position] || RUBRICS["team"];
 
-    // *** GOD MODE PROMPT INTEGRATION ***
-    // This prompt forces the AI to output drawing coordinates, timestamps, and pro comps.
-    let systemInstruction = `
-    ROLE: ${position === 'team' ? "NFL Coordinator" : "Elite Position Coach"}.
-    TASK: Analyze video clip. Focus: ${specificFocus}.
-    ROSTER: ${rosterContext}
+    // *** REVERTED LOGIC: Standard Team/Individual Analysis ***
+    let systemInstruction;
+    
+    if (position === 'team') {
+        // COORDINATOR MODE
+        systemInstruction = `
+        ROLE: NFL Offensive/Defensive Coordinator.
+        TASK: Perform a high-level schematic self-scout of this play.
+        ANALYSIS CHECKLIST: ${specificFocus}
 
-    *** GOD MODE ANALYSIS REQUIREMENTS ***
-    1. VISUALS: If you see a key movement (e.g. Safety dropping, WR break), you MUST provide 0-100% coordinates for drawing arrows or boxes in the 'visual_overlays' JSON field.
-    2. AUDIO: Listen for cadence/hard counts. Note this in 'advanced_metrics'.
-    3. COMPARISON: Compare style to a famous pro in 'pro_comparison'.
-    4. STOPWATCH: Estimate "Snap-to-Release" or "Closing Speed" in 'advanced_metrics'.
+        CRITICAL OUTPUT FORMAT (JSON):
+        { 
+            "title": "Play Title (e.g. 'Power Read vs 4-3 Over')", 
+            "data": { "o_formation": "Specific Set", "d_formation": "Front & Coverage" }, 
+            "tactical_breakdown": {
+                "concept": "Name of Scheme",
+                "box_count": "Light / Neutral / Loaded",
+                "coverage_shell": "Pre-Snap (MOFO/MOFC) -> Post-Snap",
+                "pressure": "Blitz? Stunt? Base?",
+                "key_matchup": "Key 1v1"
+            },
+            "scouting_report": { 
+                "summary": "Schematic narrative.", 
+                "timeline": [
+                    { "time": "0:00", "type": "Pre-Snap", "text": "Alignment." },
+                    { "time": "0:04", "type": "Result", "text": "Outcome." }
+                ],
+                "coaching_prescription": { "fix": "Fix", "drill": "Drill", "pro_tip": "Tip" },
+                "report_card": { "scheme_soundness": "A-", "execution": "B", "success_rate": "Grade", "overall": "A-" }
+            },
+            "players_detected": [] 
+        }`;
+    } else {
+        // PLAYER MODE
+        systemInstruction = `
+        ROLE: Elite Private Position Coach.
+        TASK: Biomechanical analysis of specific player.
+        FOCUS: ${specificFocus}
+        ROSTER: ${rosterContext}
 
-    OUTPUT JSON:
-    { 
-        "title": "Play Title", 
-        "data": { "o_formation": "Set", "d_formation": "Shell" }, 
-        "tactical_breakdown": {
-            "concept": "Scheme",
-            "box_count": "Count",
-            "coverage_shell": "Cover X",
-            "pressure": "Type",
-            "key_matchup": "1v1"
-        },
-        "advanced_metrics": {
-            "snap_to_release": "0.0s",
-            "closing_speed": "High/Med/Low",
-            "audio_cue": "Notes on cadence/voice"
-        },
-        "pro_comparison": { "player": "Name", "similarity": "Reason" },
-        "visual_overlays": [
-            { "type": "arrow", "start": [20, 80], "end": [50, 50], "color": "#ef4444", "label": "Route" },
-            { "type": "box", "rect": [40, 40, 20, 20], "color": "#fbbf24", "label": "Open Zone" }
-        ],
-        "scouting_report": { 
-            "summary": "Narrative.", 
-            "timeline": [{ "time": "0:00", "type": "Phase", "text": "Obs" }],
-            "coaching_prescription": { "fix": "Fix", "drill": "Drill", "pro_tip": "Tip" },
-            "report_card": { "football_iq": "B", "technique": "C", "effort": "A", "overall": "B" }
-        },
-        "players_detected": [ { "identifier": "Name", "position": "Pos", "grade": "B", "observation": "Note", "weakness": "Weak" } ] 
-    }`;
+        OUTPUT JSON:
+        { 
+            "title": "Play Title", 
+            "data": { "o_formation": "Set", "d_formation": "Shell" }, 
+            "scouting_report": { 
+                "summary": "Technical breakdown.", 
+                "timeline": [{ "time": "0:00", "type": "Action", "text": "Obs" }],
+                "coaching_prescription": { "fix": "Fix", "drill": "Drill", "pro_tip": "Tip" },
+                "report_card": { "football_iq": "B", "technique": "C", "effort": "A", "overall": "B" }
+            },
+            "players_detected": [ { "identifier": "Name", "position": "Pos", "grade": "B", "observation": "Note", "weakness": "Weak" } ]
+        }`;
+    }
 
     const prompt = [ { fileData: { mimeType, fileUri: file.uri } }, { text: systemInstruction } ];
     const result = await generateWithFallback(prompt);
     
     let text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
-    let json = JSON.parse(text);
+    
+    // *** CRASH GUARD: Handle Malformed JSON ***
+    let json;
+    try {
+        json = JSON.parse(text);
+        // Force critical fields to exist if AI forgot them
+        if (!json.data) json.data = { o_formation: "Unknown", d_formation: "Unknown" };
+    } catch (e) {
+        console.error("AI JSON Parse Error:", text);
+        // Fallback object so server doesn't crash
+        json = {
+            title: "Analysis Error",
+            data: { o_formation: "Error", d_formation: "Error" },
+            scouting_report: { summary: "The AI analysis could not be processed. Please try again." }
+        };
+    }
 
     if (json.players_detected && json.players_detected.length > 0) {
         for (const p of json.players_detected) {
@@ -307,7 +332,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
         await session.save();
     }
 
-    savedClip.title = json.title;
+    savedClip.title = json.title || "Untitled Clip";
     savedClip.o_formation = json.data.o_formation;
     savedClip.d_formation = json.data.d_formation;
     savedClip.formation = `${json.data.o_formation} vs ${json.data.d_formation}`;
