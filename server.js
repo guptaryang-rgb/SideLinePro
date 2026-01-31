@@ -53,7 +53,7 @@ async function generateWithFallback(promptParts) {
         } catch (error) {
             console.warn(`⚠️ ${modelName} failed: ${error.message}`);
             lastError = error;
-            if (!error.message.includes("404") && !error.message.includes("not found")) {} // Continue
+            if (!error.message.includes("404") && !error.message.includes("not found")) {} 
         }
     }
     throw new Error(`Analysis failed. Last error: ${lastError.message}`);
@@ -61,27 +61,18 @@ async function generateWithFallback(promptParts) {
 
 /* ---------------- UPDATED RUBRICS ---------------- */
 const RUBRICS = {
-    // *** NEW: COORDINATOR LEVEL RUBRIC ***
-    "team": `
-    ELITE COORDINATOR DIAGNOSTICS:
-    1. SITUATION: Down, Distance, Field Position, Personnel (11, 12, 21, Empty).
-    2. PRE-SNAP: Formation Width, Motion, Defensive Front (Over/Under/Tite), Safety Shell (MOFO/MOFC).
-    3. SCHEME: Identify Concept (Mesh, Dagger, Duo, Inside Zone) vs Coverage (Cover 1, 3, 4, 6).
-    4. THE 'WHY': Point of Attack win/loss? Conflict player decision? Blown assignment?
-    5. EFFICIENCY: Success Rate (4+ yds on 1st, Conversion on 3rd).`,
-    
-    // *** PLAYER RUBRICS ***
-    "qb": "BIOMECHANICS: Base Width, Hip Sequencing, Eye Discipline.",
-    "rb": "BIOMECHANICS: Pad Level, Vision/Cuts, Pass Pro scanning.",
-    "wr": "BIOMECHANICS: Release vs Press, Stem & Stack, Break point efficiency.",
-    "te": "BIOMECHANICS: In-line blocking leverage, Route finding in zone.",
-    "ol": "BIOMECHANICS: First Step, Hand Punch, Anchor.",
-    "dl": "BIOMECHANICS: Get-off, Hand fighting, Gap integrity.",
-    "lb": "BIOMECHANICS: Read step, Trigger speed, Block shedding.",
-    "cb": "BIOMECHANICS: Press technique, Hip fluidity, Phase maintenance.",
-    "s": "BIOMECHANICS: Range, Run fit alleys, Disguise.",
-    "kp": "BIOMECHANICS: Approach, Plant foot, Leg swing.",
-    "general": "GENERAL MECHANICS: Stance, Effort, Execution."
+    "team": "ELITE COORDINATOR: Situation, Pre-Snap Shell, Post-Snap Rotation, Conflict Players.",
+    "qb": "BIOMECHANICS: Base, Hip Sequencing, Arm Angle, Release Time.",
+    "rb": "BIOMECHANICS: Pad Level, Cuts, Vision, Pass Pro.",
+    "wr": "BIOMECHANICS: Release, Stem, Break Point, Catch Radius.",
+    "te": "BIOMECHANICS: Blocking Leverage, Route Depth, Seam Recognition.",
+    "ol": "BIOMECHANICS: First Step, Punch Timing, Anchor.",
+    "dl": "BIOMECHANICS: Get-off, Hand Usage, Bend.",
+    "lb": "BIOMECHANICS: Read Steps, Flow, Tackle Technique.",
+    "cb": "BIOMECHANICS: Press, Hip Fluidity, Phase, Ball Skills.",
+    "s":  "BIOMECHANICS: Range, Angles, Disguise, Alley Filling.",
+    "kp": "BIOMECHANICS: Plant, Swing, Follow-through.",
+    "general": "GENERAL: Effort, Speed, Intelligence."
 };
 
 const PlayerProfileSchema = new mongoose.Schema({
@@ -107,6 +98,7 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
+/* ---------------- ROUTES ---------------- */
 app.get("/", (_, res) => { res.sendFile(path.join(__dirname, "index.html")); });
 app.get("/privacy.html", (_, res) => { res.sendFile(path.join(__dirname, "privacy.html")); });
 app.get("/terms.html", (_, res) => { res.sendFile(path.join(__dirname, "terms.html")); });
@@ -175,21 +167,25 @@ app.post("/api/save-snapshot", requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: "Save failed" }); }
 });
 
+// *** CHAT WITH CONTEXT ***
 app.post("/api/clip-chat", requireAuth, async (req, res) => {
   try {
     const clip = await Clip.findOne({ _id: req.body.clipId, owner: req.auth.userId });
     if (!clip || !clip.fullData) return res.json({ reply: "Analysis needed first." });
 
+    const session = await Session.findOne({ sessionId: clip.sessionId, owner: req.auth.userId });
+    const rosterContext = session ? JSON.stringify(session.roster) : "[]";
     const chatHistory = clip.chatHistory || [];
     const historyText = chatHistory.map(h => `${h.role.toUpperCase()}: ${h.text}`).join("\n");
 
     const prompt = `
-    ROLE: Elite Coach.
-    CONTEXT: Reviewing a clip.
-    DATA: ${JSON.stringify(clip.fullData)}
+    ROLE: Elite Football Coordinator.
+    CONTEXT: User asks about a clip. You have full game context (Roster).
+    CLIP DATA: ${JSON.stringify(clip.fullData)}
+    ROSTER/TENDENCIES: ${rosterContext}
     HISTORY: ${historyText}
     QUESTION: "${req.body.message}"
-    TASK: Answer specifically using the data provided.
+    INSTRUCTION: Answer specifically. If asking about a player, check Roster for past weaknesses. Use **bold** for key stats/players.
     `;
     
     const result = await generateWithFallback([{ text: prompt }]);
@@ -243,63 +239,47 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const rosterContext = session.roster.map(p => `${p.identifier}: ${p.weaknesses.join(', ')}`).join('\n');
     const specificFocus = RUBRICS[position] || RUBRICS["team"];
 
-    // *** LOGIC FORK: TEAM VS INDIVIDUAL ***
-    let systemInstruction;
-    
-    if (position === 'team') {
-        // --- COORDINATOR MODE ---
-        systemInstruction = `
-        ROLE: NFL Offensive/Defensive Coordinator.
-        TASK: Perform a high-level schematic self-scout of this play.
-        
-        ANALYSIS CHECKLIST:
-        ${specificFocus}
+    // *** GOD MODE PROMPT ***
+    let systemInstruction = `
+    ROLE: ${position === 'team' ? "NFL Coordinator" : "Elite Position Coach"}.
+    TASK: Analyze video clip. Focus: ${specificFocus}.
+    ROSTER: ${rosterContext}
 
-        CRITICAL OUTPUT FORMAT (JSON):
-        { 
-            "title": "Play Title (e.g. 'Power Read vs 4-3 Over')", 
-            "data": { "o_formation": "Specific Set", "d_formation": "Front & Coverage" }, 
-            "tactical_breakdown": {
-                "concept": "Name of Scheme (e.g. Duo, Mesh)",
-                "box_count": "Light / Neutral / Loaded (count)",
-                "coverage_shell": "Pre-Snap (MOFO/MOFC) -> Post-Snap (Rotation)",
-                "pressure": "Blitz? Stunt? Base?",
-                "key_matchup": "The specific 1v1 that decided the play"
-            },
-            "scouting_report": { 
-                "summary": "Schematic narrative of the play.", 
-                "timeline": [
-                    { "time": "0:00", "type": "Pre-Snap", "text": "Formations, Motion, Leverage." },
-                    { "time": "0:02", "type": "Snap/Read", "text": "The Conflict: Who was put in a bind?" },
-                    { "time": "0:04", "type": "Execution", "text": "Point of Attack result." }
-                ],
-                "coaching_prescription": { "fix": "Schematic fix", "drill": "Group install drill", "pro_tip": "Coordination tip" },
-                "report_card": { "scheme_soundness": "A/B/C", "execution": "A/B/C", "success_rate": "Efficiency Grade", "overall": "A-" }
-            },
-            "players_detected": [] 
-        }`;
-    } else {
-        // --- PLAYER MODE ---
-        systemInstruction = `
-        ROLE: Elite Private Position Coach.
-        TASK: Biomechanical analysis of specific player.
-        
-        FOCUS: ${specificFocus}
-        ROSTER: ${rosterContext}
+    *** GOD MODE FEATURES ***
+    1. VISUALS: If you see a key movement (e.g. Safety dropping, WR break), provide 0-100% coordinates for drawing lines/boxes.
+    2. AUDIO: Listen for cadence/hard counts.
+    3. COMPARISON: Compare style to a famous pro.
+    4. STOPWATCH: Estimate "Snap-to-Release" or "40yd Dash" times.
 
-        OUTPUT JSON:
-        { 
-            "title": "Play Title", 
-            "data": { "o_formation": "Set", "d_formation": "Shell" }, 
-            "scouting_report": { 
-                "summary": "Technical breakdown.", 
-                "timeline": [{ "time": "0:00", "type": "Action", "text": "Obs" }],
-                "coaching_prescription": { "fix": "Tech fix", "drill": "Drill", "pro_tip": "Tip" },
-                "report_card": { "football_iq": "B", "technique": "C", "effort": "A", "overall": "B" }
-            },
-            "players_detected": [ { "identifier": "Name", "position": "Pos", "grade": "B", "observation": "Note", "weakness": "Weak" } ]
-        }`;
-    }
+    OUTPUT JSON:
+    { 
+        "title": "Play Title", 
+        "data": { "o_formation": "Set", "d_formation": "Shell" }, 
+        "tactical_breakdown": {
+            "concept": "Scheme",
+            "box_count": "Count",
+            "coverage_shell": "Cover X",
+            "pressure": "Type",
+            "key_matchup": "1v1"
+        },
+        "advanced_metrics": {
+            "snap_to_release": "0.0s",
+            "closing_speed": "High/Med/Low",
+            "audio_cue": "Notes on cadence"
+        },
+        "pro_comparison": { "player": "Name", "similarity": "Reason" },
+        "visual_overlays": [
+            { "type": "arrow", "start": [20, 80], "end": [50, 50], "color": "#ef4444", "label": "Route" },
+            { "type": "box", "rect": [40, 40, 20, 20], "color": "#fbbf24", "label": "Open Zone" }
+        ],
+        "scouting_report": { 
+            "summary": "Narrative.", 
+            "timeline": [{ "time": "0:00", "type": "Phase", "text": "Obs" }],
+            "coaching_prescription": { "fix": "Fix", "drill": "Drill", "pro_tip": "Tip" },
+            "report_card": { "football_iq": "B", "technique": "C", "effort": "A", "overall": "B" }
+        },
+        "players_detected": [ { "identifier": "Name", "position": "Pos", "grade": "B", "observation": "Note", "weakness": "Weak" } ] 
+    }`;
 
     const prompt = [ { fileData: { mimeType, fileUri: file.uri } }, { text: systemInstruction } ];
     const result = await generateWithFallback(prompt);
