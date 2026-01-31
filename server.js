@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config(); // FIXED: Lowercase 'r'
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -13,7 +13,6 @@ const cloudinary = require("cloudinary").v2;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Increased limit for Full Game Footage
 app.use(cors());
 app.use(express.json({ limit: "500mb" }));
 app.use(ClerkExpressWithAuth());
@@ -36,7 +35,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
 const MODEL_FALLBACK_LIST = [
-    "gemini-2.5-pro", "gemini-1.5-pro", "gemini-1.5-pro-002", "gemini-1.5-flash"
+    "gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"
 ];
 
 async function generateWithFallback(promptParts) {
@@ -54,13 +53,12 @@ async function generateWithFallback(promptParts) {
         } catch (error) {
             console.warn(`⚠️ ${modelName} failed: ${error.message}`);
             lastError = error;
-            if (!error.message.includes("404") && !error.message.includes("not found")) {} 
         }
     }
     throw new Error(`Analysis failed. Last error: ${lastError.message}`);
 }
 
-/* ---------------- UPDATED RUBRICS (GOD MODE READY) ---------------- */
+/* ---------------- RUBRICS ---------------- */
 const RUBRICS = {
     "team": "ELITE COORDINATOR: Situation, Pre-Snap Shell, Post-Snap Rotation, Conflict Players.",
     "qb": "BIOMECHANICS: Base, Hip Sequencing, Arm Angle, Release Time.",
@@ -99,7 +97,6 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
-/* ---------------- ROUTES ---------------- */
 app.get("/", (_, res) => { res.sendFile(path.join(__dirname, "index.html")); });
 app.get("/privacy.html", (_, res) => { res.sendFile(path.join(__dirname, "privacy.html")); });
 app.get("/terms.html", (_, res) => { res.sendFile(path.join(__dirname, "terms.html")); });
@@ -186,7 +183,7 @@ app.post("/api/clip-chat", requireAuth, async (req, res) => {
     ROSTER/TENDENCIES: ${rosterContext}
     HISTORY: ${historyText}
     QUESTION: "${req.body.message}"
-    INSTRUCTION: Answer specifically. If asking about a player, check Roster for past weaknesses. Use **bold** for key stats/players.
+    INSTRUCTION: Answer specifically. Use **bold** for key stats/players.
     `;
     
     const result = await generateWithFallback([{ text: prompt }]);
@@ -240,8 +237,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const rosterContext = session.roster.map(p => `${p.identifier}: ${p.weaknesses.join(', ')}`).join('\n');
     const specificFocus = RUBRICS[position] || RUBRICS["team"];
 
-    // *** GOD MODE PROMPT INTEGRATION ***
-    // This prompt forces the AI to output drawing coordinates, timestamps, and pro comps.
+    // *** GOD MODE PROMPT ***
     let systemInstruction = `
     ROLE: ${position === 'team' ? "NFL Coordinator" : "Elite Position Coach"}.
     TASK: Analyze video clip. Focus: ${specificFocus}.
