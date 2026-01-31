@@ -34,8 +34,12 @@ cloudinary.config({
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
 
+// *** TANK STRATEGY: Updated with Stable Model Names ***
 const MODEL_FALLBACK_LIST = [
-    "gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"
+    "gemini-1.5-flash-001", // Fast, stable
+    "gemini-1.5-pro-001",   // Powerful, stable
+    "gemini-1.5-flash",     // Latest alias
+    "gemini-1.5-pro"        // Latest alias
 ];
 
 async function generateWithFallback(promptParts) {
