@@ -11,14 +11,12 @@
         :root { --bg-deep:#09090b; --bg-panel:#18181b; --bg-card:#27272a; --border:#3f3f46; --text:#e4e4e7; --accent:#38bdf8; --danger:#ef4444; --success:#22c55e; --warning:#f59e0b; }
         body { background:var(--bg-deep); color:var(--text); font-family:'Inter',sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; margin:0; }
         
-        /* SCROLLBAR */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-deep); }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
         
         .navbar { height:70px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 40px; background:rgba(10,10,10,0.95); flex-shrink: 0; z-index: 10; }
         .logo { font-weight:900; font-size:1.6rem; letter-spacing:-1px; } .logo span { color:var(--accent); }
-        
         .nav-tabs { display:flex; gap:30px; background:#1a1a1a; padding:5px; border-radius:30px; border:1px solid var(--border); }
         .nav-tab { padding:8px 25px; border-radius:20px; font-weight:600; font-size:0.9rem; cursor:pointer; transition:0.3s; color:#888; }
         .nav-tab.active { background:var(--accent); color:black; box-shadow:0 0 15px rgba(56,189,248,0.3); }
@@ -28,7 +26,6 @@
         .view.active-view { display:flex; }
         
         .app-body { flex:1; display:flex; overflow:hidden; width: 100vw; justify-content: space-between; }
-        
         .sidebar, .lib-panel { width:280px; background:var(--bg-panel); border-right:1px solid var(--border); display:flex; flex-direction:column; transition:0.3s; flex-shrink:0; }
         .lib-panel { border-right:none; border-left:1px solid var(--border); width: 320px; }
         .sidebar.collapsed { margin-left: -280px; }
@@ -41,27 +38,15 @@
         .tools-left { justify-self: start; }
         .tools-center { justify-self: center; display: flex; gap: 15px; }
         .tools-right { justify-self: end; }
-        
         .tool-btn { background: #27272a; border: 1px solid #3f3f46; color: #ccc; font-size: 0.85rem; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; transition:0.2s; display:flex; align-items:center; gap:8px; white-space:nowrap; }
         .tool-btn:hover { border-color:var(--accent); color:white; background:#333; }
 
         .input-bar { padding:20px; background:var(--bg-panel); display:flex; gap:10px; align-items:center; border-top: 1px solid #27272a; }
         .input-box { flex:1; background:#000; border:1px solid var(--border); color:white; padding:12px 20px; border-radius:30px; outline:none; transition: border-color 0.2s; }
-        .input-box:focus { border-color: var(--accent); }
         .pos-select { background:#27272a; color:white; border:1px solid var(--border); padding:10px; border-radius:20px; font-weight:600; cursor:pointer; }
-        .btn { padding:0 25px; background:var(--accent); color:black; border:none; border-radius:30px; font-weight:800; cursor:pointer; transition: opacity 0.2s; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .session-item { padding:12px 15px; margin-bottom:5px; cursor:pointer; border-radius:8px; color:#a1a1aa; font-size:0.9rem; display:flex; justify-content:space-between; align-items:center; transition:0.2s; }
-        .session-item:hover { background:#3f3f46; color:white; }
-        .session-item.active { background:#27272a; color:var(--accent); border-left:3px solid var(--accent); padding-left: 12px; }
+        .btn { padding:0 25px; background:var(--accent); color:black; border:none; border-radius:30px; font-weight:800; cursor:pointer; }
 
-        #progress-container { display:none; position:absolute; top:0; width:100%; height:3px; background:#333; z-index:100; }
-        #progress-bar { height:100%; width:0%; background:var(--accent); transition:width 0.3s; box-shadow: 0 0 10px var(--accent); }
-
-        /* CARDS */
         .scout-card { background: #18181b; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
         .scout-header { background: linear-gradient(90deg, rgba(56,189,248,0.1) 0%, rgba(24,24,27,0) 100%); padding: 20px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .play-title { font-weight: 900; font-size: 1.3rem; color: white; }
         .formation-tag { font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--accent); background: rgba(56,189,248,0.1); padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top:5px; }
@@ -79,46 +64,6 @@
         .metric-label { font-size: 0.75rem; color: #a1a1aa; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
         .metric-val { font-size: 1.4rem; font-weight: 800; color: white; font-family: 'JetBrains Mono'; }
 
-        /* MODALS */
-        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; display:none; justify-content:center; align-items:center; }
-        .modal-content { background:#18181b; border:1px solid var(--border); border-radius:16px; overflow:hidden; }
-        .modal-content.wide { width:85vw; max-width:900px; max-height:80vh; overflow-y:auto; padding:25px; }
-        
-        #video-overlay-modal { position:fixed; inset:0; background:rgba(0,0,0,0.98); z-index:3000; display:none; justify-content:center; align-items:center; flex-direction:column; }
-        #telestrator-container { position:relative; border:1px solid #333; max-width:90vw; max-height:80vh; }
-        #main-video { display:block; max-width:100%; max-height:80vh; }
-        #draw-canvas { position:absolute; top:0; left:0; pointer-events:none; }
-        
-        .video-scrubber-container { width: 90%; max-width: 800px; margin-top: 15px; display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 30px; border: 1px solid #333; }
-        #video-scrubber { flex: 1; -webkit-appearance: none; height: 4px; background: #444; border-radius: 2px; outline: none; cursor: pointer; }
-        #video-scrubber::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 10px var(--accent); }
-        #video-time { font-family: 'JetBrains Mono'; font-size: 0.8rem; color: #e4e4e7; width: 100px; text-align: right; }
-
-        .tele-controls { margin-top:15px; display:flex; gap:15px; background:#1a1a1a; padding:10px 20px; border-radius:30px; border:1px solid #333; }
-        
-        #coach-chat-modal { position:fixed; bottom:20px; right:340px; width:400px; height:600px; background:#18181b; border:1px solid #3f3f46; z-index:2000; border-radius:20px; display:none; flex-direction:column; box-shadow: 0 20px 50px rgba(0,0,0,0.7); }
-        .chat-header { padding:15px 20px; border-bottom:1px solid #27272a; display:flex; justify-content:space-between; align-items: center; background: #27272a; border-radius: 20px 20px 0 0; }
-        .chat-header span { font-weight:800; font-size:1rem; color:white; letter-spacing: -0.5px; }
-        .coach-feed { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:15px; background: #09090b; }
-        .coach-msg { padding:12px 16px; border-radius:18px; font-size:0.9rem; max-width:85%; line-height: 1.5; position: relative; word-wrap: break-word; animation: fadeIn 0.2s ease-out; }
-        .coach-msg.user { align-self:flex-end; background:var(--accent); color:black; border-bottom-right-radius: 4px; font-weight: 600; }
-        .coach-msg.model { align-self:flex-start; background:#27272a; color:#e4e4e7; border:1px solid #3f3f46; border-bottom-left-radius: 4px; }
-        .coach-msg strong { font-weight: 800; color: white; }
-        .coach-msg.user strong { color: black; }
-
-        .clip-card { background:var(--bg-card); border:1px solid var(--border); margin-bottom:10px; border-radius:10px; cursor:pointer; position:relative; }
-        .clip-thumb { height:100px; background:#000; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#333; border-radius: 10px 10px 0 0; }
-        .clip-info { padding:10px; } 
-        .clip-menu-btn { position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border:none; width:24px; height:24px; border-radius:50%; cursor:pointer; display:none; }
-        .clip-card:hover .clip-menu-btn { display:block; }
-        
-        .msg { max-width: 70%; padding: 12px 18px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; margin-bottom:10px; }
-        .msg.user { align-self:flex-end; background:var(--accent); color:black; font-weight:700; }
-        .msg.model { align-self: flex-start; }
-        
-        .menu-opt { padding:12px 20px; border-bottom:1px solid #27272a; cursor:pointer; text-align:left; color:#d4d4d8; transition:0.2s; }
-        .menu-opt:hover { color:var(--accent); background:#27272a; padding-left: 25px; }
-        
         .timeline-event { display: flex; gap: 15px; margin-bottom: 20px; }
         .t-time { background: #27272a; border: 1px solid #444; color: #ccc; font-family: 'JetBrains Mono'; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; height: fit-content; min-width: 50px; text-align: center; }
         .t-content { flex: 1; }
@@ -129,7 +74,6 @@
         .rx-card { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); padding: 20px; border-radius: 12px; }
         .rx-header { color: var(--danger); font-weight: 900; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
         .rx-item { margin-bottom: 12px; font-size: 0.85rem; color: #e4e4e7; line-height: 1.5; }
-        .rx-label { color: var(--danger); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; display: block; margin-bottom: 2px; }
 
         .players-section { grid-column: 1 / -1; margin-top: 10px; }
         .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
@@ -139,12 +83,49 @@
         .pm-grade { font-family: 'JetBrains Mono'; font-weight: 700; color: var(--accent); }
         .pm-note { font-size: 0.8rem; color: #a1a1aa; line-height: 1.4; }
 
+        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; display:none; justify-content:center; align-items:center; }
+        .modal-content { background:#18181b; border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+        .modal-content.wide { width:85vw; max-width:900px; max-height:80vh; overflow-y:auto; padding:25px; }
+        
+        #video-overlay-modal { position:fixed; inset:0; background:rgba(0,0,0,0.98); z-index:3000; display:none; justify-content:center; align-items:center; flex-direction:column; }
+        #telestrator-container { position:relative; border:1px solid #333; max-width:90vw; max-height:80vh; }
+        #main-video { display:block; max-width:100%; max-height:80vh; }
+        #draw-canvas { position:absolute; top:0; left:0; pointer-events:none; }
+        
+        /* VIDEO SCRUBBER */
+        .video-scrubber-container { width: 90%; max-width: 800px; margin-top: 15px; display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 30px; border: 1px solid #333; }
+        #video-scrubber { flex: 1; -webkit-appearance: none; height: 4px; background: #444; border-radius: 2px; outline: none; cursor: pointer; }
+        #video-scrubber::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 10px var(--accent); }
+        #video-time { font-family: 'JetBrains Mono'; font-size: 0.8rem; color: #e4e4e7; width: 100px; text-align: right; }
+
+        .tele-controls { margin-top:15px; display:flex; gap:15px; background:#1a1a1a; padding:10px 20px; border-radius:30px; border:1px solid #333; }
+        .tele-btn { background:#333; color:white; border:none; padding:8px 16px; border-radius:20px; cursor:pointer; font-weight:700; }
+        .tele-btn.active { background:var(--accent); color:black; }
+
+        .clip-card { background:var(--bg-card); border:1px solid var(--border); margin-bottom:10px; border-radius:10px; cursor:pointer; position:relative; }
+        .clip-thumb { height:100px; background:#000; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#333; border-radius: 10px 10px 0 0; }
+        .clip-info { padding:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .clip-menu-btn { position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border:none; width:24px; height:24px; border-radius:50%; cursor:pointer; display:none; }
+        .clip-card:hover .clip-menu-btn { display:block; }
+
+        #coach-chat-modal { position:fixed; bottom:20px; right:340px; width:400px; height:600px; background:#18181b; border:1px solid #3f3f46; z-index:2000; border-radius:20px; display:none; flex-direction:column; box-shadow: 0 20px 50px rgba(0,0,0,0.7); }
+        .chat-header { padding:15px 20px; border-bottom:1px solid #27272a; display:flex; justify-content:space-between; align-items: center; background: #27272a; border-radius: 20px 20px 0 0; }
+        .coach-feed { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:15px; background: #09090b; }
+        .coach-msg { padding:12px 16px; border-radius:18px; font-size:0.9rem; max-width:85%; line-height: 1.5; position: relative; word-wrap: break-word; animation: fadeIn 0.2s ease-out; }
+        .coach-msg.user { align-self:flex-end; background:var(--accent); color:black; border-bottom-right-radius: 4px; font-weight: 600; }
+        .coach-msg.model { align-self:flex-start; background:#27272a; color:#e4e4e7; border:1px solid #3f3f46; border-bottom-left-radius: 4px; }
+        .coach-msg strong { font-weight: 800; color: white; }
+        .coach-msg.user strong { color: black; }
+
         .tendency-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
-        .tendency-col h4 { color: #a1a1aa; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; font-size: 0.8rem; letter-spacing: 1px; }
         .tendency-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #27272a; border-radius: 8px; margin-bottom: 8px; border: 1px solid #3f3f46; }
-        .t-grade { font-weight: 900; font-size: 1rem; width: 30px; text-align: right; }
-        .t-grade.A { color: var(--success); } .t-grade.B { color: var(--warning); }
-        .t-grade.C, .t-grade.D, .t-grade.F { color: var(--danger); }
+        
+        .msg { max-width: 70%; padding: 12px 18px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; margin-bottom:10px; }
+        .msg.user { align-self:flex-end; background:var(--accent); color:black; font-weight:700; }
+        .msg.model { align-self: flex-start; }
+        
+        .menu-opt { padding:12px 20px; border-bottom:1px solid #27272a; cursor:pointer; text-align:left; color:#d4d4d8; transition:0.2s; }
+        .menu-opt:hover { color:var(--accent); background:#27272a; padding-left: 25px; }
         
         @media (max-width: 1200px) { .scout-body { grid-template-columns: 1fr; } .rx-panel { grid-column: 1 / -1; } }
     </style>
@@ -393,11 +374,6 @@
             video.src = url;
             modal.style.display = 'flex';
             
-            // *** GOD MODE: AUTO-TELESTRATOR ***
-            if(currentClip.fullData && currentClip.fullData.visual_overlays) {
-                drawAIOverlays(currentClip.fullData.visual_overlays);
-            }
-
             video.onloadedmetadata = () => {
                 canvas.width = video.offsetWidth;
                 canvas.height = video.offsetHeight;
@@ -418,52 +394,43 @@
             scrubber.oninput = () => { video.currentTime = scrubber.value; };
 
             let d = false;
+            // Mouse
             canvas.onmousedown = (e) => { if(isDrawing) { d=true; scratchCtx.beginPath(); scratchCtx.moveTo(e.offsetX, e.offsetY); } };
             canvas.onmouseup = () => d=false;
             canvas.onmousemove = (e) => { if(d && isDrawing) { scratchCtx.lineTo(e.offsetX, e.offsetY); scratchCtx.stroke(); } };
+            
+            // Touch (iPad Support)
             canvas.ontouchstart = (e) => {
-                if(isDrawing) { e.preventDefault(); d = true; const rect = canvas.getBoundingClientRect(); scratchCtx.beginPath(); scratchCtx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top); }
+                if(isDrawing) {
+                    e.preventDefault(); 
+                    d = true;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.touches[0].clientX - rect.left;
+                    const y = e.touches[0].clientY - rect.top;
+                    scratchCtx.beginPath(); scratchCtx.moveTo(x, y);
+                }
             };
-            canvas.ontouchend = () => d=false;
+            canvas.ontouchend = (e) => { e.preventDefault(); d = false; };
             canvas.ontouchmove = (e) => {
-                if(d && isDrawing) { e.preventDefault(); const rect = canvas.getBoundingClientRect(); scratchCtx.lineTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top); scratchCtx.stroke(); }
+                if(d && isDrawing) {
+                    e.preventDefault(); 
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.touches[0].clientX - rect.left;
+                    const y = e.touches[0].clientY - rect.top;
+                    scratchCtx.lineTo(x, y); scratchCtx.stroke();
+                }
             };
         }
-        
-        // *** AI AUTO-DRAW LOGIC ***
-        function drawAIOverlays(overlays) {
-            const canvas = document.getElementById('draw-canvas');
-            const ctx = canvas.getContext('2d');
-            setTimeout(() => {
-                const w = canvas.width;
-                const h = canvas.height;
-                overlays.forEach(o => {
-                    ctx.strokeStyle = o.color || "#ef4444";
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    if(o.type === 'arrow') {
-                        ctx.moveTo(o.start[0]/100 * w, o.start[1]/100 * h);
-                        ctx.lineTo(o.end[0]/100 * w, o.end[1]/100 * h);
-                    } else if (o.type === 'box') {
-                        ctx.rect(o.rect[0]/100 * w, o.rect[1]/100 * h, o.rect[2]/100 * w, o.rect[3]/100 * h);
-                    }
-                    ctx.stroke();
-                    if(o.label) {
-                        ctx.fillStyle = o.color || "#ef4444";
-                        ctx.font = "bold 14px Inter";
-                        ctx.fillText(o.label, (o.type==='arrow'?o.start[0]:o.rect[0])/100 * w, (o.type==='arrow'?o.start[1]:o.rect[1])/100 * h - 10);
-                    }
-                });
-            }, 500); 
-        }
-
         function togglePlay() { const v = document.getElementById('main-video'); v.paused ? v.play() : v.pause(); }
         function toggleDrawMode() {
             isDrawing = !isDrawing;
             const btn = document.getElementById('draw-toggle');
             const canvas = document.getElementById('draw-canvas');
-            if (isDrawing) { btn.innerHTML = "✏️ Draw: ON"; btn.classList.add('active'); canvas.style.pointerEvents = "auto"; document.getElementById('main-video').pause(); } 
-            else { btn.innerHTML = "✏️ Draw: OFF"; btn.classList.remove('active'); canvas.style.pointerEvents = "none"; }
+            if (isDrawing) {
+                btn.innerHTML = "✏️ Draw: ON"; btn.classList.add('active'); canvas.style.pointerEvents = "auto"; document.getElementById('main-video').pause();
+            } else {
+                btn.innerHTML = "✏️ Draw: OFF"; btn.classList.remove('active'); canvas.style.pointerEvents = "none";
+            }
         }
         function clearCanvas() { scratchCtx.clearRect(0, 0, document.getElementById('draw-canvas').width, document.getElementById('draw-canvas').height); }
         async function saveSnapshot() {
@@ -497,37 +464,121 @@
 
         function openTendencies() {
             if(!sessionClips.length) return alert("No clips analyzed yet.");
-            let html = '';
+            
+            const stats = {};
+            const gradePoints = { "A+":4.3, "A":4.0, "A-":3.7, "B+":3.3, "B":3.0, "B-":2.7, "C+":2.3, "C":2.0, "C-":1.7, "D":1.0, "F":0 };
+
             sessionClips.forEach(c => {
-                const grade = c.fullData?.scouting_report?.report_card?.overall || "N/A";
-                html += `<div style="background:#27272a; padding:10px; border-radius:8px; margin-bottom:5px;">${c.o_formation} - Grade: ${grade}</div>`;
+                const o = c.o_formation || "Unknown", d = c.d_formation || "Unknown";
+                const gradeStr = c.fullData?.scouting_report?.report_card?.overall || "C";
+                const points = gradePoints[gradeStr] || 2.0;
+
+                if(!stats[o]) stats[o] = { type:'O', count:0, totalPoints:0 };
+                stats[o].count++; stats[o].totalPoints += points;
+
+                if(!stats[d]) stats[d] = { type:'D', count:0, totalPoints:0 };
+                stats[d].count++; stats[d].totalPoints += points;
             });
-            document.getElementById('tendency-content').innerHTML = html;
+
+            let oHTML = '<div class="tendency-col"><h4>OFFENSIVE LOOKS</h4>', dHTML = '<div class="tendency-col"><h4>DEFENSIVE LOOKS</h4>';
+            let bestO = {name:'None', gpa:-1}, worstO = {name:'None', gpa:5};
+
+            Object.entries(stats).forEach(([name, data]) => {
+                const gpa = (data.totalPoints / data.count).toFixed(1);
+                const letter = gpa >= 4 ? 'A' : (gpa >= 3 ? 'B' : (gpa >= 2 ? 'C' : 'D'));
+                if(data.type === 'O') {
+                    if(gpa > bestO.gpa) bestO = {name, gpa};
+                    if(gpa < worstO.gpa) worstO = {name, gpa};
+                }
+                const html = `
+                    <div class="tendency-row">
+                        <div class="t-name">${name}</div>
+                        <div class="t-stats">
+                            <div class="t-count">${data.count} plays</div>
+                            <div class="t-grade ${letter}">${letter}</div>
+                        </div>
+                    </div>`;
+                if(data.type === 'O') oHTML += html; else dHTML += html;
+            });
+
+            oHTML += '</div>'; dHTML += '</div>';
+            const insights = `
+                <div class="insight-box">
+                    <div>
+                        <div class="insight-label">💎 Best Performance</div>
+                        <div class="insight-val">${bestO.name}</div>
+                    </div>
+                    <div>
+                        <div class="insight-label" style="color:var(--danger);">⚠️ Worst Performance</div>
+                        <div class="insight-val">${worstO.name}</div>
+                    </div>
+                </div>`;
+
+            document.getElementById('tendency-insights').innerHTML = insights;
+            document.getElementById('tendency-content').innerHTML = oHTML + dHTML;
             document.getElementById('tendency-modal').style.display = 'flex';
         }
 
-        // *** RENDER FUNCTIONS (GOD MODE) ***
+        // *** RENDER FUNCTIONS ***
         function renderScoutCard(data) {
             const r = data.scouting_report || {};
             const grades = r.report_card || {};
             const overallGrade = grades.overall || '-';
             const gradeColor = overallGrade.startsWith('A') ? 'A' : (overallGrade.startsWith('B') ? 'B' : (overallGrade.startsWith('C') ? 'C' : 'D'));
-            
-            // NEW: Pro Comp Logic
-            const pro = data.pro_comparison || { player: "N/A", similarity: "No Data" };
-            
+
             const timelineHTML = r.timeline ? r.timeline.map(t => `
                 <div class="timeline-event">
                     <div class="t-time">${t.time}</div>
-                    <div class="t-content"><div class="t-type">${t.type}</div><div class="t-desc">${t.text}</div></div>
+                    <div class="t-content">
+                        <div class="t-type">${t.type}</div>
+                        <div class="t-desc">${t.text}</div>
+                    </div>
                 </div>`).join('') : '';
 
             const rx = r.coaching_prescription || {};
+            const rxHTML = `
+                <div class="rx-panel">
+                    <div class="rx-card" style="border-color:var(--danger); background:rgba(239,68,68,0.05);">
+                        <div class="rx-header">⚡ COACHING FIX</div>
+                        <div class="rx-item">${rx.fix || 'No immediate fix.'}</div>
+                    </div>
+                    <div class="rx-card" style="border-color:var(--accent); background:rgba(56,189,248,0.05);">
+                        <div class="rx-header" style="color:var(--accent);">🏋️ DRILL ASSIGNMENT</div>
+                        <div class="rx-item">${rx.drill || 'No drill assigned.'}</div>
+                    </div>
+                    <div class="rx-card" style="border-color:#f59e0b; background:rgba(245,158,11,0.05);">
+                        <div class="rx-header" style="color:#f59e0b;">🧠 PRO TIP</div>
+                        <div class="rx-item">${rx.pro_tip || 'No tip available.'}</div>
+                    </div>
+                </div>`;
+
+            const playersHTML = data.players_detected ? `
+                <div class="players-section">
+                    <div class="section-title">ROSTER DETECTED</div>
+                    <div class="players-grid">
+                        ${data.players_detected.map(p => `
+                            <div class="player-mini-card">
+                                <div class="pm-header">
+                                    <span class="pm-name">${p.identifier} (${p.position})</span>
+                                    <span class="pm-grade">${p.grade}</span>
+                                </div>
+                                <div class="pm-note">${p.observation}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>` : '';
+
             return `
                 <div class="scout-card">
                     <div class="scout-header">
-                        <div><div class="play-title">${data.title}</div><div class="formation-tag">${data.data.o_formation}</div></div>
-                        <div class="overall-badge"><div class="badge-label">OVR</div><div class="badge-score ${gradeColor}">${overallGrade}</div></div>
+                        <div class="play-meta">
+                            <div class="play-title">${data.title || 'Untitled Play'}</div>
+                            <div class="formation-tag">${data.data.o_formation} vs ${data.data.d_formation}</div>
+                        </div>
+                        <div class="overall-badge">
+                            <div class="badge-label">OVR</div>
+                            <div class="badge-score ${gradeColor}">${overallGrade}</div>
+                        </div>
                     </div>
                     <div class="scout-body">
                         <div class="summary-box">${r.summary}</div>
@@ -536,18 +587,12 @@
                             <div class="metric-card"><div class="metric-label">Technique</div><div class="metric-val">${grades.technique}</div></div>
                             <div class="metric-card"><div class="metric-label">Effort</div><div class="metric-val">${grades.effort}</div></div>
                         </div>
-                        
-                        <div style="grid-column: 1/-1; background: #27272a; padding: 15px; border-radius: 10px; border: 1px solid #444; margin-bottom: 20px;">
-                            <div style="font-size: 0.7rem; color: #888; text-transform: uppercase; font-weight: 700;">PRO COMPARISON</div>
-                            <div style="font-size: 1.2rem; font-weight: 800; color: var(--accent);">${pro.player}</div>
-                            <div style="font-size: 0.9rem; color: #ccc;">${pro.similarity}</div>
+                        <div class="timeline-section">
+                            <div class="section-title">PLAY BREAKDOWN</div>
+                            ${timelineHTML}
                         </div>
-
-                        <div class="timeline-section"><div class="section-title">PLAY BREAKDOWN</div>${timelineHTML}</div>
-                        <div class="rx-panel">
-                            <div class="rx-card"><div class="rx-header">FIX</div><div class="rx-item">${rx.fix}</div></div>
-                            <div class="rx-card"><div class="rx-header">DRILL</div><div class="rx-item">${rx.drill}</div></div>
-                        </div>
+                        ${rxHTML}
+                        ${playersHTML}
                     </div>
                 </div>`;
         }
@@ -556,7 +601,6 @@
             const t = data.tactical_breakdown || {};
             const r = data.scouting_report || {};
             const rx = r.coaching_prescription || {};
-            const metrics = data.advanced_metrics || {};
             const timelineHTML = r.timeline ? r.timeline.map(item => `
                 <div class="timeline-event">
                     <div class="t-time">${item.time}</div>
@@ -566,33 +610,58 @@
             return `
                 <div class="scout-card" style="border-color:#f59e0b;">
                     <div class="scout-header" style="background:rgba(245,158,11,0.1);">
-                        <div><div class="play-title">${data.title}</div><div class="formation-tag" style="color:#f59e0b;">${data.data.o_formation} vs ${data.data.d_formation}</div></div>
-                        <div class="overall-badge" style="border-color:#f59e0b;"><div class="badge-label" style="color:#f59e0b;">TEAM</div><div class="badge-score" style="color:#f59e0b;">XO</div></div>
+                        <div class="play-meta">
+                            <div class="play-title">${data.title}</div>
+                            <div class="formation-tag" style="color:#f59e0b; background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3);">${data.data.o_formation} vs ${data.data.d_formation}</div>
+                        </div>
+                        <div class="overall-badge" style="border-color:#f59e0b;">
+                            <div class="badge-label" style="color:#f59e0b;">TEAM</div>
+                            <div class="badge-score" style="color:#f59e0b; font-size:1.5rem;">XO</div>
+                        </div>
                     </div>
                     <div class="scout-body">
                         <div class="tactical-grid">
                             <div class="tac-card highlight"><div class="tac-label">CONCEPT</div><div class="tac-val">${t.concept}</div></div>
-                            <div class="tac-card"><div class="tac-label">BOX</div><div class="tac-val">${t.box_count}</div></div>
+                            <div class="tac-card"><div class="tac-label">BOX COUNT</div><div class="tac-val">${t.box_count}</div></div>
                             <div class="tac-card"><div class="tac-label">COVERAGE</div><div class="tac-val">${t.coverage_shell}</div></div>
-                            <div class="tac-card highlight"><div class="tac-label">METRICS</div><div class="tac-val" style="font-size:0.8rem;">Snap: ${metrics.snap_to_release || 'N/A'}</div></div>
+                            <div class="tac-card highlight"><div class="tac-label">KEY MATCHUP</div><div class="tac-val" style="font-size:0.8rem;">${t.key_matchup}</div></div>
                         </div>
+                        
                         <div class="summary-box" style="border-left-color:#f59e0b;">${r.summary}</div>
-                        <div class="timeline-section"><div class="section-title" style="color:#f59e0b;">SCHEMATIC TIMELINE</div>${timelineHTML}</div>
-                        <div class="rx-panel"><div class="rx-card" style="border-color:#f59e0b; background:rgba(245,158,11,0.05);"><div class="rx-header" style="color:#f59e0b;">COORDINATOR NOTE</div><div class="rx-item">${rx.fix}</div></div></div>
+                        
+                        <div class="timeline-section">
+                            <div class="section-title" style="color:#f59e0b;">SCHEMATIC TIMELINE</div>
+                            ${timelineHTML}
+                        </div>
+
+                        <div class="rx-panel">
+                            <div class="rx-card" style="border-color:#f59e0b; background:rgba(245,158,11,0.05);">
+                                <div class="rx-header" style="color:#f59e0b;">📋 COORDINATOR NOTE</div>
+                                <div class="rx-item">${rx.fix}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>`;
         }
 
         function renderMessage(role, text) {
             const feed = document.getElementById('chat-feed');
+            
             if (!text) return;
+
             let content = text;
-            content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             if(role === 'model' && text.includes('{')) {
                 try {
                     const j = JSON.parse(text);
-                    content = j.tactical_breakdown ? renderTeamCard(j) : renderScoutCard(j);
-                } catch(e) { }
+                    // *** LOGIC FORK: TEAM vs PLAYER ***
+                    if (j.tactical_breakdown) {
+                        content = renderTeamCard(j);
+                    } else {
+                        content = renderScoutCard(j);
+                    }
+                } catch(e) {
+                    console.warn("JSON Parse Failed for UI, falling back to text.");
+                }
             }
             feed.innerHTML += `<div class="msg ${role}">${content}</div>`;
             feed.scrollTop = feed.scrollHeight;
@@ -602,11 +671,15 @@
             const txt = document.getElementById('user-input').value;
             const file = document.getElementById('file-input').files[0];
             const sendBtn = document.getElementById('send-btn');
+            
             const pos = currentType === 'team' ? 'team' : document.getElementById('pos-select').value;
+            
             if(!txt && !file) return;
             if(!currentSession) return alert("Select Session");
 
-            sendBtn.innerHTML = "⏳ Processing..."; sendBtn.disabled = true;
+            // VISUAL FEEDBACK START
+            sendBtn.innerHTML = "⏳ Processing...";
+            sendBtn.disabled = true;
             document.getElementById('progress-container').style.display = 'block';
             document.getElementById('progress-bar').style.width = '30%';
 
@@ -617,26 +690,57 @@
             
             const handleResponse = async (res) => {
                 document.getElementById('progress-bar').style.width = '100%';
-                if (res.error) renderMessage('model', "⚠️ Error: " + res.error);
-                else if (res.reply) { if(res.newClip) loadLibrary(); renderMessage('model', res.reply); }
+                
+                if (res.error) {
+                    renderMessage('model', "⚠️ Error: " + res.error);
+                } else if (res.reply) {
+                    if(res.newClip) loadLibrary();
+                    renderMessage('model', res.reply);
+                } else {
+                    renderMessage('model', "⚠️ Unknown error occurred.");
+                }
+                
+                // RESET FILE INPUT UI
                 document.getElementById('file-input').value = '';
-                document.getElementById('file-btn').innerHTML = '📎'; 
-                document.getElementById('file-btn').style.background = ''; 
-                document.getElementById('file-name-display').textContent = '';
+                const btn = document.getElementById('file-btn');
+                const display = document.getElementById('file-name-display');
+                btn.innerHTML = '📎'; 
+                btn.style.background = ''; 
+                btn.style.color = ''; 
+                display.textContent = ''; // Clear text
+                
                 setTimeout(() => document.getElementById('progress-container').style.display='none', 500);
-                sendBtn.innerHTML = "SEND"; sendBtn.disabled = false;
+                sendBtn.innerHTML = "SEND";
+                sendBtn.disabled = false;
             };
 
-            const handleError = (e) => { console.error(e); alert("Upload Failed."); sendBtn.innerHTML = "SEND"; sendBtn.disabled = false; };
+            const handleError = (e) => {
+                console.error(e);
+                alert("Upload Failed. Please try a smaller file or check your connection.");
+                sendBtn.innerHTML = "SEND";
+                sendBtn.disabled = false;
+                document.getElementById('progress-container').style.display='none';
+            };
 
             if(file) {
                 const r = new FileReader();
                 r.onload = async () => {
-                    try { payload.fileData = r.result.split(',')[1]; payload.mimeType = file.type; const res = await apiFetch('/api/chat', payload); handleResponse(res); } catch(e) { handleError(e); }
+                    try {
+                        payload.fileData = r.result.split(',')[1]; payload.mimeType = file.type;
+                        const res = await apiFetch('/api/chat', payload);
+                        handleResponse(res);
+                    } catch(e) { handleError(e); }
                 };
+                r.onerror = handleError;
                 r.readAsDataURL(file);
+                
+                // Note: We intentionally DO NOT clear the file input here anymore. 
+                // It is cleared in handleResponse AFTER the server is done.
             } else {
-                try { const res = await apiFetch('/api/chat', payload); handleResponse(res); } catch(e) { handleError(e); }
+                try {
+                    const res = await apiFetch('/api/chat', payload);
+                    handleResponse(res);
+                } catch(e) { handleError(e); }
             }
         }
         
@@ -646,6 +750,7 @@
             if(currentClip) {
                const data = await apiFetch(`/api/clip/${currentClip._id}`);
                if(data.chatHistory) data.chatHistory.forEach(m => {
+                   // Parse bolding for chat history too
                    let txt = m.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                    document.getElementById('coach-feed').innerHTML += `<div class="coach-msg ${m.role}">${txt}</div>`;
                });
@@ -658,6 +763,8 @@
             document.getElementById('coach-feed').innerHTML += `<div class="coach-msg user">${msg}</div>`;
             document.getElementById('coach-input').value = '';
             const res = await apiFetch('/api/clip-chat', { message: msg, clipId: currentClip._id });
+            
+            // Parse bolding for new messages
             let txt = res.reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             document.getElementById('coach-feed').innerHTML += `<div class="coach-msg model">${txt}</div>`;
         }
