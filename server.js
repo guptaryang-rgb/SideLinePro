@@ -13,6 +13,7 @@ const cloudinary = require("cloudinary").v2;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Increased limit for Full Game Footage
 app.use(cors());
 app.use(express.json({ limit: "500mb" }));
 app.use(ClerkExpressWithAuth());
@@ -59,7 +60,7 @@ async function generateWithFallback(promptParts) {
     throw new Error(`Analysis failed. Last error: ${lastError.message}`);
 }
 
-/* ---------------- UPDATED RUBRICS ---------------- */
+/* ---------------- UPDATED RUBRICS (GOD MODE READY) ---------------- */
 const RUBRICS = {
     "team": "ELITE COORDINATOR: Situation, Pre-Snap Shell, Post-Snap Rotation, Conflict Players.",
     "qb": "BIOMECHANICS: Base, Hip Sequencing, Arm Angle, Release Time.",
@@ -239,17 +240,18 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     const rosterContext = session.roster.map(p => `${p.identifier}: ${p.weaknesses.join(', ')}`).join('\n');
     const specificFocus = RUBRICS[position] || RUBRICS["team"];
 
-    // *** GOD MODE PROMPT ***
+    // *** GOD MODE PROMPT INTEGRATION ***
+    // This prompt forces the AI to output drawing coordinates, timestamps, and pro comps.
     let systemInstruction = `
     ROLE: ${position === 'team' ? "NFL Coordinator" : "Elite Position Coach"}.
     TASK: Analyze video clip. Focus: ${specificFocus}.
     ROSTER: ${rosterContext}
 
-    *** GOD MODE FEATURES ***
-    1. VISUALS: If you see a key movement (e.g. Safety dropping, WR break), provide 0-100% coordinates for drawing lines/boxes.
-    2. AUDIO: Listen for cadence/hard counts.
-    3. COMPARISON: Compare style to a famous pro.
-    4. STOPWATCH: Estimate "Snap-to-Release" or "40yd Dash" times.
+    *** GOD MODE ANALYSIS REQUIREMENTS ***
+    1. VISUALS: If you see a key movement (e.g. Safety dropping, WR break), you MUST provide 0-100% coordinates for drawing arrows or boxes in the 'visual_overlays' JSON field.
+    2. AUDIO: Listen for cadence/hard counts. Note this in 'advanced_metrics'.
+    3. COMPARISON: Compare style to a famous pro in 'pro_comparison'.
+    4. STOPWATCH: Estimate "Snap-to-Release" or "Closing Speed" in 'advanced_metrics'.
 
     OUTPUT JSON:
     { 
@@ -265,7 +267,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
         "advanced_metrics": {
             "snap_to_release": "0.0s",
             "closing_speed": "High/Med/Low",
-            "audio_cue": "Notes on cadence"
+            "audio_cue": "Notes on cadence/voice"
         },
         "pro_comparison": { "player": "Name", "similarity": "Reason" },
         "visual_overlays": [
